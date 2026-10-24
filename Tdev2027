@@ -675,7 +675,6 @@ input,select,textarea { color:#172b4d; }
         <input type="email" id="reg-email" class="reg-input" placeholder="E-posta">
         <input type="password" id="reg-pass" class="reg-input" placeholder="Şifre">
         <input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar">
-        <button class="reg-btn" onclick="register()">KAYIT OL</button>
         <div class="reg-actions"><button type="button" class="auth-primary" onclick="register()">Kayıt ol</button><button type="button" class="auth-secondary" onclick="goTo('gate')">Giriş yap</button></div>
         <div class="reg-link">Hesabın varsa giriş yapabilir, yeni hesap için kayıt olabilirsin.</div>
         <div class="error-msg" id="reg-err" role="alert" aria-live="polite" style="display:none;margin-top:8px"></div>
@@ -1102,17 +1101,19 @@ async function loginWithEmail() {
             showAuthError('verify-email-err', 'Hesabına devam etmek için e-postanı doğrula.');
             return;
         }
-        if (result.role === 'admin') {
-            document.getElementById('admin-login-area').style.display = 'none';
-            document.getElementById('admin-content').style.display = 'block';
+        if (result.role === 'admin' || result.role === 'founder') {
+            const loginArea = document.getElementById('admin-login-area');
+            const adminContent = document.getElementById('admin-content');
+            if (loginArea) loginArea.style.display = 'none';
+            if (adminContent) adminContent.style.display = 'block';
             goTo('adminpage');
             refreshAdminPage();
-            showNotif('Giriş başarılı.');
+            showNotif(result.role === 'founder' ? 'Kurucu girişi başarılı.' : 'Admin girişi başarılı.');
             return;
         }
         goTo('class');
         loadClassList();
-        showNotif('Giriş başarılı. Hoş geldin!');
+        showNotif(result.role === 'beta' ? 'Beta hesabıyla giriş başarılı.' : 'Giriş başarılı. Hoş geldin!');
     } catch (error) {
         showAuthError(errorId, error && error.message ? error.message : 'Giriş yapılamadı.');
     } finally {
@@ -1145,55 +1146,8 @@ document.addEventListener('keydown', function(event) {
     if (event.key === 'Enter' && document.getElementById('verify-email-code') === document.activeElement) verifyEmailCode();
 });
 
-// ---- ROL & GİRİŞ (Cloud Code) ----
-function selRole(r) {
-    curRole = r;
-    document.getElementById('login-box').style.display = 'block';
-    document.getElementById('login-role-title').innerText = roleNames[r] + ' GİRİŞİ';
-    document.getElementById('err-msg').style.display = 'none';
-    document.getElementById('pass').value = '';
-    setTimeout(() => document.getElementById('pass').focus(), 100);
-}
-
-function verify() {
-    const p = document.getElementById('pass').value.trim();
-    Parse.Cloud.run('verifyRole', { role: curRole, password: p })
-        .then(result => {
-            if(result.success) {
-                document.getElementById('err-msg').style.display = 'none';
-                goTo('class');
-                loadClassList();
-                showNotif('✅ ' + roleNames[curRole] + ' girişi başarılı');
-            } else {
-                document.getElementById('err-msg').style.display = 'block';
-                showNotif('❌ Hatalı şifre');
-            }
-        })
-        .catch(err => {
-            showNotif('❌ Hata: ' + err.message);
-        });
-}
-document.addEventListener('keydown', e => { if(e.key === 'Enter' && document.getElementById('pass') === document.activeElement) verify(); });
-
-// ---- ADMİN GİRİŞİ (Cloud Code) ----
-function adminLogin() {
-    const p = document.getElementById('admin-pass').value.trim();
-    Parse.Cloud.run('adminLogin', { password: p })
-        .then(result => {
-            if(result.success) {
-                document.getElementById('admin-login-area').style.display = 'none';
-                document.getElementById('admin-content').style.display = 'block';
-                refreshAdminPage();
-                showNotif('✅ Admin girişi başarılı');
-            } else {
-                document.getElementById('admin-err').style.display = 'block';
-                showNotif('❌ Hatalı şifre');
-            }
-        })
-        .catch(err => {
-            showNotif('❌ Hata: ' + err.message);
-        });
-}
+// Kurucu/Admin/Beta kimlik bilgileri istemci kodunda tutulmaz.
+// Rol ve yetki yalnızca Back4App Cloud Code yanıtından alınır.
 
 function refreshAdminPage() {
     // Admin ekibi
@@ -1250,6 +1204,46 @@ function adminBan(userId, isBanned) {
 }
 
 // ---- KAYIT (Cloud Code) ----
+let registrationInProgress = false;
+async function register() {
+    if (registrationInProgress) return;
+    const name = (document.getElementById('reg-name')?.value || '').trim();
+    const email = (document.getElementById('reg-email')?.value || '').trim().toLowerCase();
+    const pass = document.getElementById('reg-pass')?.value || '';
+    const pass2 = document.getElementById('reg-pass2')?.value || '';
+    const err = document.getElementById('reg-err');
+    const buttons = document.querySelectorAll('#scr-register button[onclick="register()"]');
+    const showError = message => {
+        if (err) { err.textContent = message; err.style.display = 'block'; }
+    };
+    if (!name || !email || !pass || !pass2) { showError('Lütfen tüm alanları doldur.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Geçerli bir e-posta adresi gir.'); return; }
+    if (pass.length < 8) { showError('Şifren en az 8 karakter olmalı.'); return; }
+    if (pass !== pass2) { showError('Şifreler eşleşmiyor.'); return; }
+    registrationInProgress = true;
+    buttons.forEach(button => { button.disabled = true; button.dataset.originalText = button.textContent; button.textContent = 'Kaydediliyor…'; });
+    if (err) err.style.display = 'none';
+    try {
+        const result = await Parse.Cloud.run('registerUser', { name, email, password: pass });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Kayıt tamamlanamadı.');
+        showNotif(result.verificationRequired ? 'Doğrulama kodu e-postana gönderildi.' : 'Kayıt başarılı!');
+        if (result.verificationRequired) {
+            const verifyEmail = document.getElementById('verify-email-address');
+            if (verifyEmail) verifyEmail.value = email;
+            goTo('verify-email');
+        } else {
+            const loginEmail = document.getElementById('auth-email');
+            if (loginEmail) loginEmail.value = email;
+            goTo('gate');
+        }
+    } catch (error) {
+        showError(error && error.message ? error.message : 'Kayıt yapılamadı. Lütfen tekrar dene.');
+    } finally {
+        registrationInProgress = false;
+        buttons.forEach(button => { button.disabled = false; button.textContent = button.dataset.originalText || 'Kayıt ol'; });
+    }
+}
+
 function register() {
     const name = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
