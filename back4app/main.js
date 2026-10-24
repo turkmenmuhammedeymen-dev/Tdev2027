@@ -36,15 +36,38 @@ const CONFIG_DEFAULTS = {
   REQUIRE_EMAIL_VERIFY: 'true'
 };
 
+let parseConfigPromise = null;
+async function loadParseConfig() {
+  if (!parseConfigPromise) {
+    parseConfigPromise = (async () => {
+      try {
+        if (Parse && Parse.Config && typeof Parse.Config.get === 'function') {
+          return await Parse.Config.get({ useMasterKey: true });
+        }
+      } catch (error) {
+        console.error('[TdevKuantum] Parse Config read failed:', String(error && error.message || error).slice(0, 240));
+      }
+      return null;
+    })();
+  }
+  return parseConfigPromise;
+}
+
 function configValue(key, fallback) {
-  try {
-    const cfg = (Parse && Parse.Config && Parse.Config.get) ? Parse.Config.get() : null;
-    const value = cfg && cfg.get(key);
-    if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
-  } catch (_) {}
+  // Synchronous lookups intentionally use environment variables only.
+  // Parse.Config.get() is asynchronous; use configValueAsync() for dashboard Config values.
   const env = (typeof process !== 'undefined' && process.env) ? process.env[key] : undefined;
   if (env !== undefined && env !== null && String(env).trim() !== '') return String(env).trim();
   return fallback !== undefined ? String(fallback) : '';
+}
+
+async function configValueAsync(key, fallback) {
+  try {
+    const cfg = await loadParseConfig();
+    const value = cfg && typeof cfg.get === 'function' ? cfg.get(key) : undefined;
+    if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+  } catch (_) {}
+  return configValue(key, fallback);
 }
 
 function normalizeEmail(value) {
@@ -122,9 +145,9 @@ function verificationKey(email) {
   return 'emailVerification:' + sha256(normalizeEmail(email));
 }
 async function sendVerificationEmail(email, code, name) {
-  const scriptUrl = (configValue('GOOGLE_SCRIPT_URL') || configValue('GOOGLE_APPS_SCRIPT_URL'));
-  const apiKey = configValue('RESEND_API_KEY');
-  const from = configValue('EMAIL_FROM');
+  const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
+  const apiKey = await configValueAsync('RESEND_API_KEY');
+  const from = await configValueAsync('EMAIL_FROM');
   const subject = 'TdevKuantum e-posta doğrulama kodu';
   const html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b4d">' +
     '<h1 style="color:#2457c5">TdevKuantum</h1><p>Merhaba ' + safeText(name || 'öğrenci', 100) + ', hesabını doğrulamak için aşağıdaki kodu kullan:</p>' +
@@ -141,7 +164,7 @@ async function sendVerificationEmail(email, code, name) {
         body: JSON.stringify({
           to: email, email: email, name: safeText(name || 'öğrenci', 100),
           code: code, subject: subject, html: html, app: 'TdevKuantum',
-          token: configValue('APPS_SCRIPT_TOKEN'),
+          token: await configValueAsync('APPS_SCRIPT_TOKEN'),
           text: 'TdevKuantum doğrulama kodun: ' + code + ' (10 dakika geçerlidir)'
         })
       });
@@ -455,18 +478,24 @@ Parse.Cloud.define('getQuestionsForGrade', async (request) => {
   }));
 });
 
-Parse.Cloud.define('healthCheck', async () => ({
-  success: true,
-  service: 'TdevKuantum Cloud Code',
-  timestamp: new Date().toISOString(),
-  emailProviderConfigured: !!((configValue('GOOGLE_SCRIPT_URL') || configValue('GOOGLE_APPS_SCRIPT_URL')) || (configValue('RESEND_API_KEY') && configValue('EMAIL_FROM')))
-}));
+Parse.Cloud.define('healthCheck', async () => {
+  const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
+  const apiKey = await configValueAsync('RESEND_API_KEY');
+  const from = await configValueAsync('EMAIL_FROM');
+  return {
+    success: true,
+    service: 'TdevKuantum Cloud Code',
+    timestamp: new Date().toISOString(),
+    emailProviderConfigured: !!(scriptUrl || (apiKey && from)),
+    emailProvider: scriptUrl ? 'google-apps-script' : (apiKey && from ? 'resend' : 'none')
+  };
+});
 
 async function sendSupportNotification(name, email, category, message) {
-  const recipient = normalizeEmail(configValue('SUPPORT_EMAIL', 'tdevkuantum.official@gmail.com'));
-  const scriptUrl = (configValue('GOOGLE_SCRIPT_URL') || configValue('GOOGLE_APPS_SCRIPT_URL'));
-  const apiKey = configValue('RESEND_API_KEY');
-  const from = configValue('EMAIL_FROM');
+  const recipient = normalizeEmail(await configValueAsync('SUPPORT_EMAIL', 'tdevkuantum.official@gmail.com'));
+  const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
+  const apiKey = await configValueAsync('RESEND_API_KEY');
+  const from = await configValueAsync('EMAIL_FROM');
   const subject = '[TdevKuantum Destek] ' + safeText(category || 'Genel', 40) + ' — ' + safeText(name, 100);
   const textBody = 'TdevKuantum destek mesajı\\n\\nAd: ' + name + '\\nE-posta: ' + email + '\\nKategori: ' + category + '\\n\\nMesaj:\\n' + message;
   const escapeHtml = (value) => String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -477,7 +506,7 @@ async function sendSupportNotification(name, email, category, message) {
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message, token: configValue('APPS_SCRIPT_TOKEN') })
+        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message, token: await configValueAsync('APPS_SCRIPT_TOKEN') })
       });
       const body = await response.text();
       if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
