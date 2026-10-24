@@ -252,34 +252,36 @@ Parse.Cloud.define('loginUser', async (request) => {
     const staffQuery = new Parse.Query(Parse.User);
     staffQuery.equalTo('username', email);
     let staffUser = await staffQuery.first({ useMasterKey: true });
+    const configuredPassword = configValue(specialRole === 'founder' ? 'FOUNDER_PASSWORD' : (specialRole === 'admin' ? 'ADMIN_PASSWORD' : 'BETA_PASSWORD'));
+    if (!configuredPassword) return resultError('Bu özel hesap için şifre Back4App Config içinde ayarlanmamış.', 'STAFF_PASSWORD_NOT_CONFIGURED');
     if (!staffUser) {
-      // Provision a Parse identity on first special-account login. Its password is
-      // generated randomly; the configured secret is never stored as a Parse password.
       staffUser = new Parse.User();
       staffUser.set('username', email);
       staffUser.set('email', email);
-      staffUser.set('password', crypto.randomBytes(32).toString('hex'));
       staffUser.set('displayName', specialRole === 'founder' ? 'Kurucu' : (specialRole === 'admin' ? 'Admin' : 'Beta'));
       staffUser.set('name', specialRole === 'founder' ? 'Kurucu' : (specialRole === 'admin' ? 'Admin' : 'Beta'));
       staffUser.set('role', specialRole);
       staffUser.set('emailVerified', true);
       staffUser.set('banned', false);
+      staffUser.set('password', configuredPassword);
       await staffUser.signUp(null, { useMasterKey: true });
+    } else {
+      if (staffUser.get('banned') === true) return resultError('Bu hesap devre dışı bırakılmış.', 'ACCOUNT_BANNED');
+      // Sync the Parse password with the server-only Config secret so Parse can
+      // issue a real session token for protected Cloud Code calls.
+      staffUser.set('password', configuredPassword);
+      staffUser.set('role', specialRole);
+      staffUser.set('emailVerified', true);
+      await staffUser.save(null, { useMasterKey: true });
     }
-    if (staffUser.get('banned') === true) return resultError('Bu hesap devre dışı bırakılmış.', 'ACCOUNT_BANNED');
-    // Establish a session token for the client by rotating to a random password,
-    // then logging in with that one-time generated password is intentionally not
-    // supported here. Use a Parse user session created by the normal user login path.
-    // Staff account must exist in Parse and have a normal Parse password unless the
-    // frontend is updated to use the returned staff-session strategy below.
+    const authenticatedStaff = await Parse.User.logIn(email, configuredPassword);
+    if (authenticatedStaff.get('banned') === true) return resultError('Bu hesap devre dışı bırakılmış.', 'ACCOUNT_BANNED');
     return {
       success: true,
       role: specialRole,
-      name: safeText(staffUser.get('displayName') || staffUser.get('name'), 100),
+      name: safeText(authenticatedStaff.get('displayName') || authenticatedStaff.get('name'), 100),
       email: email,
-      sessionToken: staffUser.getSessionToken() || null,
-      sessionRequired: true,
-      message: 'Rol doğrulandı. Cloud oturumu için Parse oturum eşlemesi gerekiyor.'
+      sessionToken: authenticatedStaff.getSessionToken()
     };
   }
 
