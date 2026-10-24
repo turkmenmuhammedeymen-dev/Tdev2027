@@ -460,7 +460,58 @@ Parse.Cloud.define('healthCheck', async () => ({
   emailProviderConfigured: !!configValue('RESEND_API_KEY') && !!configValue('EMAIL_FROM')
 }));
 
+async function sendSupportNotification(name, email, category, message) {
+  const recipient = normalizeEmail(configValue('SUPPORT_EMAIL', 'tdevkuantum.official@gmail.com'));
+  const scriptUrl = configValue('GOOGLE_APPS_SCRIPT_URL');
+  const apiKey = configValue('RESEND_API_KEY');
+  const from = configValue('EMAIL_FROM');
+  const subject = '[TdevKuantum Destek] ' + safeText(category || 'Genel', 40) + ' — ' + safeText(name, 100);
+  const textBody = 'TdevKuantum destek mesajı\\n\\nAd: ' + name + '\\nE-posta: ' + email + '\\nKategori: ' + category + '\\n\\nMesaj:\\n' + message;
+  const escapeHtml = (value) => String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const htmlBody = '<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:24px;color:#172b4d"><h2>TdevKuantum Destek Mesajı</h2><p><b>Ad:</b> ' + escapeHtml(name) + '</p><p><b>E-posta:</b> ' + escapeHtml(email) + '</p><p><b>Kategori:</b> ' + escapeHtml(category) + '</p><hr><p style="white-space:pre-wrap">' + escapeHtml(message) + '</p></div>';
+  const errors = [];
+  if (scriptUrl) {
+    try {
+      const response = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message })
+      });
+      const body = await response.text();
+      if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
+      if (body && body.trim()) {
+        let data = null;
+        try { data = JSON.parse(body); } catch (_) {}
+        if (data && (data.success === false || data.ok === false || data.error)) throw new Error(String(data.error || data.message || 'Apps Script e-posta gönderimini reddetti.'));
+      }
+      return { provider: 'google-apps-script' };
+    } catch (error) {
+      console.error('[TdevKuantum] Support Apps Script email error:', error && error.message);
+      errors.push('Apps Script: ' + String(error && error.message || error));
+    }
+  }
+  if (apiKey && from) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: from, to: [recipient], reply_to: email, subject: subject, html: htmlBody, text: textBody })
+      });
+      if (!response.ok) {
+        let detail = '';
+        try { detail = (await response.text()).slice(0, 250); } catch (_) {}
+        throw new Error('Resend HTTP ' + response.status + (detail ? ': ' + detail : ''));
+      }
+      return { provider: 'resend' };
+    } catch (error) {
+      console.error('[TdevKuantum] Support Resend email error:', error && error.message);
+      errors.push('Resend: ' + String(error && error.message || error));
+    }
+  }
+  throw new Error('Destek mesajı e-postayla gönderilemedi. Back4App Config içinde GOOGLE_APPS_SCRIPT_URL veya RESEND_API_KEY ve EMAIL_FROM ayarlarını kontrol et. ' + errors.join(' | '));
+}
 Parse.Cloud.define('sendSupportMessage', async (request) => {
+  const user = requireUser(request);
   const name = safeText(request.params && request.params.name, 100);
   const email = normalizeEmail(request.params && request.params.email);
   const category = safeText(request.params && request.params.category, 40);
@@ -472,8 +523,15 @@ Parse.Cloud.define('sendSupportMessage', async (request) => {
   row.set('category', category);
   row.set('message', message);
   row.set('status', 'new');
+  row.set('userId', user.id);
   await row.save(null, { useMasterKey: true });
-  return { success: true, message: 'Mesajın kaydedildi.' };
+  try {
+    await sendSupportNotification(name, email, category, message);
+  } catch (error) {
+    console.error('[TdevKuantum] Support email delivery failed:', error && error.message);
+    return resultError('Mesaj kaydedildi ancak e-posta gönderilemedi. Yönetici Back4App e-posta ayarlarını kontrol etmeli.', 'SUPPORT_EMAIL_FAILED');
+  }
+  return { success: true, message: 'Destek mesajı tdevkuantum.official@gmail.com adresine gönderildi.' };
 });
 
 // Legacy admin login endpoint is intentionally not reintroduced: all staff
