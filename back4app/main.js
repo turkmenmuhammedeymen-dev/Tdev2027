@@ -147,14 +147,12 @@ async function sendVerificationEmail(email, code, name) {
       const body = await response.text();
       if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
       if (body && body.trim()) {
-        try {
-          const data = JSON.parse(body);
-          if (data && (data.success === false || data.ok === false || data.error)) {
-            throw new Error(String(data.error || data.message || 'Apps Script e-posta gönderimini reddetti.'));
-          }
-        } catch (parseError) {
-          if (parseError && /Apps Script e-posta gönderimini reddetti/.test(String(parseError.message))) throw parseError;
+        let data = null;
+        try { data = JSON.parse(body); } catch (_) {
           // Some deployments return a non-JSON success page; HTTP 2xx is accepted.
+        }
+        if (data && (data.success === false || data.ok === false || data.error)) {
+          throw new Error(String(data.error || data.message || 'Apps Script e-posta gönderimini reddetti.'));
         }
       }
       return { provider: 'google-apps-script' };
