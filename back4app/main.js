@@ -5,7 +5,7 @@
  * Upload as Cloud Code main.js.
  *
  * REQUIRED Back4App Config keys:
- *   FOUNDER_EMAIL        default: admin.tr.reis@gamil.com (confirm spelling in Config)
+ *   FOUNDER_EMAIL        default: admin.tr.reis@gmail.com (confirm spelling in Config)
  *   FOUNDER_PASSWORD     strong secret; never place in HTML/GitHub
  *   ADMIN_EMAIL          admin account email
  *   ADMIN_PASSWORD       strong secret; never place in HTML/GitHub
@@ -31,7 +31,7 @@
 const crypto = require('crypto');
 
 const CONFIG_DEFAULTS = {
-  FOUNDER_EMAIL: 'admin.tr.reis@gamil.com',
+  FOUNDER_EMAIL: 'admin.tr.reis@gmail.com',
   REGISTRATION_ENABLED: 'true',
   REQUIRE_EMAIL_VERIFY: 'true'
 };
@@ -577,9 +577,85 @@ const TK_SCHEMA = {
   Question: { grade:'number', server:'string', subject:'string', topic:'string', question:'string', options:'array', correctAnswer:'string', explanation:'string', difficulty:'string', active:'boolean', order:'number' },
   SupportMessage: { email:'string', name:'string', subject:'string', message:'string', status:'string', createdAtISO:'string' },
   AuditLog: { actorId:'string', actorEmail:'string', action:'string', targetId:'string', details:'object', ipHash:'string', createdAtISO:'string' },
-  Referral: { code:'string', ownerId:'string', referredUserId:'string', status:'string', createdAtISO:'string' }
+  Referral: { code:'string', ownerId:'string', referredUserId:'string', status:'string', createdAtISO:'string' },
+  StudyPlan: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  StudyNote: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' }
 };
 const TK_FIELD_METHODS = { string:'addString', number:'addNumber', boolean:'addBoolean', date:'addDate', array:'addArray', object:'addObject' };
+
+// ---- KİŞİSEL ÖĞRENME VERİLERİ (kullanıcıya özel, sunucu doğrulamalı) ----
+function studyPayload(value, kind) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Geçersiz öğrenme kaydı.');
+  const item = {
+    id: safeText(value.id, 100),
+    updatedAt: safeText(value.updatedAt || value.createdAt || value.date, 40)
+  };
+  if (!item.id) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Kayıt kimliği eksik.');
+  if (kind === 'plan') {
+    item.title = safeText(value.title, 140);
+    item.subject = safeText(value.subject, 60);
+    item.date = safeText(value.date, 10);
+    item.minutes = Number(value.minutes);
+    item.done = value.done === true;
+    item.createdAt = safeText(value.createdAt, 40);
+    item.completedAt = safeText(value.completedAt, 40);
+    if (!item.title || !item.subject || !/^\d{4}-\d{2}-\d{2}$/.test(item.date) || !Number.isInteger(item.minutes) || item.minutes < 5 || item.minutes > 600) {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, 'Çalışma planı alanları geçersiz.');
+    }
+  } else if (kind === 'note') {
+    item.title = safeText(value.title, 120);
+    item.subject = safeText(value.subject, 80);
+    item.body = safeText(value.body, 12000);
+    item.updatedAt = safeText(value.updatedAt, 40) || new Date().toISOString();
+    if (!item.title || !item.body) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Not başlığı ve içeriği zorunludur.');
+  } else {
+    item.subject = safeText(value.subject, 60);
+    item.kind = safeText(value.kind, 40);
+    item.total = Number(value.total);
+    item.correct = Number(value.correct);
+    item.reflection = safeText(value.reflection, 1000);
+    item.date = safeText(value.date, 40) || new Date().toISOString();
+    if (!item.subject || !Number.isInteger(item.total) || !Number.isInteger(item.correct) || item.total < 0 || item.correct < 0 || item.correct > item.total || item.total > 1000) {
+      throw new Parse.Error(Parse.Error.INVALID_JSON, 'Çalışma oturumu alanları geçersiz.');
+    }
+  }
+  return item;
+}
+async function saveStudyRecord(request, className, kind) {
+  const user = requireUser(request);
+  const item = studyPayload(request.params && request.params.item, kind);
+  const query = new Parse.Query(className);
+  query.equalTo('ownerId', user.id);
+  query.equalTo('itemId', item.id);
+  let row = await query.first({ useMasterKey: true });
+  if (!row) {
+    const Record = Parse.Object.extend(className);
+    row = new Record();
+    row.set('ownerId', user.id);
+    row.set('itemId', item.id);
+    row.set('createdAtISO', new Date().toISOString());
+  }
+  row.set('payload', item);
+  row.set('updatedAtISO', new Date().toISOString());
+  await row.save(null, { useMasterKey: true });
+  return { success: true, item: item };
+}
+async function getStudyRecords(request, className) {
+  const user = requireUser(request);
+  const query = new Parse.Query(className);
+  query.equalTo('ownerId', user.id);
+  query.descending('updatedAtISO');
+  query.limit(100);
+  const rows = await query.find({ useMasterKey: true });
+  return { success: true, items: rows.map(function (row) { return row.get('payload'); }).filter(Boolean) };
+}
+Parse.Cloud.define('saveStudyPlan', async (request) => saveStudyRecord(request, 'StudyPlan', 'plan'));
+Parse.Cloud.define('getStudyPlans', async (request) => getStudyRecords(request, 'StudyPlan'));
+Parse.Cloud.define('saveStudyNote', async (request) => saveStudyRecord(request, 'StudyNote', 'note'));
+Parse.Cloud.define('getStudyNotes', async (request) => getStudyRecords(request, 'StudyNote'));
+Parse.Cloud.define('saveStudyProgress', async (request) => saveStudyRecord(request, 'StudyProgress', 'progress'));
+
 Parse.Cloud.define('setupDatabaseSchema', async (request) => {
   const config = await Parse.Config.get({ useMasterKey: true });
   const expected = config.get('SCHEMA_SETUP_TOKEN');
