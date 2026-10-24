@@ -168,7 +168,7 @@
         '</div></div><div class="study-item-actions"><button class="study-mini" onclick="deleteStudyItem(\'practice\',\'' + esc(p.id) + '\')">Sil</button></div></article>';
     }).join('') : '<p class="study-item-meta">Henüz çalışma oturumu kaydedilmedi.</p>';
   }
-  window.loadPracticeLog = renderPracticeLog;
+  window.loadPracticeLog = async function () { renderPracticeLog(); const result = await cloud('getStudyProgress', {}); if (result && result.success && Array.isArray(result.items)) { mergeCloud('practice', result.items); renderPracticeLog(); window.renderLearningProgress(); } };
   window.deleteStudyItem = function (key, itemId) {
     if (!Object.prototype.hasOwnProperty.call(KEYS, key)) return;
     write(key, read(key).filter(function (x) { return x.id !== itemId; }));
