@@ -726,6 +726,7 @@ input,select,textarea { color:#172b4d; }
         <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
         <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
         <div class="nav-btn" onclick="showTab('stats',this)"><span class="nav-icon">📊</span>İstatistikler</div>
+        <div class="nav-btn" onclick="openModal('support')"><span class="nav-icon">💬</span>Destek Merkezi</div>
         <div class="sidebar-footer">
             <div class="role-indicator">
                 <div class="role-dot" id="role-dot"></div>
@@ -973,7 +974,7 @@ input,select,textarea { color:#172b4d; }
 <div class="modal-bg hidden" id="modal-support">
     <div class="modal-box">
         <h2>💬 DESTEK / SUPPORT</h2>
-        <p>turkmenmuhammedeymen@gmail.com adresine iletilecek</p>
+        <p>Destek ekibine iletilecek: tdevkuantum.official@gmail.com</p>
         <input type="text" class="modal-input" id="sup-name" placeholder="Adınız">
         <input type="email" class="modal-input" id="sup-email" placeholder="E-postanız">
         <select class="modal-input" id="sup-type" style="cursor:pointer">
@@ -1635,21 +1636,46 @@ function stopFocus(){ if(focusInt){ clearInterval(focusInt); focusInt = null; } 
 function resetFocus(){ stopFocus(); focusCur = focusSecs; const m = Math.floor(focusSecs/60); document.getElementById('focus-time').innerText = String(m).padStart(2,'0')+':00'; }
 
 // ---- DESTEK ----
-function openModal(id){ document.getElementById('modal-'+id).classList.remove('hidden'); }
+function openModal(id) {
+    const modal = document.getElementById('modal-' + id);
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    if (id === 'support') {
+        const user = Parse.User.current();
+        const nameField = document.getElementById('sup-name');
+        const emailField = document.getElementById('sup-email');
+        if (user) {
+            if (nameField && !nameField.value) nameField.value = user.get('displayName') || user.get('name') || '';
+            if (emailField && !emailField.value) emailField.value = user.get('email') || user.get('username') || '';
+        }
+    }
+}
 function closeModal(id){ document.getElementById('modal-'+id).classList.add('hidden'); }
-function sendSupport() {
+async function sendSupport() {
     const name = document.getElementById('sup-name').value.trim();
-    const email = document.getElementById('sup-email').value.trim();
+    const email = document.getElementById('sup-email').value.trim().toLowerCase();
     const type = document.getElementById('sup-type').value;
     const msg = document.getElementById('sup-msg').value.trim();
-    if(!name || !msg){ showNotif('⚠ Ad ve mesaj zorunlu!'); return; }
+    const button = document.querySelector('#modal-support .modal-send');
+    if (!name || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !msg) {
+        showNotif('⚠ Ad, geçerli e-posta ve mesaj zorunlu.');
+        return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'GÖNDERİLİYOR…'; }
     const types = { bug:'Hata Bildirimi', oneri:'Öneri', soru:'Soru', diger:'Diğer' };
-    const sub = encodeURIComponent('[TDEV DESTEK] '+types[type]+' — '+name);
-    const body = encodeURIComponent('Gönderen: '+name+'\nE-posta: '+email+'\nTür: '+types[type]+'\n\nMesaj:\n'+msg);
-    window.open('mailto:turkmenmuhammedeymen@gmail.com?subject='+sub+'&body='+body,'_blank');
-    showNotif('✓ Mail uygulaması açılıyor...');
-    ['sup-name','sup-email','sup-msg'].forEach(id => { document.getElementById(id).value = ''; });
-    setTimeout(() => closeModal('support'), 1500);
+    try {
+        const result = await Parse.Cloud.run('sendSupportMessage', {
+            name: name, email: email, category: types[type] || 'Diğer', message: msg
+        });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Destek mesajı gönderilemedi.');
+        showNotif('✓ Destek mesajın gönderildi.');
+        ['sup-name','sup-email','sup-msg'].forEach(id => { document.getElementById(id).value = ''; });
+        setTimeout(() => closeModal('support'), 900);
+    } catch (error) {
+        showNotif('⚠ ' + (error && error.message ? error.message : 'Gönderim başarısız. Tekrar dene.'));
+    } finally {
+        if (button) { button.disabled = false; button.textContent = '📧 GÖNDER'; }
+    }
 }
 
 // ---- BİLDİRİM ----
