@@ -11,7 +11,8 @@
  *   ADMIN_PASSWORD       strong secret; never place in HTML/GitHub
  *   BETA_EMAIL           beta account email
  *   BETA_PASSWORD        strong secret; never place in HTML/GitHub
- *   RESEND_API_KEY       optional, required for sending verification emails
+ *   GOOGLE_APPS_SCRIPT_URL optional deployed Web App URL for sending verification emails
+ *   RESEND_API_KEY       fallback provider API key
  *   EMAIL_FROM           verified sender, e.g. TdevKuantum <noreply@your-domain>
  *
  * Optional:
@@ -24,7 +25,7 @@
  * - Administrative functions require an authenticated Parse user whose
  *   email matches a configured staff account.
  * - Public user registration uses Parse User accounts. Verification mail
- *   is sent using Resend when configured.
+ *   uses Google Apps Script when configured, then falls back to Resend.
  */
 
 const crypto = require('crypto');
@@ -120,33 +121,75 @@ function publicUser(user) {
 function verificationKey(email) {
   return 'emailVerification:' + sha256(normalizeEmail(email));
 }
-async function sendVerificationEmail(email, code) {
+async function sendVerificationEmail(email, code, name) {
+  const scriptUrl = configValue('GOOGLE_APPS_SCRIPT_URL');
   const apiKey = configValue('RESEND_API_KEY');
   const from = configValue('EMAIL_FROM');
-  if (!apiKey || !from) {
-    throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'E-posta gönderimi yapılandırılmamış. Back4App Config içine RESEND_API_KEY ve EMAIL_FROM ekle.');
-  }
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: from,
-      to: [email],
-      subject: 'TdevKuantum e-posta doğrulama kodu',
-      html: '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b4d">' +
-        '<h1 style="color:#2457c5">TdevKuantum</h1><p>Hesabını doğrulamak için aşağıdaki kodu kullan:</p>' +
-        '<div style="font-size:30px;font-weight:700;letter-spacing:8px;padding:18px;background:#f3f6fb;border-radius:12px;text-align:center">' + code + '</div>' +
-        '<p>Bu kod 10 dakika geçerlidir. Bu isteği sen yapmadıysan e-postayı yok sayabilirsin.</p></div>'
-    })
-  });
-  if (!response.ok) {
-    let detail = '';
-    try { detail = (await response.text()).slice(0, 300); } catch (_) {}
-    console.error('[TdevKuantum] Verification email provider error:', response.status, detail);
-    throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. E-posta sağlayıcı ayarlarını kontrol et.');
-  }
-}
+  const subject = 'TdevKuantum e-posta doğrulama kodu';
+  const html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b4d">' +
+    '<h1 style="color:#2457c5">TdevKuantum</h1><p>Merhaba ' + safeText(name || 'öğrenci', 100) + ', hesabını doğrulamak için aşağıdaki kodu kullan:</p>' +
+    '<div style="font-size:30px;font-weight:700;letter-spacing:8px;padding:18px;background:#f3f6fb;border-radius:12px;text-align:center">' + code + '</div>' +
+    '<p>Bu kod 10 dakika geçerlidir. Bu isteği sen yapmadıysan e-postayı yok sayabilirsin.</p></div>';
+  const errors = [];
 
+  // Google Apps Script Web App: deploy with access set so the server can call it.
+  if (scriptUrl) {
+    try {
+      const response = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email, email: email, name: safeText(name || 'öğrenci', 100),
+          code: code, subject: subject, html: html, app: 'TdevKuantum',
+          text: 'TdevKuantum doğrulama kodun: ' + code + ' (10 dakika geçerlidir)'
+        })
+      });
+      const body = await response.text();
+      if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
+      if (body && body.trim()) {
+        try {
+          const data = JSON.parse(body);
+          if (data && (data.success === false || data.ok === false || data.error)) {
+            throw new Error(String(data.error || data.message || 'Apps Script e-posta gönderimini reddetti.'));
+          }
+        } catch (parseError) {
+          if (parseError && /Apps Script e-posta gönderimini reddetti/.test(String(parseError.message))) throw parseError;
+          // Some deployments return a non-JSON success page; HTTP 2xx is accepted.
+        }
+      }
+      return { provider: 'google-apps-script' };
+    } catch (error) {
+      console.error('[TdevKuantum] Google Apps Script email error:', error && error.message);
+      errors.push('Google Apps Script: ' + String(error && error.message || error));
+    }
+  }
+
+  // Resend fallback.
+  if (apiKey && from) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: from, to: [email], subject: subject, html: html })
+      });
+      if (!response.ok) {
+        let detail = '';
+        try { detail = (await response.text()).slice(0, 300); } catch (_) {}
+        throw new Error('Resend HTTP ' + response.status + (detail ? ': ' + detail : ''));
+      }
+      return { provider: 'resend' };
+    } catch (error) {
+      console.error('[TdevKuantum] Resend email error:', error && error.message);
+      errors.push('Resend: ' + String(error && error.message || error));
+    }
+  }
+
+  const setupMessage = (!scriptUrl && !(apiKey && from))
+    ? 'Back4App Config içine GOOGLE_APPS_SCRIPT_URL ekle veya RESEND_API_KEY ve EMAIL_FROM ayarla.'
+    : 'Google Apps Script URL dağıtımını ve e-posta sağlayıcısı ayarlarını kontrol et.';
+  console.error('[TdevKuantum] All verification email providers failed:', errors.join(' | ') || 'No provider configured');
+  throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. ' + setupMessage);
+}
 async function saveVerification(email, code) {
   const row = new Parse.Object('EmailVerification');
   row.set('emailHash', sha256(normalizeEmail(email)));
@@ -205,7 +248,7 @@ Parse.Cloud.define('registerUser', async (request) => {
     const code = String(crypto.randomInt(100000, 1000000));
     try {
       await saveVerification(email, code);
-      await sendVerificationEmail(email, code);
+      await sendVerificationEmail(email, code, name);
     } catch (error) {
       // Do not delete the account automatically if email delivery fails; provide a useful message.
       console.error('[TdevKuantum] Registration email error:', error && error.message);
