@@ -170,14 +170,12 @@ async function sendVerificationEmail(email, code, name) {
       });
       const body = await response.text();
       if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
-      if (body && body.trim()) {
-        let data = null;
-        try { data = JSON.parse(body); } catch (_) {
-          // Some deployments return a non-JSON success page; HTTP 2xx is accepted.
-        }
-        if (data && (data.success === false || data.ok === false || data.error)) {
-          throw new Error(String(data.error || data.message || 'Apps Script e-posta gönderimini reddetti.'));
-        }
+      let data;
+      try { data = JSON.parse(body); } catch (_) {
+        throw new Error('Apps Script geçerli JSON döndürmedi; dağıtım URL’si ve erişim ayarları kontrol edilmeli.');
+      }
+      if (!(data && (data.success === true || data.ok === true))) {
+        throw new Error(String((data && (data.error || data.message)) || 'Apps Script e-posta gönderimini doğrulamadı.'));
       }
       return { provider: 'google-apps-script' };
     } catch (error) {
@@ -510,10 +508,12 @@ async function sendSupportNotification(name, email, category, message) {
       });
       const body = await response.text();
       if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
-      if (body && body.trim()) {
-        let data = null;
-        try { data = JSON.parse(body); } catch (_) {}
-        if (data && (data.success === false || data.ok === false || data.error)) throw new Error(String(data.error || data.message || 'Apps Script e-posta gönderimini reddetti.'));
+      let data;
+      try { data = JSON.parse(body); } catch (_) {
+        throw new Error('Apps Script geçerli JSON döndürmedi; dağıtım URL’si ve erişim ayarları kontrol edilmeli.');
+      }
+      if (!(data && (data.success === true || data.ok === true))) {
+        throw new Error(String((data && (data.error || data.message)) || 'Apps Script e-posta gönderimini doğrulamadı.'));
       }
       return { provider: 'google-apps-script' };
     } catch (error) {
