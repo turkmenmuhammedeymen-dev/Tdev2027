@@ -655,6 +655,7 @@ Parse.Cloud.define('getStudyPlans', async (request) => getStudyRecords(request, 
 Parse.Cloud.define('saveStudyNote', async (request) => saveStudyRecord(request, 'StudyNote', 'note'));
 Parse.Cloud.define('getStudyNotes', async (request) => getStudyRecords(request, 'StudyNote'));
 Parse.Cloud.define('saveStudyProgress', async (request) => saveStudyRecord(request, 'StudyProgress', 'progress'));
+Parse.Cloud.define('getStudyProgress', async (request) => getStudyRecords(request, 'StudyProgress'));
 
 Parse.Cloud.define('setupDatabaseSchema', async (request) => {
   const config = await Parse.Config.get({ useMasterKey: true });
