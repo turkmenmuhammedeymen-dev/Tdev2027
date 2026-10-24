@@ -1,0 +1,13 @@
+{
+  "name": "TdevKuantum | Eğitim ve Akademi",
+  "short_name": "TdevKuantum",
+  "description": "Eğitim, sınav hazırlığı ve etkileşimli öğrenme platformu.",
+  "lang": "tr-TR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#f3f6fb",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
