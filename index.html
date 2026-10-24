@@ -1094,6 +1094,10 @@ async function loginWithEmail() {
             }
             throw new Error((result && result.error) || 'E-posta veya şifre hatalı.');
         }
+        if (result.sessionToken) {
+            try { await Parse.User.become(result.sessionToken); }
+            catch (sessionError) { throw new Error('Giriş oturumu açılamadı. Back4App kullanıcı ayarlarını kontrol et.'); }
+        }
         curRole = result.role || 'member';
         if (result.verificationRequired) {
             document.getElementById('verify-email-address').value = email;
