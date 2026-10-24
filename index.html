@@ -567,6 +567,13 @@ input,select,textarea { color:#172b4d; }
 }
 
 
+/* Student workspace styles */
+.legal-consent{display:flex;align-items:flex-start;gap:9px;margin:14px 0;color:#aab7c8;font-size:.78rem;line-height:1.5;text-align:left}.legal-consent input{margin-top:4px;accent-color:#d6b365}.legal-consent a{color:#e6c77e;text-decoration:underline}
+.study-panel{background:rgba(10,18,30,.78);border:1px solid rgba(214,179,101,.22);border-radius:16px;padding:clamp(14px,3vw,24px);max-width:1000px}.study-intro,.study-footnote{color:#9cabbf;font-size:.88rem;line-height:1.65;margin:0 0 16px}
+.study-form{display:grid;gap:12px;padding:15px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:18px}.study-form label{display:grid;gap:6px;color:#c4cfdd;font-size:.82rem;font-weight:600}.study-form input,.study-form textarea,.study-form select{width:100%;box-sizing:border-box;border:1px solid #344256;border-radius:8px;background:#0a111b;color:#f3f5f8;padding:11px;font:inherit;min-width:0}.study-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.study-action{border:1px solid #c49c4d;background:linear-gradient(135deg,#f2d48d,#c49c4d);color:#17130a;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;min-height:42px}.study-action.secondary{background:#172538;color:#e5edf8;border-color:#3a4d66}.study-action.danger{background:#301b20;color:#ffd6d6;border-color:#71333a}
+.study-list{display:grid;gap:10px}.study-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:11px;padding:13px}.study-item.done{opacity:.68}.study-item.done .study-item-title{text-decoration:line-through}.study-item-title{color:#f1f5fa;font-weight:750;margin-bottom:5px}.study-item-meta{color:#9aabc0;font-size:.78rem;line-height:1.6;overflow-wrap:anywhere}.study-item-actions{display:flex;gap:6px;flex-wrap:wrap}.study-mini{border:1px solid #43516a;background:#132033;color:#dbe5f2;border-radius:7px;padding:7px 9px;cursor:pointer}
+.study-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.study-flashcard{min-height:150px;display:flex;flex-direction:column;justify-content:space-between;gap:15px;text-align:left;background:#101c2b;color:#f2f6fb;border:1px solid rgba(214,179,101,.3);border-radius:13px;padding:16px;cursor:pointer;overflow-wrap:anywhere}.study-flashcard small{color:#d6b365;font-size:.7rem;letter-spacing:1px}.study-flashcard .card-answer{color:#b6d9c5;line-height:1.5}.progress-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.progress-tile{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);border-radius:12px;padding:16px}.progress-tile strong{display:block;color:#f0d18a;font-size:1.6rem;margin-bottom:5px}.progress-tile span{color:#a9b7c8;font-size:.8rem}.study-actions-row{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}@media(max-width:560px){.study-item{flex-direction:column}.study-item-actions{width:100%}.study-item-actions button{flex:1}.study-actions-row .study-action{width:100%}}
 /* Password visibility controls */
 .password-field { position:relative; width:100%; min-width:0; }
 .password-field > input { width:100%; box-sizing:border-box; padding-right:78px !important; }
@@ -684,6 +691,7 @@ input,select,textarea { color:#172b4d; }
         <div class="password-field"><input type="password" id="reg-pass" class="reg-input" placeholder="Şifre" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Şifreyi göster" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass', this)">Göster</button></div>
         <div class="password-field"><input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Tekrar şifresini göster" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass2', this)">Göster</button></div>
         <div class="reg-actions"><button type="button" class="auth-primary" onclick="register()">Kayıt ol</button><button type="button" class="auth-secondary" onclick="goTo('gate')">Giriş yap</button></div>
+        <label class="legal-consent"><input type="checkbox" id="reg-terms"> <span><a href="terms.html" target="_blank" rel="noopener">Kullanım Şartları</a> ve <a href="privacy.html" target="_blank" rel="noopener">Gizlilik Politikası</a>'nı okudum ve kabul ediyorum.</span></label>
         <div class="reg-link">Hesabın varsa giriş yapabilir, yeni hesap için kayıt olabilirsin.</div>
         <div class="error-msg" id="reg-err" role="alert" aria-live="polite" style="display:none;margin-top:8px"></div>
     </div>
@@ -730,6 +738,12 @@ input,select,textarea { color:#172b4d; }
         <div class="nav-btn" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
         <div class="nav-btn" onclick="showTab('ai',this)"><span class="nav-icon">🤖</span>TDEV-AI</div>
         <div class="nav-btn" onclick="showTab('m5',this)"><span class="nav-icon">⚡</span>M5 Bilişim</div>
+        <div class="nav-section">ÇALIŞMA ARAÇLARI</div>
+        <div class="nav-btn" onclick="showTab('planner',this);loadStudyPlanner()"><span class="nav-icon">🗓️</span>Çalışma Planı</div>
+        <div class="nav-btn" onclick="showTab('notes',this);loadStudyNotes()"><span class="nav-icon">📝</span>Not Defterim</div>
+        <div class="nav-btn" onclick="showTab('cards',this);renderStudyCards()"><span class="nav-icon">🧠</span>Bilgi Kartları</div>
+        <div class="nav-btn" onclick="showTab('practice',this);loadPracticeLog()"><span class="nav-icon">🎯</span>Tekrar ve Deneme</div>
+        <div class="nav-btn" onclick="showTab('progress',this);renderLearningProgress()"><span class="nav-icon">📈</span>Gelişimim</div>
         <div class="nav-section">SİSTEM</div>
         <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
         <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
@@ -961,6 +975,16 @@ input,select,textarea { color:#172b4d; }
                 </div>
             </div>
 
+            <!-- ÇALIŞMA PLANI -->
+            <div id="tab-planner" class="tab"><div class="sec-title">KİŞİSEL <span>ÇALIŞMA PLANI</span></div><div class="study-panel"><p class="study-intro">Günlük hedeflerini planla ve tamamladıklarını işaretle. Oturum açtıysan bulut eşitlemesi denenir; çevrimdışı kullanımda bu cihazda saklanır.</p><form id="study-plan-form" class="study-form" onsubmit="saveStudyPlan(event)"><label>Görev / konu<input id="plan-title" maxlength="140" required placeholder="Örn. Denklem çözme tekrarı"></label><div class="study-form-grid"><label>Ders<input id="plan-subject" maxlength="60" required placeholder="Matematik"></label><label>Tarih<input id="plan-date" type="date" required></label><label>Süre (dakika)<input id="plan-minutes" type="number" min="5" max="600" value="25" required></label></div><button class="study-action" type="submit">＋ PLANA EKLE</button></form><div id="study-plan-list" class="study-list" aria-live="polite"></div></div></div>
+            <!-- NOT DEFTERİ -->
+            <div id="tab-notes" class="tab"><div class="sec-title">KİŞİSEL <span>NOT DEFTERİ</span></div><div class="study-panel"><form id="study-note-form" class="study-form" onsubmit="saveStudyNote(event)"><label>Not başlığı<input id="note-title" maxlength="120" required placeholder="Örn. Fotosentez — önemli noktalar"></label><label>Ders / konu<input id="note-subject" maxlength="80" placeholder="Fen Bilimleri"></label><label>Notun<textarea id="note-body" rows="5" maxlength="12000" required placeholder="Kendi cümlelerinle notlarını yaz..."></textarea></label><button class="study-action" type="submit">NOTU KAYDET</button></form><div id="study-note-list" class="study-list" aria-live="polite"></div></div></div>
+            <!-- BİLGİ KARTLARI -->
+            <div id="tab-cards" class="tab"><div class="sec-title">AKTİF HATIRLAMA <span>BİLGİ KARTLARI</span></div><div class="study-panel"><p class="study-intro">Ön yüze soruyu, arka yüze cevabı yaz. Hatırlamaya çalıştıktan sonra kartı çevir.</p><form class="study-form" onsubmit="addStudyCard(event)"><label>Soru / ön yüz<input id="card-front" maxlength="300" required placeholder="Örn. Fotosentez nedir?"></label><label>Cevap / arka yüz<textarea id="card-back" rows="3" maxlength="500" required placeholder="Kısa ve doğru cevap..."></textarea></label><button class="study-action" type="submit">＋ KART OLUŞTUR</button></form><div id="study-card-list" class="study-card-grid" aria-live="polite"></div></div></div>
+            <!-- TEKRAR VE DENEME -->
+            <div id="tab-practice" class="tab"><div class="sec-title">KENDİNİ <span>DEĞERLENDİR</span></div><div class="study-panel"><p class="study-intro">Kendi tekrarlarını ve deneme performansını takip et. Bu alan resmî sınav sonucu üretmez.</p><form class="study-form" onsubmit="savePractice(event)"><div class="study-form-grid"><label>Ders<input id="practice-subject" maxlength="60" required placeholder="Türkçe"></label><label>Çalışma türü<select id="practice-kind"><option>Konu tekrarı</option><option>Test çözümü</option><option>Deneme sınavı</option><option>Yanlış analizi</option></select></label><label>Soru sayısı<input id="practice-total" type="number" min="0" max="1000" value="20" required></label><label>Doğru sayısı<input id="practice-correct" type="number" min="0" max="1000" value="15" required></label></div><label>Çıkardığım ders / sonraki adım<textarea id="practice-reflection" rows="3" maxlength="1000" placeholder="Hangi konuyu tekrar etmeliyim?"></textarea></label><button class="study-action" type="submit">OTURUMU KAYDET</button></form><div id="practice-log" class="study-list" aria-live="polite"></div></div></div>
+            <!-- GELİŞİM -->
+            <div id="tab-progress" class="tab"><div class="sec-title">ÖĞRENME <span>GELİŞİMİM</span></div><div class="study-panel"><div id="learning-progress-summary" class="progress-summary"></div><div class="study-actions-row"><button class="study-action secondary" type="button" onclick="exportLearningData()">VERİLERİMİ İNDİR</button><button class="study-action danger" type="button" onclick="clearLocalLearningData()">BU CİHAZDAKİ VERİLERİ TEMİZLE</button></div><p class="study-footnote">İndirme, bu cihazda kayıtlı verileri JSON olarak dışa aktarır. Temizleme işlemi sunucudaki kayıtları silmez.</p></div></div>
             <!-- İSTATİSTİK -->
             <div id="tab-stats" class="tab">
                 <div class="sec-title">SİSTEM — <span>İSTATİSTİKLERİ</span></div>
@@ -1242,6 +1266,7 @@ async function register() {
         if (err) { err.textContent = message; err.style.display = 'block'; }
     };
     if (!name || !email || !pass || !pass2) { showError('Lütfen tüm alanları doldur.'); return; }
+    if (!document.getElementById('reg-terms')?.checked) { showError('Kayıt için Kullanım Şartları ve Gizlilik Politikası’nı kabul etmelisin.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Geçerli bir e-posta adresi gir.'); return; }
     if (pass.length < 8) { showError('Şifren en az 8 karakter olmalı.'); return; }
     if (pass !== pass2) { showError('Şifreler eşleşmiyor.'); return; }
@@ -1397,7 +1422,7 @@ function showTab(id, el) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const tab = document.getElementById('tab-'+id); if(tab) tab.classList.add('active');
     if(el) el.classList.add('active');
-    const titles = { lessons:'DERS MODÜLLERİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER' };
+    const titles = { lessons:'DERS MODÜLLERİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', progress:'GELİŞİMİM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER' };
     document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
     if(id === 'devpanel') refreshDevPanel();
 }
@@ -1698,6 +1723,7 @@ async function sendSupport() {
     }
 }
 
+<script src="study.js"></script>
 // ---- BİLDİRİM ----
 function showNotif(msg) {
     const n = document.getElementById('notif');
