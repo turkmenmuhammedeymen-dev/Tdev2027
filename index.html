@@ -1248,40 +1248,6 @@ async function register() {
     }
 }
 
-function register() {
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-pass').value;
-    const pass2 = document.getElementById('reg-pass2').value;
-    const err = document.getElementById('reg-err');
-    if(!name || !email || !pass) { err.textContent = 'Tüm alanları doldur.'; err.style.display = 'block'; return; }
-    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { err.textContent = 'Geçerli bir e-posta adresi gir.'; err.style.display = 'block'; return; }
-    if(pass.length < 8) { err.textContent = 'Şifren en az 8 karakter olmalı.'; err.style.display = 'block'; return; }
-    if(pass !== pass2) { err.innerText = '⚠ Şifreler eşleşmiyor'; err.style.display = 'block'; return; }
-    if(!email.includes('@')) { err.innerText = '⚠ Geçerli e-posta girin'; err.style.display = 'block'; return; }
-
-    Parse.Cloud.run('registerUser', { name, email, password: pass })
-        .then(result => {
-            if(result.success) {
-                showNotif(result.verificationRequired ? 'Doğrulama kodu e-postana gönderildi.' : 'Kayıt başarılı!');
-                err.style.display = 'none';
-                if (result.verificationRequired) {
-                    document.getElementById('verify-email-address').value = email;
-                    goTo('verify-email');
-                } else {
-                    document.getElementById('auth-email').value = email;
-                    goTo('gate');
-                }
-            } else {
-                err.innerText = '⚠ ' + (result.error || 'Kayıt başarısız');
-                err.style.display = 'block';
-            }
-        })
-        .catch(err => {
-            err.innerText = '⚠ ' + err.message;
-            err.style.display = 'block';
-        });
-}
 
 // ---- SINIF LİSTESİ ----
 function loadClassList() {
