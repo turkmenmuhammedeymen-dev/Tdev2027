@@ -427,6 +427,102 @@ button:focus-visible,[role="button"]:focus-visible { outline:2px solid #e7bd68; 
 }
 @media(max-width:370px) { .role-grid { grid-template-columns:1fr; } }
 
+
+/* TdevKuantum kurumsal eğitim kimliği — açık, erişilebilir arayüz */
+:root {
+ --accent:#2457c5; --accent2:#3977e8; --gold:#b88936; --gold2:#8b6424;
+ --admin:#b64b54; --beta:#4775c9; --green:#16866a; --bg:#f3f6fb;
+ --card:#ffffff; --border:#dce4ef; --ink:#172b4d; --muted:#65758b;
+}
+html,body { min-height:100%; background:#f3f6fb !important; color:#172b4d !important; font-family:'DM Sans',sans-serif !important; }
+body { background:radial-gradient(ellipse at 8% 0%,rgba(61,115,213,.09),transparent 35%),linear-gradient(180deg,#f8faff,#eef3f9) !important; }
+.wallpaper { background:linear-gradient(135deg,#f8faff,#eef3f9) !important; opacity:1 !important; }
+.wallpaper::after { background:radial-gradient(ellipse at 75% 10%,rgba(37,99,235,.07),transparent 44%) !important; }
+.grid-overlay { opacity:.28 !important; background-image:linear-gradient(rgba(42,75,122,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(42,75,122,.035) 1px,transparent 1px) !important; }
+.scanline { display:none !important; }
+.screen { color:var(--ink); }
+#scr-gate { background:transparent !important; backdrop-filter:none !important; justify-content:flex-start; padding-top:clamp(22px,5vh,58px); }
+.gate-brand-lockup { gap:6px; margin-bottom:28px; }
+.gate-emblem { width:62px; filter:none; }
+.coming-logo { background:none !important; -webkit-text-fill-color:initial !important; color:#17335d !important; font-weight:800; font-size:clamp(2rem,5vw,2.7rem); }
+.coming-logo span { color:#2457c5 !important; -webkit-text-fill-color:#2457c5 !important; }
+.logo-sub { color:#64748b !important; letter-spacing:.14em; }
+.logo-quantum { color:#3d659b !important; letter-spacing:.1em; }
+.server-row { background:rgba(255,255,255,.72); border:1px solid #e0e7f0; border-radius:14px; padding:9px; box-shadow:0 6px 24px rgba(23,43,77,.04); }
+.server-btn { color:#5c6d83 !important; background:#fff !important; border-color:#dce4ef !important; border-radius:9px; }
+.server-btn.active { background:#eaf1ff !important; color:#2457c5 !important; border-color:#9bb9f5 !important; }
+.auth-card,.reg-box {
+ width:min(100%,470px); margin:22px auto 0; padding:clamp(22px,4vw,36px);
+ background:rgba(255,255,255,.96) !important; border:1px solid #e0e7f0 !important;
+ border-radius:22px !important; box-shadow:0 18px 55px rgba(24,48,86,.09) !important;
+ color:#172b4d; text-align:left;
+}
+.auth-eyebrow { color:#2457c5; font-size:.7rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; margin-bottom:10px; }
+.auth-heading { margin:0; color:#172b4d; font-size:clamp(1.55rem,4vw,2rem); font-weight:800; letter-spacing:-.045em !important; }
+.auth-description { margin:9px 0 23px; color:#65758b; line-height:1.6; font-size:.91rem; }
+.auth-label { display:block; margin:13px 0 7px; color:#344866; font-size:.78rem; font-weight:700; }
+.auth-input,.reg-input {
+ display:block; width:100%; min-height:48px; padding:12px 14px; margin:0 0 8px;
+ border:1px solid #d7e0ec !important; border-radius:11px !important;
+ background:#fbfcfe !important; color:#172b4d !important; font:inherit !important;
+ font-size:.9rem !important; box-sizing:border-box; outline:none;
+}
+.auth-input:focus,.reg-input:focus { border-color:#5485e5 !important; box-shadow:0 0 0 3px rgba(37,99,235,.11); background:#fff !important; }
+.auth-actions,.reg-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+.auth-primary,.auth-secondary {
+ display:inline-flex; justify-content:center; align-items:center; min-height:47px;
+ padding:12px 16px; border-radius:11px; font:700 .88rem 'DM Sans',sans-serif;
+ cursor:pointer; transition:transform .18s,box-shadow .18s,background .18s;
+}
+.auth-primary { color:#fff !important; border:1px solid #2457c5 !important; background:linear-gradient(135deg,#326fe0,#2457c5) !important; box-shadow:0 7px 16px rgba(37,99,235,.17); }
+.auth-secondary { color:#2457c5 !important; border:1px solid #cbd9ee !important; background:#f5f8ff !important; }
+.auth-primary:hover,.auth-secondary:hover { transform:translateY(-1px); }
+.auth-switch { margin:17px 0 0; text-align:center; font-size:.83rem; color:#65758b; }
+.auth-inline { padding:0; border:0; background:transparent; color:#2457c5; font:700 .83rem 'DM Sans',sans-serif; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.auth-security-note { display:flex; align-items:center; justify-content:center; gap:8px; border-top:1px solid #edf1f6; margin-top:21px; padding-top:16px; color:#78879b; font-size:.73rem; }
+.auth-security-dot { width:7px; height:7px; border-radius:50%; background:#1b9a76; box-shadow:0 0 0 3px rgba(27,154,118,.1); }
+.reg-box { text-align:left; }
+.reg-title { font-family:'Manrope',sans-serif !important; color:#172b4d !important; font-size:1.45rem !important; letter-spacing:-.035em !important; text-align:left; }
+.reg-box::before { content:'TdevKuantum Akademi'; display:block; margin-bottom:8px; color:#2457c5; font-size:.7rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+.reg-box .reg-actions { margin-top:16px; }
+.reg-box .reg-link { text-align:center; color:#65758b; font-size:.8rem; line-height:1.5; margin-top:14px; }
+.verification-card { text-align:left; }
+.verification-icon { display:grid; place-items:center; width:54px; height:54px; border-radius:15px; margin-bottom:20px; background:#eaf1ff; color:#2457c5; font-size:1.55rem; }
+.verification-code-input { letter-spacing:.16em !important; }
+.verification-back { width:100%; margin-top:10px; }
+.error-msg { color:#b42332 !important; background:#fff1f2; border:1px solid #fecdd3; border-radius:10px; padding:10px 12px; font-size:.82rem; }
+#login-box { display:none !important; }
+.role-grid,.role-card { display:none !important; }
+#scr-adminpage { display:none !important; }
+.sidebar { background:#fff !important; border-right:1px solid #dce4ef !important; color:#172b4d !important; }
+.sidebar-head { background:#fff !important; border-bottom:1px solid #e3eaf3 !important; }
+.sidebar-logo { color:#2457c5 !important; }
+.nav-btn { color:#5d6d82 !important; }
+.nav-btn:hover,.nav-btn.active { color:#2457c5 !important; background:#edf3ff !important; border-color:#d5e2fb !important; }
+.card,.panel,.stat-card,.bot-card,.m5-info-card,.admin-card,.class-card,.feature-card {
+ background:#fff !important; color:#172b4d !important; border-color:#dce4ef !important; box-shadow:0 8px 24px rgba(23,43,77,.055) !important;
+}
+input,select,textarea { color:#172b4d; }
+#scr-register { justify-content:flex-start; padding-top:clamp(22px,5vh,58px); }
+#scr-verify-email { justify-content:flex-start; padding-top:clamp(22px,5vh,58px); }
+#scr-coming { background:radial-gradient(ellipse at center,#f4f7fc,#eaf0f8) !important; color:#172b4d !important; }
+.splash-brand { color:#172b4d !important; }
+.splash-brand span { color:#2457c5 !important; }
+.splash-tagline { color:#5f7087 !important; }
+.splash-loader { background:#dce5f1 !important; }
+.splash-loader span { background:linear-gradient(90deg,#2457c5,#69a1ff) !important; box-shadow:0 0 12px rgba(37,99,235,.3) !important; }
+.splash-status { color:#72829a !important; }
+.splash-orbit { border-color:rgba(37,87,197,.12) !important; }
+@media(max-width:600px) {
+ #scr-gate { padding:20px 14px 32px; }
+ .gate-emblem { width:50px; }
+ .gate-brand-lockup { margin-bottom:18px; }
+ .server-row { display:flex; flex-wrap:wrap; justify-content:center; }
+ .auth-card,.reg-box { margin-top:15px; padding:23px 19px; border-radius:18px !important; }
+ .auth-actions,.reg-actions { grid-template-columns:1fr; }
+ .auth-primary,.auth-secondary { width:100%; }
+}
+
 </style>
 </head>
 <body>
@@ -466,29 +562,22 @@ button:focus-visible,[role="button"]:focus-visible { outline:2px solid #e7bd68; 
         <div class="server-btn" onclick="selServer(this,'AZ')"><span class="server-dot"></span>🇦🇿 AZERBAYCAN</div>
         <div class="server-btn" onclick="selServer(this,'JP')"><span class="server-dot"></span>🇯🇵 JAPONYA</div>
     </div>
-    <div class="role-grid">
-        <div class="role-card founder" onclick="selRole('founder')">
-            <div class="role-icon">👑</div><div class="role-name">MUHAMMED EYMEN</div>
-            <div class="role-desc">Kurucu & Geliştirici</div><div class="role-badge">TAM YETKİ</div>
+    <section class="auth-card" aria-labelledby="auth-heading">
+        <div class="auth-eyebrow">TdevKuantum Akademi</div>
+        <h1 id="auth-heading" class="auth-heading">Öğrenmeye devam et</h1>
+        <p class="auth-description">Derslerine, hedeflerine ve kişisel öğrenme alanına güvenle giriş yap.</p>
+        <label class="auth-label" for="auth-email">E-posta adresi</label>
+        <input type="email" id="auth-email" class="auth-input" placeholder="ornek@eposta.com" autocomplete="email" inputmode="email">
+        <label class="auth-label" for="auth-password">Şifre</label>
+        <input type="password" id="auth-password" class="auth-input" placeholder="Şifren" autocomplete="current-password">
+        <div class="auth-actions">
+            <button type="button" class="auth-primary" id="login-button" onclick="loginWithEmail()">Giriş yap</button>
+            <button type="button" class="auth-secondary" onclick="goTo('register')">Hesap oluştur</button>
         </div>
-        <div class="role-card admin" onclick="goTo('adminpage')">
-            <div class="role-icon">⚙️</div><div class="role-name">ADMİN GİRİŞİ</div>
-            <div class="role-desc">Yönetici Paneli</div><div class="role-badge">ADMİN</div>
-        </div>
-        <div class="role-card beta" onclick="selRole('beta')">
-            <div class="role-icon">🧪</div><div class="role-name">BETA TESTER</div>
-            <div class="role-desc">Test Kullanıcısı</div><div class="role-badge">KISITLI</div>
-        </div>
-    </div>
-    <div id="login-box">
-        <div class="login-title" id="login-role-title">GÜVENLİK DOĞRULAMA</div>
-        <input type="password" id="pass" class="input-field" placeholder="ŞİFRENİ GİR">
-        <button class="btn-connect" onclick="verify()">BAĞLAN →</button>
-        <div class="error-msg" id="err-msg">⚠ HATALI ŞİFRE</div>
-    </div>
-    <div style="margin-top:15px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#444;text-align:center">
-        Hesabın yok mu? <span style="color:var(--accent);cursor:pointer" onclick="goTo('register')">Kayıt Ol</span>
-    </div>
+        <p class="auth-switch">Yeni misin? <button type="button" class="auth-inline" onclick="goTo('register')">Kayıt ol</button></p>
+        <div class="error-msg" id="auth-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
+        <div class="auth-security-note"><span class="auth-security-dot"></span> Güvenli hesap erişimi</div>
+    </section>
 </div>
 
 <!-- ===== ADMİN SAYFASI (AYRI EKRAN) ===== -->
@@ -544,9 +633,28 @@ button:focus-visible,[role="button"]:focus-visible { outline:2px solid #e7bd68; 
         <input type="password" id="reg-pass" class="reg-input" placeholder="Şifre">
         <input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar">
         <button class="reg-btn" onclick="register()">KAYIT OL</button>
-        <div class="reg-link" onclick="goTo('gate')">Hesabın var mı? <span>Giriş Yap</span></div>
-        <div class="error-msg" id="reg-err" style="display:none;margin-top:8px"></div>
+        <div class="reg-actions"><button type="button" class="auth-primary" onclick="register()">Kayıt ol</button><button type="button" class="auth-secondary" onclick="goTo('gate')">Giriş yap</button></div>
+        <div class="reg-link">Hesabın varsa giriş yapabilir, yeni hesap için kayıt olabilirsin.</div>
+        <div class="error-msg" id="reg-err" role="alert" aria-live="polite" style="display:none;margin-top:8px"></div>
     </div>
+</div>
+
+
+<!-- ===== E-POSTA DOĞRULAMA ===== -->
+<div id="scr-verify-email" class="screen hidden">
+    <section class="auth-card verification-card">
+        <div class="verification-icon" aria-hidden="true">✉</div>
+        <div class="auth-eyebrow">HESAP GÜVENLİĞİ</div>
+        <h1 class="auth-heading">E-postanı doğrula</h1>
+        <p class="auth-description">E-posta adresine gönderilen doğrulama kodunu girerek hesabını etkinleştir.</p>
+        <label class="auth-label" for="verify-email-address">E-posta adresi</label>
+        <input type="email" id="verify-email-address" class="auth-input" placeholder="ornek@eposta.com" autocomplete="email">
+        <label class="auth-label" for="verify-email-code">Doğrulama kodu</label>
+        <input type="text" id="verify-email-code" class="auth-input verification-code-input" placeholder="E-postana gelen kod" inputmode="numeric" autocomplete="one-time-code" maxlength="10">
+        <button type="button" class="auth-primary" onclick="verifyEmailCode()">E-postayı doğrula</button>
+        <button type="button" class="auth-secondary verification-back" onclick="goTo('register')">Kayıt ekranına dön</button>
+        <div class="error-msg" id="verify-email-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
+    </section>
 </div>
 
 <!-- ===== SINIF SEÇİMİ ===== -->
@@ -912,6 +1020,88 @@ function selServer(el,s) {
     if(curGrade) loadLessonsFromCloud(curGrade, curServer);
 }
 
+
+// ---- E-POSTA/ŞİFRE GİRİŞİ VE E-POSTA DOĞRULAMA ----
+function showAuthError(id, message) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = message || 'İşlem tamamlanamadı. Lütfen tekrar deneyin.';
+    el.style.display = 'block';
+}
+async function loginWithEmail() {
+    const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
+    const password = document.getElementById('auth-password')?.value || '';
+    const button = document.getElementById('login-button');
+    const errorId = 'auth-err';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password) {
+        showAuthError(errorId, 'Geçerli e-posta adresini ve şifreni gir.');
+        return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Giriş yapılıyor…'; }
+    const err = document.getElementById(errorId);
+    if (err) err.style.display = 'none';
+    try {
+        // Rol ve yetki, istemciye güvenilmeden sunucu tarafında belirlenir.
+        const result = await Parse.Cloud.run('loginUser', { email, password });
+        if (!result || result.success !== true) {
+            if (result && result.verificationRequired) {
+                document.getElementById('verify-email-address').value = email;
+                goTo('verify-email');
+                showAuthError('verify-email-err', result.message || 'Önce e-posta adresini doğrula.');
+                return;
+            }
+            throw new Error((result && result.error) || 'E-posta veya şifre hatalı.');
+        }
+        curRole = result.role || 'member';
+        if (result.verificationRequired) {
+            document.getElementById('verify-email-address').value = email;
+            goTo('verify-email');
+            showAuthError('verify-email-err', 'Hesabına devam etmek için e-postanı doğrula.');
+            return;
+        }
+        if (result.role === 'admin') {
+            document.getElementById('admin-login-area').style.display = 'none';
+            document.getElementById('admin-content').style.display = 'block';
+            goTo('adminpage');
+            refreshAdminPage();
+            showNotif('Giriş başarılı.');
+            return;
+        }
+        goTo('class');
+        loadClassList();
+        showNotif('Giriş başarılı. Hoş geldin!');
+    } catch (error) {
+        showAuthError(errorId, error && error.message ? error.message : 'Giriş yapılamadı.');
+    } finally {
+        if (button) { button.disabled = false; button.textContent = 'Giriş yap'; }
+    }
+}
+async function verifyEmailCode() {
+    const email = (document.getElementById('verify-email-address')?.value || '').trim().toLowerCase();
+    const code = (document.getElementById('verify-email-code')?.value || '').trim();
+    const err = document.getElementById('verify-email-err');
+    if (err) err.style.display = 'none';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !code) {
+        showAuthError('verify-email-err', 'E-posta adresini ve doğrulama kodunu gir.');
+        return;
+    }
+    try {
+        const result = await Parse.Cloud.run('verifyEmailCode', { email, code });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Kod doğrulanamadı.');
+        showNotif('E-posta doğrulandı. Şimdi giriş yapabilirsin.');
+        document.getElementById('auth-email').value = email;
+        document.getElementById('auth-password').value = '';
+        goTo('gate');
+        showAuthError('auth-err', 'E-posta doğrulandı. Lütfen şifrenle giriş yap.');
+    } catch (error) {
+        showAuthError('verify-email-err', error && error.message ? error.message : 'Doğrulama yapılamadı.');
+    }
+}
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && document.getElementById('auth-password') === document.activeElement) loginWithEmail();
+    if (event.key === 'Enter' && document.getElementById('verify-email-code') === document.activeElement) verifyEmailCode();
+});
+
 // ---- ROL & GİRİŞ (Cloud Code) ----
 function selRole(r) {
     curRole = r;
@@ -1023,16 +1213,24 @@ function register() {
     const pass = document.getElementById('reg-pass').value;
     const pass2 = document.getElementById('reg-pass2').value;
     const err = document.getElementById('reg-err');
-    if(!name || !email || !pass) { err.innerText = '⚠ Tüm alanları doldurun'; err.style.display = 'block'; return; }
+    if(!name || !email || !pass) { err.textContent = 'Tüm alanları doldur.'; err.style.display = 'block'; return; }
+    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { err.textContent = 'Geçerli bir e-posta adresi gir.'; err.style.display = 'block'; return; }
+    if(pass.length < 8) { err.textContent = 'Şifren en az 8 karakter olmalı.'; err.style.display = 'block'; return; }
     if(pass !== pass2) { err.innerText = '⚠ Şifreler eşleşmiyor'; err.style.display = 'block'; return; }
     if(!email.includes('@')) { err.innerText = '⚠ Geçerli e-posta girin'; err.style.display = 'block'; return; }
 
     Parse.Cloud.run('registerUser', { name, email, password: pass })
         .then(result => {
             if(result.success) {
-                showNotif('✓ Kayıt başarılı!');
+                showNotif(result.verificationRequired ? 'Doğrulama kodu e-postana gönderildi.' : 'Kayıt başarılı!');
                 err.style.display = 'none';
-                goTo('gate');
+                if (result.verificationRequired) {
+                    document.getElementById('verify-email-address').value = email;
+                    goTo('verify-email');
+                } else {
+                    document.getElementById('auth-email').value = email;
+                    goTo('gate');
+                }
             } else {
                 err.innerText = '⚠ ' + (result.error || 'Kayıt başarısız');
                 err.style.display = 'block';
