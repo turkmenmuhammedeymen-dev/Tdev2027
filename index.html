@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TdevKuantum | Öğrenme ve Akademi Platformu</title>
+<style>
+/* ============================================================ */
+/* CSS-1: DEĞİŞKENLER, GENEL, KAPAK, GİRİŞ, KAYIT, SINIF, UYGULAMA */
+/* ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --accent: #00f2fe;
+    --accent2: #4facfe;
+    --gold: #ffd700;
+    --gold2: #ffaa00;
+    --admin: #ff4444;
+    --beta: #ae00ff;
+    --green: #00ff88;
+    --bg: #020408;
+    --card: rgba(0,242,254,0.04);
+    --border: rgba(0,242,254,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; background: var(--bg); color: #fff; }
+
+.wallpaper { position: fixed; inset: 0; z-index: 0; background: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop') center/cover no-repeat; }
+.wallpaper::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg,rgba(2,4,8,0.93) 0%,rgba(0,20,40,0.89) 50%,rgba(2,4,8,0.96) 100%); }
+.grid-overlay { position: fixed; inset: 0; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(0,242,254,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,242,254,0.03) 1px,transparent 1px); background-size: 60px 60px; }
+.scanline { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px); }
+
+.screen { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+.screen.hidden { display: none !important; }
+
+/* KAPAK */
+#scr-coming { background: rgba(0,0,0,0.7); }
+.coming-logo { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem,7vw,5rem); font-weight: 900; letter-spacing: 8px; background: linear-gradient(90deg,var(--accent2),var(--accent),var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 20px rgba(0,242,254,0.6)); text-align: center; }
+.coming-sub { font-family: 'Share Tech Mono', monospace; font-size: .72rem; letter-spacing: 5px; color: #888; margin-top: 6px; text-align: center; }
+.coming-timer { display: flex; gap: 18px; margin: 35px 0; flex-wrap: wrap; justify-content: center; }
+.c-block { text-align: center; background: rgba(0,242,254,0.05); border: 1px solid rgba(0,242,254,0.2); border-radius: 12px; padding: 18px 24px; }
+.c-num { font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem,4vw,3rem); font-weight: 900; color: var(--accent); line-height: 1; }
+.c-lbl { font-family: 'Share Tech Mono', monospace; font-size: .58rem; color: #555; margin-top: 5px; letter-spacing: 2px; }
+.coming-enter { padding: 13px 36px; border-radius: 10px; border: 1px solid rgba(0,242,254,0.3); background: rgba(0,242,254,0.08); color: var(--accent); cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: .72rem; font-weight: 700; letter-spacing: 3px; transition: all .2s; margin-top: 8px; }
+.coming-enter:hover { background: rgba(0,242,254,0.2); box-shadow: 0 0 20px rgba(0,242,254,0.3); }
+
+/* GATE */
+.logo-main { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem,6vw,4.5rem); font-weight: 900; letter-spacing: 8px; background: linear-gradient(90deg,var(--accent2),var(--accent),var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 15px rgba(0,242,254,0.5)); text-align: center; }
+.logo-sub { font-family: 'Share Tech Mono', monospace; font-size: .7rem; letter-spacing: 5px; color: #888; margin-top: 5px; text-align: center; }
+.logo-quantum { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: var(--gold); letter-spacing: 4px; margin-top: 3px; animation: blink 2s step-end infinite; text-align: center; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.server-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+.server-btn { background: rgba(0,0,0,0.6); border: 1px solid #333; color: #666; padding: 5px 11px; border-radius: 6px; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: .65rem; letter-spacing: 1px; transition: all .2s; }
+.server-btn:hover, .server-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,242,254,0.08); }
+.server-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; display: inline-block; margin-right: 5px; }
+.server-btn.active .server-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+.role-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; max-width: 700px; width: 100%; }
+@media(max-width:600px){ .role-grid { grid-template-columns: 1fr; } }
+.role-card { background: rgba(0,0,0,0.75); border: 1px solid #222; border-radius: 14px; padding: 20px 16px; cursor: pointer; text-align: center; transition: all .3s; position: relative; overflow: hidden; }
+.role-card::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .3s; }
+.role-card.founder::before { background: linear-gradient(135deg,rgba(0,242,254,0.12),transparent); }
+.role-card.admin::before { background: linear-gradient(135deg,rgba(255,68,68,0.12),transparent); }
+.role-card.beta::before { background: linear-gradient(135deg,rgba(174,0,255,0.12),transparent); }
+.role-card:hover::before { opacity: 1; }
+.role-card:hover { transform: translateY(-5px); }
+.role-card.founder:hover { border-color: var(--accent); box-shadow: 0 8px 25px rgba(0,242,254,0.2); }
+.role-card.admin:hover { border-color: var(--admin); box-shadow: 0 8px 25px rgba(255,68,68,0.2); }
+.role-card.beta:hover { border-color: var(--beta); box-shadow: 0 8px 25px rgba(174,0,255,0.2); }
+.role-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.role-name { font-family: 'Orbitron', sans-serif; font-size: .75rem; font-weight: 700; letter-spacing: 2px; }
+.role-card.founder .role-name { color: var(--accent); }
+.role-card.admin .role-name { color: var(--admin); }
+.role-card.beta .role-name { color: var(--beta); }
+.role-desc { font-size: .7rem; color: #666; margin-top: 5px; }
+.role-badge { display: inline-block; font-size: .56rem; padding: 2px 8px; border-radius: 20px; margin-top: 7px; font-family: 'Share Tech Mono', monospace; }
+.founder .role-badge { background: rgba(0,242,254,0.12); color: var(--accent); border: 1px solid rgba(0,242,254,0.3); }
+.admin .role-badge { background: rgba(255,68,68,0.12); color: var(--admin); border: 1px solid rgba(255,68,68,0.3); }
+.beta .role-badge { background: rgba(174,0,255,0.12); color: var(--beta); border: 1px solid rgba(174,0,255,0.3); }
+
+#login-box { display: none; width: 100%; max-width: 370px; margin-top: 16px; background: rgba(0,0,0,0.9); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; }
+.login-title { font-family: 'Orbitron', sans-serif; font-size: .65rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 12px; }
+.input-field { background: rgba(0,242,254,0.03); border: 1px solid #333; color: white; padding: 12px 15px; border-radius: 9px; width: 100%; margin: 6px 0; font-family: 'Share Tech Mono', monospace; font-size: .95rem; text-align: center; letter-spacing: 3px; outline: none; transition: border-color .2s; }
+.input-field:focus { border-color: var(--accent); }
+.input-field::placeholder { letter-spacing: 1px; color: #444; font-size: .7rem; }
+.btn-connect { background: linear-gradient(90deg,var(--accent2),var(--accent)); color: #000; border: none; padding: 12px; border-radius: 9px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: .7rem; letter-spacing: 3px; cursor: pointer; width: 100%; margin-top: 5px; transition: all .2s; }
+.btn-connect:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,242,254,0.35); }
+.error-msg { color: var(--admin); font-size: .7rem; margin-top: 7px; font-family: 'Share Tech Mono', monospace; display: none; }
+
+/* KAYIT */
+#scr-register { background: rgba(0,0,0,0.75); }
+.reg-box { background: rgba(0,0,0,0.92); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 400px; text-align: center; }
+.reg-title { font-family: 'Orbitron', sans-serif; font-size: .78rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 18px; }
+.reg-input { background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; padding: 11px 14px; border-radius: 8px; width: 100%; margin: 5px 0; font-family: 'Exo 2', sans-serif; font-size: .82rem; outline: none; transition: border-color .2s; }
+.reg-input:focus { border-color: var(--accent); }
+.reg-btn { background: linear-gradient(90deg,var(--accent2),var(--accent)); color: #000; border: none; padding: 12px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: .68rem; letter-spacing: 2px; cursor: pointer; width: 100%; margin-top: 7px; }
+.reg-link { font-size: .7rem; color: #666; margin-top: 10px; cursor: pointer; }
+.reg-link span { color: var(--accent); }
+
+/* SINIF */
+.class-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(115px,1fr)); gap: 10px; max-width: 840px; width: 100%; margin-top: 14px; }
+.class-card { background: rgba(0,0,0,0.72); border: 1px solid #222; border-radius: 10px; padding: 15px 7px; cursor: pointer; text-align: center; transition: all .25s; }
+.class-card:hover { border-color: var(--accent); background: rgba(0,242,254,0.07); transform: translateY(-4px); }
+.class-num { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 900; color: var(--accent); }
+.class-label { font-size: .65rem; color: #888; margin-top: 3px; }
+.class-badge { font-size: .56rem; margin-top: 3px; font-family: 'Share Tech Mono', monospace; }
+
+/* UYGULAMA */
+#app { display: none; position: fixed; inset: 0; z-index: 500; flex-direction: row; }
+.sidebar { width: 255px; min-width: 255px; background: rgba(0,0,0,0.97); border-right: 1px solid rgba(0,242,254,0.1); display: flex; flex-direction: column; overflow: hidden; }
+.sidebar-head { padding: 16px 16px 12px; border-bottom: 1px solid rgba(0,242,254,0.08); background: rgba(0,242,254,0.02); }
+.sidebar-logo { font-family: 'Orbitron', sans-serif; font-size: .98rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; }
+.sidebar-ver { font-family: 'Share Tech Mono', monospace; font-size: .56rem; color: #555; margin-top: 2px; }
+.grade-badge { display: inline-block; margin-top: 6px; padding: 3px 9px; background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-radius: 20px; font-size: .6rem; color: var(--gold); font-family: 'Share Tech Mono', monospace; }
+#countdown { padding: 8px 16px; font-family: 'Share Tech Mono', monospace; font-size: .58rem; color: var(--gold); border-bottom: 1px solid rgba(255,215,0,0.07); background: rgba(255,215,0,0.02); }
+.countdown-label { font-size: .46rem; color: #555; letter-spacing: 2px; margin-bottom: 1px; }
+.nav-section { padding: 12px 13px 4px; font-family: 'Share Tech Mono', monospace; font-size: .5rem; color: #444; letter-spacing: 3px; }
+.nav-btn { display: flex; align-items: center; gap: 9px; margin: 2px 8px; padding: 9px 12px; border-radius: 7px; cursor: pointer; transition: all .2s; border: 1px solid transparent; font-size: .76rem; font-weight: 600; color: #888; }
+.nav-btn:hover { background: rgba(0,242,254,0.06); color: var(--accent); border-color: rgba(0,242,254,0.13); }
+.nav-btn.active { background: rgba(0,242,254,0.1); color: var(--accent); border-color: rgba(0,242,254,0.22); }
+.nav-icon { font-size: .9rem; width: 17px; text-align: center; }
+.sidebar-footer { margin-top: auto; padding: 12px; border-top: 1px solid #111; }
+.role-indicator { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; padding: 7px 9px; background: rgba(0,0,0,0.5); border-radius: 7px; border: 1px solid #1a1a1a; }
+.role-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.role-indicator-name { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: #aaa; }
+.btn-exit { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid rgba(255,68,68,0.3); background: rgba(255,68,68,0.07); color: #ff6666; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: .56rem; letter-spacing: 2px; transition: all .2s; }
+.btn-exit:hover { background: rgba(255,68,68,0.18); }
+.main-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: rgba(255,255,255,0.01); }
+.topbar { padding: 12px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.5); flex-wrap: wrap; gap: 8px; }
+.page-title { font-family: 'Orbitron', sans-serif; font-size: .8rem; font-weight: 700; letter-spacing: 3px; color: var(--accent); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-info { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: #555; }
+.support-btn-top { padding: 6px 13px; border-radius: 7px; border: 1px solid rgba(0,255,136,0.3); background: rgba(0,255,136,0.07); color: var(--green); cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: .56rem; letter-spacing: 2px; transition: all .2s; }
+.support-btn-top:hover { background: rgba(0,255,136,0.15); }
+.content-area { flex: 1; overflow-y: auto; padding: 20px; }
+.content-area::-webkit-scrollbar { width: 4px; }
+.content-area::-webkit-scrollbar-thumb { background: rgba(0,242,254,0.2); border-radius: 4px; }
+.tab { display: none; }
+.tab.active { display: block; }
+.sec-title { font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 4px; color: #444; margin-bottom: 16px; text-transform: uppercase; }
+.sec-title span { color: var(--accent); }
+
+/* DERSLER */
+.lesson-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(205px,1fr)); gap: 12px; }
+.lesson-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all .25s; position: relative; overflow: hidden; }
+.lesson-card::after { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: var(--accent); opacity: 0; transition: opacity .2s; }
+.lesson-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 22px rgba(0,242,254,0.11); }
+.lesson-card:hover::after { opacity: 1; }
+.lesson-icon { font-size: 1.6rem; margin-bottom: 9px; }
+.lesson-name { font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+.lesson-desc { font-size: .68rem; color: #666; margin-top: 4px; line-height: 1.5; }
+.lesson-tag { display: inline-block; margin-top: 8px; padding: 2px 7px; border-radius: 4px; font-size: .56rem; font-family: 'Share Tech Mono', monospace; }
+.tag-lgs { background: rgba(255,107,53,0.12); color: #ff6b35; border: 1px solid rgba(255,107,53,0.28); }
+.tag-yks { background: rgba(255,215,0,0.09); color: var(--gold); border: 1px solid rgba(255,215,0,0.22); }
+.tag-temel { background: rgba(0,255,136,0.09); color: var(--green); border: 1px solid rgba(0,255,136,0.22); }
+.tag-lise { background: rgba(192,132,252,0.09); color: #c084fc; border: 1px solid rgba(192,132,252,0.22); }
+.back-btn { padding: 7px 14px; border-radius: 7px; border: 1px solid #333; background: rgba(255,255,255,0.03); color: #aaa; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: .65rem; transition: all .2s; margin-bottom: 18px; }
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.detail-title { font-family: 'Orbitron', sans-serif; font-size: .9rem; font-weight: 700; color: var(--accent); letter-spacing: 2px; margin-bottom: 4px; }
+.detail-grade { font-size: .65rem; color: #666; font-family: 'Share Tech Mono', monospace; margin-bottom: 18px; }
+.detail-box { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,242,254,0.13); border-radius: 13px; padding: 20px; margin-bottom: 16px; }
+.detail-box h3 { font-family: 'Orbitron', sans-serif; font-size: .64rem; letter-spacing: 3px; color: var(--gold); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,215,0,0.08); }
+.detail-box p { font-size: .8rem; line-height: 1.8; color: #ccc; }
+.detail-box ul { list-style: none; padding: 0; }
+.detail-box ul li { font-size: .78rem; color: #bbb; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); line-height: 1.6; }
+.detail-box ul li::before { content: '▸ '; color: var(--accent); }
+.meb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media(max-width:700px){ .meb-grid { grid-template-columns: 1fr; } }
+.meb-card { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 16px; border-left: 3px solid; }
+.meb-card.s1 { border-color: var(--accent); }
+.meb-card.s2 { border-color: var(--gold); }
+.meb-card h4 { font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px; margin-bottom: 8px; }
+.meb-card.s1 h4 { color: var(--accent); }
+.meb-card.s2 h4 { color: var(--gold); }
+.meb-card p { font-size: .74rem; color: #aaa; line-height: 1.7; }
+.video-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(165px,1fr)); gap: 10px; margin-top: 14px; }
+.video-card { background: rgba(0,0,0,0.7); border: 1px solid #222; border-radius: 8px; overflow: hidden; cursor: pointer; transition: all .25s; }
+.video-card:hover { border-color: var(--gold); transform: scale(1.02); }
+.video-thumb { height: 85px; background: linear-gradient(135deg,#0a1628,#0d2137); display: flex; align-items: center; justify-content: center; position: relative; }
+.video-thumb .play-icon { font-size: 1.7rem; opacity: .7; }
+.video-thumb::after { content: 'YT'; position: absolute; top: 6px; right: 6px; font-size: .5rem; background: #ff0000; color: #fff; padding: 1px 5px; border-radius: 3px; font-family: 'Share Tech Mono', monospace; }
+.video-info { padding: 8px; }
+.video-title { font-size: .65rem; color: #ccc; font-weight: 600; }
+.video-src { font-size: .56rem; color: #ff4444; margin-top: 2px; font-family: 'Share Tech Mono', monospace; }
+
+/* QUIZ */
+.quiz-score-row { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.quiz-score-card { flex: 1; min-width: 110px; background: rgba(0,0,0,0.5); border: 1px solid #1a1a1a; border-radius: 9px; padding: 12px; text-align: center; }
+.quiz-score-val { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; }
+.quiz-score-lbl { font-family: 'Share Tech Mono', monospace; font-size: .52rem; color: #555; margin-top: 2px; letter-spacing: 2px; }
+.quiz-card { background: rgba(0,0,0,0.7); border: 1px solid rgba(0,242,254,0.15); border-radius: 14px; padding: 26px; text-align: center; margin-bottom: 18px; }
+.quiz-question { font-size: 1rem; color: #eee; line-height: 1.7; margin-bottom: 22px; min-height: 55px; }
+.quiz-source { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: #555; margin-bottom: 15px; }
+.quiz-btns { display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; }
+.quiz-btn { padding: 13px 36px; border-radius: 11px; border: 2px solid; font-family: 'Orbitron', sans-serif; font-size: .76rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all .2s; background: transparent; }
+.quiz-btn.true-btn { border-color: var(--green); color: var(--green); }
+.quiz-btn.true-btn:hover { background: rgba(0,255,136,0.15); }
+.quiz-btn.false-btn { border-color: var(--admin); color: var(--admin); }
+.quiz-btn.false-btn:hover { background: rgba(255,68,68,0.15); }
+.quiz-result { padding: 11px; border-radius: 7px; font-family: 'Orbitron', sans-serif; font-size: .7rem; letter-spacing: 2px; margin-top: 13px; display: none; }
+.quiz-result.correct { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+.quiz-result.wrong { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: var(--admin); }
+.quiz-select-row { display: flex; gap: 9px; margin-bottom: 18px; flex-wrap: wrap; }
+.quiz-select { background: rgba(0,0,0,0.7); border: 1px solid #333; color: white; padding: 8px 12px; border-radius: 7px; font-family: 'Exo 2', sans-serif; font-size: .78rem; outline: none; cursor: pointer; }
+
+/* M5 */
+.m5-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.m5-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+.m5-tab-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid #333; background: transparent; color: #888; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px; transition: all .2s; }
+.m5-tab-btn:hover, .m5-tab-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,242,254,0.08); }
+.m5-panel { display: none; }
+.m5-panel.active { display: block; }
+.m5-display { font-family: 'Orbitron', sans-serif; font-size: clamp(2.5rem,8vw,5.5rem); font-weight: 900; color: var(--accent); text-shadow: 0 0 25px rgba(0,242,254,0.5); min-height: 110px; display: flex; align-items: center; justify-content: center; letter-spacing: 4px; }
+.m5-progress { width: 100%; max-width: 500px; height: 3px; background: #111; border-radius: 3px; margin: 12px 0; overflow: hidden; }
+.m5-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg,var(--accent2),var(--accent)); transition: width .1s; }
+.m5-stat { font-family: 'Share Tech Mono', monospace; font-size: .65rem; color: #555; margin-top: 10px; }
+.speed-row { display: flex; gap: 7px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 9px; }
+.speed-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid #333; background: transparent; color: #888; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: .65rem; transition: all .2s; }
+.speed-btn:hover, .speed-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.07); }
+.m5-controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 18px 0; }
+.m5-btn { padding: 10px 24px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.28); background: rgba(0,242,254,0.07); color: var(--accent); cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: .65rem; letter-spacing: 2px; transition: all .2s; }
+.m5-btn:hover { background: rgba(0,242,254,0.17); }
+.m5-btn.stop { border-color: rgba(255,68,68,0.28); background: rgba(255,68,68,0.07); color: var(--admin); }
+.m5-info-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(175px,1fr)); gap: 12px; margin-top: 18px; width: 100%; max-width: 750px; }
+.m5-info-card { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,242,254,0.12); border-radius: 10px; padding: 14px; text-align: left; }
+.m5-info-card h4 { font-family: 'Orbitron', sans-serif; font-size: .58rem; letter-spacing: 2px; color: var(--gold); margin-bottom: 7px; }
+.m5-info-card p { font-size: .72rem; color: #888; line-height: 1.7; }
+.m5-typing-area { width: 100%; max-width: 600px; background: rgba(0,0,0,0.7); border: 1px solid #333; border-radius: 10px; padding: 16px; margin: 14px 0; text-align: left; }
+.m5-type-target { font-size: 1rem; color: #666; line-height: 1.8; margin-bottom: 10px; letter-spacing: 1px; }
+.m5-type-target span.correct { color: var(--green); }
+.m5-type-target span.wrong { color: var(--admin); text-decoration: underline; }
+.m5-type-target span.current { border-bottom: 2px solid var(--accent); }
+.m5-type-input { width: 100%; background: rgba(0,242,254,0.03); border: 1px solid rgba(0,242,254,0.2); color: white; padding: 10px; border-radius: 7px; font-family: 'Share Tech Mono', monospace; font-size: .85rem; outline: none; }
+
+/* AI */
+.chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 140px); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; gap: 12px; }
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: rgba(0,242,254,0.2); }
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { flex-direction: row-reverse; }
+.msg-avatar { width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .82rem; flex-shrink: 0; }
+.msg.ai .msg-avatar { background: rgba(0,242,254,0.09); border: 1px solid rgba(0,242,254,0.28); }
+.msg.user .msg-avatar { background: rgba(174,0,255,0.13); border: 1px solid rgba(174,0,255,0.28); }
+.msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 10px; font-size: .78rem; line-height: 1.7; }
+.msg.ai .msg-bubble { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,242,254,0.1); color: #ccc; }
+.msg.user .msg-bubble { background: rgba(174,0,255,0.11); border: 1px solid rgba(174,0,255,0.2); color: #ddd; }
+.msg-time { font-family: 'Share Tech Mono', monospace; font-size: .5rem; color: #444; margin-top: 3px; text-align: right; }
+.chat-input-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+.chat-input { flex: 1; background: rgba(0,0,0,0.7); border: 1px solid #333; color: white; padding: 11px 15px; border-radius: 9px; font-family: 'Exo 2', sans-serif; font-size: .8rem; outline: none; transition: border-color .2s; }
+.chat-input:focus { border-color: var(--accent); }
+.chat-attach { padding: 11px 12px; border-radius: 9px; border: 1px solid #333; background: rgba(255,255,255,0.03); color: #888; cursor: pointer; font-size: .8rem; transition: all .2s; }
+.chat-attach:hover { border-color: var(--accent); color: var(--accent); }
+.chat-send { padding: 11px 18px; border-radius: 9px; border: none; background: linear-gradient(90deg,var(--accent2),var(--accent)); color: #000; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 700; letter-spacing: 1px; transition: all .2s; }
+.chat-send:hover { transform: translateY(-2px); }
+.typing-indicator { display: flex; gap: 4px; padding: 10px 14px; }
+.typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: .3; animation: ta 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes ta { 0%,100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
+.ai-file-preview { background: rgba(0,242,254,0.05); border: 1px solid rgba(0,242,254,0.2); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: .7rem; color: var(--accent); font-family: 'Share Tech Mono', monospace; display: none; }
+
+/* BOTLAR */
+.bots-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(235px,1fr)); gap: 12px; }
+.bot-card { background: rgba(0,0,0,0.6); border: 1px solid #1a1a1a; border-radius: 12px; padding: 18px; transition: all .3s; }
+.bot-card:hover { border-color: var(--beta); transform: translateY(-3px); }
+.bot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.bot-name { font-family: 'Orbitron', sans-serif; font-size: .68rem; font-weight: 700; color: #ddd; letter-spacing: 2px; }
+.bot-status { display: flex; align-items: center; gap: 4px; font-family: 'Share Tech Mono', monospace; font-size: .56rem; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; }
+.status-online { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+.status-active { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 2s infinite; }
+.status-standby { background: var(--gold); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+.bot-desc { font-size: .7rem; color: #666; line-height: 1.6; }
+.bot-stats { display: flex; gap: 12px; margin-top: 12px; }
+.bot-stat-val { font-family: 'Orbitron', sans-serif; font-size: .82rem; font-weight: 700; color: var(--accent); }
+.bot-stat-lbl { font-size: .5rem; color: #555; font-family: 'Share Tech Mono', monospace; margin-top: 1px; }
+.bot-progress { height: 3px; background: #111; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+.bot-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,var(--accent2),var(--accent)); }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(125px,1fr)); gap: 10px; margin-bottom: 20px; }
+.stat-card { background: rgba(0,0,0,0.5); border: 1px solid #1a1a1a; border-radius: 8px; padding: 12px; text-align: center; }
+.stat-val { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 900; color: var(--accent); }
+.stat-lbl { font-family: 'Share Tech Mono', monospace; font-size: .5rem; color: #555; margin-top: 2px; letter-spacing: 2px; }
+
+/* ADMİN */
+.admin-card { background: rgba(0,0,0,0.7); border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.admin-card h3 { font-family: 'Orbitron', sans-serif; font-size: .68rem; letter-spacing: 2px; color: var(--admin); margin-bottom: 14px; padding-bottom: 9px; border-bottom: 1px solid rgba(255,68,68,0.1); }
+.admin-table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+.admin-table th { font-family: 'Share Tech Mono', monospace; font-size: .55rem; color: #555; letter-spacing: 2px; padding: 6px; text-align: left; border-bottom: 1px solid #1a1a1a; }
+.admin-table td { padding: 8px 6px; border-bottom: 1px solid #0f0f0f; color: #bbb; vertical-align: middle; }
+.admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+.online-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.online-dot.on { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.online-dot.off { background: #444; }
+.ban-btn { padding: 3px 9px; border-radius: 4px; border: 1px solid rgba(255,68,68,0.3); background: rgba(255,68,68,0.08); color: #ff6666; cursor: pointer; font-size: .58rem; font-family: 'Share Tech Mono', monospace; transition: all .2s; }
+.ban-btn:hover { background: rgba(255,68,68,0.25); }
+.ban-btn.unbanbtn { background: rgba(0,255,136,0.08); border-color: rgba(0,255,136,0.3); color: var(--green); }
+.dev-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: .56rem; font-family: 'Share Tech Mono', monospace; }
+.dev-badge.active { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+.dev-badge.banned-badge { background: rgba(255,68,68,0.1); color: var(--admin); border: 1px solid rgba(255,68,68,0.25); }
+.admin-log { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: #555; line-height: 1.9; max-height: 250px; overflow-y: auto; }
+.admin-log span { color: var(--accent); }
+
+/* DESTEK MODAL */
+.modal-bg { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-bg.hidden { display: none; }
+.modal-box { background: rgba(5,10,20,0.98); border: 1px solid rgba(0,242,254,0.2); border-radius: 15px; padding: 28px; width: 100%; max-width: 460px; }
+.modal-box h2 { font-family: 'Orbitron', sans-serif; font-size: .82rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 5px; }
+.modal-box p { font-size: .72rem; color: #666; margin-bottom: 18px; font-family: 'Share Tech Mono', monospace; }
+.modal-input { background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; padding: 10px 14px; border-radius: 8px; width: 100%; margin: 5px 0; font-family: 'Exo 2', sans-serif; font-size: .8rem; outline: none; transition: border-color .2s; }
+.modal-input:focus { border-color: var(--accent); }
+.modal-textarea { background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; padding: 10px 14px; border-radius: 8px; width: 100%; margin: 5px 0; font-family: 'Exo 2', sans-serif; font-size: .8rem; outline: none; resize: vertical; min-height: 100px; }
+.modal-textarea:focus { border-color: var(--accent); }
+.modal-send { background: linear-gradient(90deg,var(--accent2),var(--accent)); color: #000; border: none; padding: 11px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: .65rem; letter-spacing: 2px; cursor: pointer; width: 100%; margin-top: 5px; }
+.modal-close { background: transparent; border: 1px solid #333; color: #888; padding: 8px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: .65rem; cursor: pointer; width: 100%; margin-top: 6px; }
+
+/* ADMİN SAYFASI */
+#scr-adminpage { background: rgba(0,0,0,0.85); align-items: flex-start; justify-content: flex-start; padding: 30px; overflow-y: auto; }
+.adminpage-head { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; width: 100%; }
+.adminpage-back { padding: 8px 16px; border-radius: 8px; border: 1px solid #333; background: rgba(255,255,255,0.03); color: #aaa; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: .65rem; transition: all .2s; }
+.adminpage-back:hover { border-color: var(--admin); color: var(--admin); }
+
+/* BİLDİRİM */
+.notif { position: fixed; top: 16px; right: 16px; z-index: 9999; background: rgba(0,0,0,0.96); border: 1px solid rgba(0,242,254,0.28); border-radius: 8px; padding: 11px 16px; max-width: 280px; font-family: 'Share Tech Mono', monospace; font-size: .68rem; color: var(--accent); transform: translateX(120%); transition: transform .3s; box-shadow: 0 4px 18px rgba(0,242,254,0.13); }
+.notif.show { transform: translateX(0); }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .role-grid { grid-template-columns: 1fr; }
+    .class-grid { grid-template-columns: repeat(3,1fr); }
+    .sidebar { width: 100%; min-width: unset; height: auto; max-height: 60vh; border-right: none; border-bottom: 1px solid var(--border); }
+    #app { flex-direction: column; }
+    .main-area { height: 100%; }
+    .topbar { flex-direction: column; align-items: flex-start; }
+    .chat-wrap { height: 60vh; }
+    .quiz-btns { flex-direction: column; align-items: center; }
+    .quiz-btn { width: 100%; }
+}
+@media (max-width: 480px) {
+    .role-grid { grid-template-columns: 1fr; }
+    .class-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+/* TdevKuantum Akademi — kurumsal eğitim arayüzü */
+:root {
+  --accent: #2563eb;
+  --accent-2: #0f766e;
+  --bg: #f3f6fb;
+  --card: #ffffff;
+  --border: #dbe4f0;
+  --ink: #172b4d;
+  --muted: #63748b;
+  --navy: #102744;
+}
+html { background: var(--bg); }
+body {
+  font-family: 'DM Sans', 'Manrope', sans-serif !important;
+  color: var(--ink);
+  background: radial-gradient(ellipse at 10% 0%, rgba(37,99,235,.08), transparent 38%), var(--bg) !important;
+}
+body::before, body::after { opacity: 0 !important; pointer-events: none !important; }
+h1,h2,h3,h4,.logo,.brand,.panel-title { font-family: 'Manrope','DM Sans',sans-serif !important; letter-spacing: -.025em; }
+button, input, select, textarea { font: inherit; }
+button { transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+button:hover { transform: translateY(-1px); }
+input,select,textarea {
+  color: var(--ink) !important; background: #fff !important;
+  border: 1px solid var(--border) !important; border-radius: 12px !important;
+}
+input:focus,select:focus,textarea:focus {
+  outline: 3px solid rgba(37,99,235,.13) !important; border-color: var(--accent) !important;
+}
+.card,.panel,.modal-content,.role-card,.feature-card,.stat-card,.lesson-card,.quiz-card {
+  border: 1px solid var(--border) !important; border-radius: 18px !important;
+  box-shadow: 0 8px 28px rgba(16,39,68,.055) !important;
+}
+.sidebar,.side-nav,.admin-sidebar { background: var(--navy) !important; }
+.nav-item,.sidebar a,.side-nav a { border-radius: 10px; }
+.primary-btn,.btn-primary,.login-btn {
+  background: linear-gradient(135deg,#2563eb,#1d4ed8) !important;
+  color: #fff !important; border: 0 !important; border-radius: 12px !important;
+  box-shadow: 0 6px 16px rgba(37,99,235,.18);
+}
+.primary-btn:hover,.btn-primary:hover,.login-btn:hover { box-shadow: 0 9px 22px rgba(37,99,235,.25); }
+.logo,.brand { color: var(--accent) !important; }
+small,.muted,.subtitle,.description { color: var(--muted); }
+@media (max-width: 760px) {
+  .container,.main-content,.dashboard-content { width: 100% !important; max-width: 100% !important; }
+  .sidebar,.side-nav,.admin-sidebar { max-width: 100%; }
+  .card,.panel,.modal-content { border-radius: 14px !important; }
+  button { min-height: 42px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="wallpaper"></div>
+<div class="grid-overlay"></div>
+<div class="scanline"></div>
+
+<!-- ===== KAPAK SAYAÇ ===== -->
+<div id="scr-coming" class="screen">
+    <div class="coming-logo">TDEV <span style="color:var(--gold)">QUANTUM</span></div>
+    <div class="coming-sub">AKADEMİ · ÖĞRENME · GELİŞİM</div>
+    <p style="font-size:.78rem;color:#555;margin-top:10px;text-align:center;font-family:'Share Tech Mono',monospace">Derslerini keşfet, hedeflerini belirle ve kendi öğrenme yolculuğunu başlat.</p>
+    <div class="c-lbl">GÜN</div></div>
+        <div class="c-block"><div class="c-num" id="c-hours">--</div><div class="c-lbl">SAAT</div></div>
+        <div class="c-block"><div class="c-num" id="c-mins">--</div><div class="c-lbl">DAKİKA</div></div>
+        <div class="c-block"><div class="c-num" id="c-secs">--</div><div class="c-lbl">SANİYE</div></div>
+    </div>
+    <button class="coming-enter" onclick="goTo('gate')">PLATFORMA GİRİŞ →</button>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.56rem;color:#333;margin-top:14px">© 2026 TdevKuantum · turkmenmuhammedeymen@gmail.com</div>
+</div>
+
+<!-- ===== GİRİŞ ===== -->
+<div id="scr-gate" class="screen hidden">
+    <div style="margin-bottom:22px;text-align:center">
+        <div class="coming-logo" style="font-size:clamp(1.8rem,5vw,3.2rem)">TDEV <span style="color:var(--gold)">QUANTUM</span></div>
+        <div class="logo-sub">AKADEMİ · ÖĞRENME · GELİŞİM</div>
+        <div class="logo-quantum">▌ TDEVKUANTUM AKADEMİ · ÖĞRENME MOTORU ▐</div>
+    </div>
+    <div class="server-row">
+        <div class="server-btn active" onclick="selServer(this,'TR')"><span class="server-dot"></span>🇹🇷 TÜRKİYE</div>
+        <div class="server-btn" onclick="selServer(this,'US')"><span class="server-dot"></span>🇺🇸 USA</div>
+        <div class="server-btn" onclick="selServer(this,'UK')"><span class="server-dot"></span>🇬🇧 UK</div>
+        <div class="server-btn" onclick="selServer(this,'DE')"><span class="server-dot"></span>🇩🇪 ALMANYA</div>
+        <div class="server-btn" onclick="selServer(this,'AZ')"><span class="server-dot"></span>🇦🇿 AZERBAYCAN</div>
+        <div class="server-btn" onclick="selServer(this,'JP')"><span class="server-dot"></span>🇯🇵 JAPONYA</div>
+    </div>
+    <div class="role-grid">
+        <div class="role-card founder" onclick="selRole('founder')">
+            <div class="role-icon">👑</div><div class="role-name">MUHAMMED EYMEN</div>
+            <div class="role-desc">Kurucu & Geliştirici</div><div class="role-badge">TAM YETKİ</div>
+        </div>
+        <div class="role-card admin" onclick="goTo('adminpage')">
+            <div class="role-icon">⚙️</div><div class="role-name">ADMİN GİRİŞİ</div>
+            <div class="role-desc">Yönetici Paneli</div><div class="role-badge">ADMİN</div>
+        </div>
+        <div class="role-card beta" onclick="selRole('beta')">
+            <div class="role-icon">🧪</div><div class="role-name">BETA TESTER</div>
+            <div class="role-desc">Test Kullanıcısı</div><div class="role-badge">KISITLI</div>
+        </div>
+    </div>
+    <div id="login-box">
+        <div class="login-title" id="login-role-title">GÜVENLİK DOĞRULAMA</div>
+        <input type="password" id="pass" class="input-field" placeholder="ŞİFRENİ GİR">
+        <button class="btn-connect" onclick="verify()">BAĞLAN →</button>
+        <div class="error-msg" id="err-msg">⚠ HATALI ŞİFRE</div>
+    </div>
+    <div style="margin-top:15px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#444;text-align:center">
+        Hesabın yok mu? <span style="color:var(--accent);cursor:pointer" onclick="goTo('register')">Kayıt Ol</span>
+    </div>
+</div>
+
+<!-- ===== ADMİN SAYFASI (AYRI EKRAN) ===== -->
+<div id="scr-adminpage" class="screen hidden">
+    <div class="adminpage-head">
+        <button class="adminpage-back" onclick="goTo('gate')">← GERİ DÖN</button>
+        <div>
+            <div style="font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--admin);letter-spacing:3px">ADMİN PANELİ</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#555;margin-top:2px">TdevKuantum — Yönetim Paneli</div>
+        </div>
+    </div>
+    <div style="width:100%;max-width:900px">
+        <!-- Admin şifre -->
+        <div id="admin-login-area">
+            <div class="admin-card" style="max-width:400px">
+                <h3>🔐 ADMİN GİRİŞİ</h3>
+                <input type="password" id="admin-pass" class="modal-input" placeholder="Admin şifresi" style="margin-bottom:10px">
+                <button class="modal-send" onclick="adminLogin()">GİRİŞ YAP</button>
+                <div class="error-msg" id="admin-err" style="display:none">⚠ Hatalı şifre</div>
+            </div>
+        </div>
+        <!-- Admin içerik -->
+        <div id="admin-content" style="display:none">
+            <div class="admin-card">
+                <h3>👥 ADMİN EKİBİ</h3>
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>AD</th><th>ROL</th><th>DURUM</th><th>KATILIM</th></tr></thead>
+                    <tbody id="admin-team-table"></tbody>
+                </table>
+                <div style="font-size:.7rem;color:#555;font-family:'Share Tech Mono',monospace;margin-top:12px">➕ Yeni admin eklemek için geliştirici (Eymen) ile iletişime geçin.</div>
+            </div>
+            <div class="admin-card">
+                <h3>📋 KAYITLI KULLANICILAR</h3>
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>AD</th><th>E-POSTA</th><th>TARİH</th><th>DURUM</th><th>İŞLEM</th></tr></thead>
+                    <tbody id="admin-user-table"></tbody>
+                </table>
+            </div>
+            <div class="admin-card">
+                <h3>📊 PLATFORM İSTATİSTİKİ</h3>
+                <div class="stats-row" id="admin-stats-row"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== KAYIT ===== -->
+<div id="scr-register" class="screen hidden">
+    <div class="reg-box">
+        <div class="reg-title">YENİ KULLANICI KAYDI</div>
+        <input type="text" id="reg-name" class="reg-input" placeholder="Ad Soyad">
+        <input type="email" id="reg-email" class="reg-input" placeholder="E-posta">
+        <input type="password" id="reg-pass" class="reg-input" placeholder="Şifre">
+        <input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar">
+        <button class="reg-btn" onclick="register()">KAYIT OL</button>
+        <div class="reg-link" onclick="goTo('gate')">Hesabın var mı? <span>Giriş Yap</span></div>
+        <div class="error-msg" id="reg-err" style="display:none;margin-top:8px"></div>
+    </div>
+</div>
+
+<!-- ===== SINIF SEÇİMİ ===== -->
+<div id="scr-class" class="screen hidden">
+    <div style="text-align:center;margin-bottom:14px">
+        <div style="font-family:'Orbitron',sans-serif;font-size:.92rem;letter-spacing:4px;color:var(--accent)">SINIF SEÇİMİ</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#555;margin-top:3px">HANGİ SINIF?</div>
+    </div>
+    <div class="class-grid" id="class-grid"></div>
+</div>
+
+<!-- ===== UYGULAMA ===== -->
+<div id="app">
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <div class="sidebar-logo">TdevKuantum</div>
+            <div class="sidebar-ver">ÖĞRENME PLATFORMU · SÜRÜM 1.0</div>
+            <div class="grade-badge" id="grade-label">YÜKLENİYOR</div>
+        </div>
+<div id="timer-display">...</div></div>
+        <div class="nav-section">MODÜLLER</div>
+        <div class="nav-btn active" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Dersler</div>
+        <div class="nav-btn" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
+        <div class="nav-btn" onclick="showTab('ai',this)"><span class="nav-icon">🤖</span>TDEV-AI</div>
+        <div class="nav-btn" onclick="showTab('m5',this)"><span class="nav-icon">⚡</span>M5 Bilişim</div>
+        <div class="nav-section">SİSTEM</div>
+        <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
+        <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
+        <div class="nav-btn" onclick="showTab('stats',this)"><span class="nav-icon">📊</span>İstatistikler</div>
+        <div class="sidebar-footer">
+            <div class="role-indicator">
+                <div class="role-dot" id="role-dot"></div>
+                <div class="role-indicator-name" id="role-name-disp">—</div>
+            </div>
+            <button class="btn-exit" onclick="location.reload()">✕ ÇIKIŞ</button>
+        </div>
+    </aside>
+    <div class="main-area">
+        <div class="topbar">
+            <div class="page-title" id="tab-title">DERS MODÜLLERİ</div>
+            <div class="topbar-right">
+                <span class="topbar-info" id="server-lbl">TR</span>
+                <button class="support-btn-top" onclick="openModal('support')">💬 DESTEK</button>
+            </div>
+        </div>
+        <div class="content-area">
+            <!-- DERSLER -->
+            <div id="tab-lessons" class="tab active">
+                <div id="lesson-list">
+                    <div class="sec-title"><span id="sc-grade">—</span>. SINIF MÜFREDATı</div>
+                    <div class="stats-row" id="lesson-stats"></div>
+                    <div class="lesson-grid" id="lesson-grid"></div>
+                </div>
+                <div id="lesson-detail" style="display:none">
+                    <button class="back-btn" onclick="backLesson()">← GERİ</button>
+                    <div class="detail-title" id="d-title"></div>
+                    <div class="detail-grade" id="d-grade"></div>
+                    <div id="d-content"></div>
+                </div>
+            </div>
+
+            <!-- DOĞRU/YANLIŞ -->
+            <div id="tab-quiz" class="tab">
+                <div class="sec-title">DOĞRU / YANLIŞ — <span>KONU TESTİ</span></div>
+                <div class="quiz-select-row">
+                    <select class="quiz-select" id="qg" onchange="fillQLesson()"></select>
+                    <select class="quiz-select" id="ql"></select>
+                    <button class="m5-btn" onclick="nextQ()">↺ YENİ SORU</button>
+                </div>
+                <div class="quiz-score-row">
+                    <div class="quiz-score-card"><div class="quiz-score-val" style="color:var(--green)" id="qc">0</div><div class="quiz-score-lbl">DOĞRU</div></div>
+                    <div class="quiz-score-card"><div class="quiz-score-val" style="color:var(--admin)" id="qw">0</div><div class="quiz-score-lbl">YANLIŞ</div></div>
+                    <div class="quiz-score-card"><div class="quiz-score-val" style="color:var(--gold)" id="qt">0</div><div class="quiz-score-lbl">TOPLAM</div></div>
+                    <div class="quiz-score-card"><div class="quiz-score-val" style="color:var(--accent)" id="qp">-%</div><div class="quiz-score-lbl">BAŞARI</div></div>
+                </div>
+                <div class="quiz-card">
+                    <div class="quiz-source" id="q-src">—</div>
+                    <div class="quiz-question" id="q-q">Sınıf ve ders seçin, ardından Yeni Soru'ya tıklayın.</div>
+                    <div class="quiz-btns">
+                        <button class="quiz-btn true-btn" onclick="ansQ(true)">✓ DOĞRU</button>
+                        <button class="quiz-btn false-btn" onclick="ansQ(false)">✗ YANLIŞ</button>
+                    </div>
+                    <div class="quiz-result" id="q-res"></div>
+                </div>
+            </div>
+
+            <!-- AI -->
+            <div id="tab-ai" class="tab">
+                <div class="sec-title">TDEV-AI — <span>YAPAY ZEKA ASISTAN</span></div>
+                <div class="chat-wrap">
+                    <div class="chat-messages" id="chat-msgs">
+                        <div class="msg ai">
+                            <div class="msg-avatar">🤖</div>
+                            <div>
+                                <div class="msg-bubble">Merhaba! Ben <strong>TDEV-AI</strong>. Ders soruları, konu anlatımı, dosya/fotoğraf analizi için buradayım. Fotoğraf veya dosya yüklemek için 📎 butonunu kullan!</div>
+                                <div class="msg-time">SİSTEM · HAZIR</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ai-file-preview" id="ai-file-prev">📎 <span id="ai-file-name">—</span> yüklendi</div>
+                    <div class="chat-input-row">
+                        <input type="file" id="ai-file-inp" style="display:none" accept="image/*,.pdf,.txt,.doc,.docx" onchange="aiFileLoad(this)">
+                        <button class="chat-attach" onclick="document.getElementById('ai-file-inp').click()" title="Dosya/Fotoğraf Yükle">📎</button>
+                        <input type="text" class="chat-input" id="chat-in" placeholder="Sorunuzu yazın... (Enter)">
+                        <button class="chat-send" onclick="sendMsg()">GÖNDER</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- M5 BİLİŞİM -->
+            <div id="tab-m5" class="tab">
+                <div class="sec-title">M5 BİLİŞİM SİSTEMİ — <span>TAM MODÜL PAKETİ</span></div>
+                <div class="m5-tabs">
+                    <button class="m5-tab-btn active" onclick="showM5Tab('read',this)">📖 HIZLI OKUMA</button>
+                    <button class="m5-tab-btn" onclick="showM5Tab('type',this)">⌨️ HIZLI YAZMA</button>
+                    <button class="m5-tab-btn" onclick="showM5Tab('memory',this)">🧠 HAFIZA</button>
+                    <button class="m5-tab-btn" onclick="showM5Tab('focus',this)">🎯 ODAK</button>
+                    <button class="m5-tab-btn" onclick="showM5Tab('info',this)">ℹ️ BİLGİ</button>
+                </div>
+                <!-- HIZLI OKUMA -->
+                <div id="m5-read" class="m5-panel active">
+                    <div class="m5-wrap">
+                        <div class="m5-display" id="m5-word">HAZIR</div>
+                        <div class="m5-progress"><div class="m5-progress-bar" id="m5-bar"></div></div>
+                        <div class="m5-stat" id="m5-stat">Metin girin ve başlatın</div>
+                        <div class="speed-row">
+                            <span style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#555">HIZ:</span>
+                            <div class="speed-btn active" onclick="setSpd(this,200)">200 WPM</div>
+                            <div class="speed-btn" onclick="setSpd(this,400)">400 WPM</div>
+                            <div class="speed-btn" onclick="setSpd(this,600)">600 WPM</div>
+                            <div class="speed-btn" onclick="setSpd(this,900)">900 WPM</div>
+                            <div class="speed-btn" onclick="setSpd(this,1200)">1200 WPM</div>
+                        </div>
+                        <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;justify-content:center">
+                            <label style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#555">MANUEL METİN:</label>
+                            <input type="range" id="wpm-slider" min="50" max="1500" value="200" style="width:160px;accent-color:var(--accent)" oninput="updateSlider(this.value)">
+                            <span id="wpm-val" style="font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--accent)">200</span>
+                            <button class="speed-btn" onclick="autoWordSet()" style="border-color:var(--beta);color:var(--beta)">🎲 OTOMATİK KELİME</button>
+                        </div>
+                        <div class="m5-controls">
+                            <button class="m5-btn" onclick="startM5()">▶ BAŞLAT</button>
+                            <button class="m5-btn stop" onclick="stopM5()">■ DURDUR</button>
+                            <button class="m5-btn" onclick="resetM5()">↺ SIFIRLA</button>
+                        </div>
+                        <textarea id="m5-text" style="width:100%;max-width:600px;background:rgba(0,0,0,0.6);border:1px solid #222;color:#aaa;padding:13px;border-radius:9px;font-size:.75rem;font-family:'Exo 2',sans-serif;resize:vertical;min-height:80px;outline:none;margin-top:7px" placeholder="Buraya metin girin VEYA 'Otomatik Kelime' butonuna basın..."></textarea>
+                    </div>
+                </div>
+                <!-- HIZLI YAZMA -->
+                <div id="m5-type" class="m5-panel">
+                    <div class="m5-wrap">
+                        <h3 style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:3px;color:var(--accent);margin-bottom:15px">⌨️ HIZLI YAZMA TESTİ</h3>
+                        <div class="m5-typing-area">
+                            <div class="m5-type-target" id="type-target">Başlamak için aşağıya yazmaya başlayın...</div>
+                            <input type="text" class="m5-type-input" id="type-input" placeholder="Buraya yazın..." oninput="checkTyping(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+                        </div>
+                        <div class="stats-row" style="max-width:500px;margin-top:15px">
+                            <div class="stat-card"><div class="stat-val" id="type-wpm">0</div><div class="stat-lbl">WPM</div></div>
+                            <div class="stat-card"><div class="stat-val" id="type-acc" style="color:var(--green)">100%</div><div class="stat-lbl">DOĞRULUK</div></div>
+                            <div class="stat-card"><div class="stat-val" id="type-time" style="color:var(--gold)">0s</div><div class="stat-lbl">SÜRE</div></div>
+                        </div>
+                        <button class="m5-btn" onclick="resetTyping()" style="margin-top:12px">↺ YENİ METİN</button>
+                    </div>
+                </div>
+                <!-- HAFIZA -->
+                <div id="m5-memory" class="m5-panel">
+                    <div class="m5-wrap">
+                        <h3 style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:3px;color:var(--accent);margin-bottom:15px">🧠 HAFIZA EGZERSİZİ</h3>
+                        <div style="background:rgba(0,0,0,0.7);border:1px solid rgba(0,242,254,0.15);border-radius:12px;padding:25px;max-width:500px;text-align:center">
+                            <div id="mem-display" style="font-family:'Orbitron',sans-serif;font-size:2rem;color:var(--gold);letter-spacing:8px;min-height:60px;display:flex;align-items:center;justify-content:center">—</div>
+                            <div id="mem-info" style="font-family:'Share Tech Mono',monospace;font-size:.65rem;color:#555;margin:10px 0">Başlat butonuna bas, diziyi ezberle</div>
+                            <input type="text" id="mem-input" class="modal-input" placeholder="Gördüğün diziyi yaz..." style="text-align:center;letter-spacing:4px;font-size:1rem;display:none;margin-top:10px">
+                            <div class="m5-controls" style="margin-top:15px">
+                                <button class="m5-btn" onclick="startMemory()">▶ BAŞLAT</button>
+                                <button class="m5-btn" onclick="checkMemory()" id="mem-check-btn" style="display:none">✓ KONTROL</button>
+                            </div>
+                            <div id="mem-result" style="font-family:'Orbitron',sans-serif;font-size:.7rem;margin-top:12px;display:none"></div>
+                            <div style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#555;margin-top:10px">Seviye: <span id="mem-level" style="color:var(--accent)">1</span> | Rekor: <span id="mem-record" style="color:var(--gold)">0</span></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ODAK -->
+                <div id="m5-focus" class="m5-panel">
+                    <div class="m5-wrap">
+                        <h3 style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:3px;color:var(--accent);margin-bottom:15px">🎯 ODAK MOD — POmodoro</h3>
+                        <div style="background:rgba(0,0,0,0.7);border:1px solid rgba(0,242,254,0.15);border-radius:12px;padding:30px;text-align:center;max-width:400px">
+                            <div id="focus-time" style="font-family:'Orbitron',sans-serif;font-size:4rem;font-weight:900;color:var(--accent);text-shadow:0 0 20px rgba(0,242,254,0.5)">25:00</div>
+                            <div id="focus-label" style="font-family:'Share Tech Mono',monospace;font-size:.65rem;color:#888;margin:8px 0">ÇALIŞMA SÜRESİ</div>
+                            <div class="speed-row" style="margin:15px 0">
+                                <div class="speed-btn active" onclick="setFocus(this,25,'ÇALIŞMA')">25 dk</div>
+                                <div class="speed-btn" onclick="setFocus(this,5,'KISA MOLA')">5 dk</div>
+                                <div class="speed-btn" onclick="setFocus(this,15,'UZUN MOLA')">15 dk</div>
+                                <div class="speed-btn" onclick="setFocus(this,45,'DERİN ÇALIŞMA')">45 dk</div>
+                            </div>
+                            <div class="m5-controls">
+                                <button class="m5-btn" onclick="startFocus()">▶ BAŞLAT</button>
+                                <button class="m5-btn stop" onclick="stopFocus()">■ DURDUR</button>
+                                <button class="m5-btn" onclick="resetFocus()">↺ SIFIRLA</button>
+                            </div>
+                            <div style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#555;margin-top:10px">Tamamlanan: <span id="focus-count" style="color:var(--gold)">0</span> seans</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- BİLGİ -->
+                <div id="m5-info" class="m5-panel">
+                    <div class="m5-info-grid">
+                        <div class="m5-info-card"><h4>📖 HIZLI OKUMA NEDİR?</h4><p>Göz hareketlerini optimize ederek dakikada okunan kelime sayısını artırma tekniğidir. Ortalama insan 200-250 WPM okurken, eğitimli okuyucular 600-1000 WPM ulaşabilir.</p></div>
+                        <div class="m5-info-card"><h4>⌨️ HIZLI YAZMA</h4><p>10 parmak yazma tekniği ile dakikada 60-100 kelime hedeflenebilir. Düzenli pratikle dokunmatik yazma becerisi gelişir ve verimlilik artar.</p></div>
+                        <div class="m5-info-card"><h4>🧠 HAFIZA TEKNİKLERİ</h4><p>Saray tekniği, bağlantı yöntemi ve görselleştirme ile hafıza kapasitesi güçlendirilebilir. LGS ve YKS için kritik bir beceridir.</p></div>
+                        <div class="m5-info-card"><h4>🎯 POMODORO TEKNİĞİ</h4><p>25 dk çalışma + 5 dk mola döngüsü ile verimlilik artar. Beyin bu ritme adapte olarak derin odak moduna girer.</p></div>
+                        <div class="m5-info-card"><h4>⚡ M5 QUANTUM MOTOR</h4><p>RSVP (Hızlı Seri Görsel Sunum) yöntemi ile kelimeler tek tek odak noktasına gelir. Göz hareketi sıfıra iner, beyin daha hızlı işler.</p></div>
+                        <div class="m5-info-card"><h4>📊 HIZ HEDEFLERİ</h4><p>Başlangıç: 200 WPM → Orta: 400 WPM → İleri: 600 WPM → Uzman: 900+ WPM. Günlük 10 dk pratikle 3 ayda hedefe ulaşılır.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GELİŞTİRİCİ PANELİ -->
+            <div id="tab-devpanel" class="tab">
+                <div class="sec-title">GELİŞTİRİCİ — <span>MUHAMMED EYMEN</span></div>
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-val" id="dev-tot">0</div><div class="stat-lbl">KAYITLI</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="dev-act">0</div><div class="stat-lbl">AKTİF</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:var(--admin)" id="dev-ban">0</div><div class="stat-lbl">YASAK</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:var(--gold)">6</div><div class="stat-lbl">SERVER</div></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="admin-card">
+                        <h3>👤 TÜM KULLANICILAR</h3>
+                        <table class="admin-table">
+                            <thead><tr><th>AD</th><th>E-POSTA</th><th>TARİH</th><th>DURUM</th><th>İŞLEM</th></tr></thead>
+                            <tbody id="dev-user-tbl"></tbody>
+                        </table>
+                    </div>
+                    <div class="admin-card">
+                        <h3>📋 SİSTEM KAYITLARI</h3>
+                        <div class="admin-log" id="dev-log">
+                            <div><span>[SİSTEM]</span> TDEV Quantum V10 başlatıldı.</div>
+                            <div><span>[SİSTEM]</span> 6 global server aktif.</div>
+                            <div><span>[BOT]</span> Analiz-Bot-V3 çevrimiçi.</div>
+                            <div><span>[BOT]</span> Eymen-Bot-V2 aktif.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTLAR -->
+            <div id="tab-bots" class="tab">
+                <div class="sec-title">AKTİF — <span>SİSTEM BOTLARI</span></div>
+                <div class="bots-grid">
+                    <div class="bot-card"><div class="bot-header"><div class="bot-name">ANALİZ-BOT-V3</div><div class="bot-status"><div class="status-dot status-online"></div><span style="color:var(--green)">ONLİNE</span></div></div><div class="bot-desc">MEB müfredatını tarar, LGS/YKS soru havuzu oluşturur.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">2.4K</div><div class="bot-stat-lbl">SORU</div></div><div class="bot-stat"><div class="bot-stat-val">99.2%</div><div class="bot-stat-lbl">DOĞRULUK</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:87%"></div></div></div>
+                    <div class="bot-card"><div class="bot-header"><div class="bot-name">EYMEN-BOT-V2</div><div class="bot-status"><div class="status-dot status-active"></div><span style="color:var(--accent)">AKTİF</span></div></div><div class="bot-desc">Kurucu Muhammed Eymen'in kişisel asistanı. Platform yönetimi.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">∞</div><div class="bot-stat-lbl">YETKİ</div></div><div class="bot-stat"><div class="bot-stat-val">7/24</div><div class="bot-stat-lbl">AKTİF</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:100%;background:linear-gradient(90deg,var(--gold2),var(--gold))"></div></div></div>
+                    <div class="bot-card"><div class="bot-header"><div class="bot-name">VERİ-BOT-V1</div><div class="bot-status"><div class="status-dot status-active"></div><span style="color:var(--accent)">AKTİF</span></div></div><div class="bot-desc">Öğrenci performans verisi toplar, çalışma planı oluşturur.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">5.8K</div><div class="bot-stat-lbl">VERİ</div></div><div class="bot-stat"><div class="bot-stat-val">0.2s</div><div class="bot-stat-lbl">YANIT</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:73%"></div></div></div>
+                    <div class="bot-card"><div class="bot-header"><div class="bot-name">VİDEO-BOT-V1</div><div class="bot-status"><div class="status-dot status-standby"></div><span style="color:var(--gold)">STANDBY</span></div></div><div class="bot-desc">Video içeriklerini sınıflandırır, transkript oluşturur.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">342</div><div class="bot-stat-lbl">VİDEO</div></div><div class="bot-stat"><div class="bot-stat-val">56%</div><div class="bot-stat-lbl">KATALOG</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:56%;background:linear-gradient(90deg,var(--gold2),var(--gold))"></div></div></div>
+                </div>
+            </div>
+
+            <!-- İSTATİSTİK -->
+            <div id="tab-stats" class="tab">
+                <div class="sec-title">SİSTEM — <span>İSTATİSTİKLERİ</span></div>
+                <div class="stats-row">
+                    <div class="stat-card"><div class="stat-val">1–12</div><div class="stat-lbl">SINIF</div></div>
+                    <div class="stat-card"><div class="stat-val">144+</div><div class="stat-lbl">DERS</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:var(--gold)">2.4K+</div><div class="stat-lbl">SORU</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:var(--green)">342</div><div class="stat-lbl">VİDEO</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:var(--beta)">4</div><div class="stat-lbl">BOT</div></div>
+                    <div class="stat-card"><div class="stat-val" style="color:#ff6b35">6</div><div class="stat-lbl">SERVER</div></div>
+                </div>
+                <div class="detail-box"><h3>📡 SERVER DURUMU</h3><ul><li>🇹🇷 Türkiye — AKTİF · 12ms</li><li>🇺🇸 USA — AKTİF · 89ms</li><li>🇬🇧 UK — AKTİF · 45ms</li><li>🇩🇪 Almanya — AKTİF · 38ms</li><li>🇦🇿 Azerbaycan — AKTİF · 22ms</li><li>🇯🇵 Japonya — AKTİF · 142ms</li></ul></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DESTEK MODALI ===== -->
+<div class="modal-bg hidden" id="modal-support">
+    <div class="modal-box">
+        <h2>💬 DESTEK / SUPPORT</h2>
+        <p>turkmenmuhammedeymen@gmail.com adresine iletilecek</p>
+        <input type="text" class="modal-input" id="sup-name" placeholder="Adınız">
+        <input type="email" class="modal-input" id="sup-email" placeholder="E-postanız">
+        <select class="modal-input" id="sup-type" style="cursor:pointer">
+            <option value="bug">🐛 Hata Bildirimi</option>
+            <option value="oneri">💡 Öneri</option>
+            <option value="soru">❓ Soru</option>
+            <option value="diger">📌 Diğer</option>
+        </select>
+        <textarea class="modal-textarea" id="sup-msg" placeholder="Mesajınız..."></textarea>
+        <button class="modal-send" onclick="sendSupport()">📧 GÖNDER</button>
+        <button class="modal-close" onclick="closeModal('support')">KAPAT</button>
+    </div>
+</div>
+
+<div class="notif" id="notif"></div>
+<input type="file" id="ai-img-inp" style="display:none" accept="image/*">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/parse/5.0.0/parse.min.js"></script>
+<script>
+// ============================================================
+// TdevKuantum - TAM BACK4APP CLOUD ENTEGRASYONU
+// Tüm veriler Parse.Cloud.run üzerinden alınır.
+// Yerel veri (localStorage, sabit DB) KULLANILMAZ.
+// ============================================================
+
+Parse.initialize(
+    "ODlTC43Fn2yWQrc0tGdYWKF8mJvMXJ40WipYIAsH",
+    "s2ugwBLnPNkHJGsNdTaKulh7SSZRLtl9AxmySK6H"
+);
+Parse.serverURL = "https://parseapi.back4app.com";
+
+// ---- GLOBAL STATE ----
+let curRole = '', curGrade = '', curServer = 'TR';
+let m5Int = null, m5Spd = 200, m5Idx = 0, m5Words = [];
+let qCor = 0, qWrg = 0, curQ = null;
+let typeInt = null, typeStart = null;
+let focusInt = null, focusSecs = 1500, focusCur = 1500, focusCount = 0;
+let memLevel = 1, memRecord = 0, memSeq = '', memShow = false;
+const roleColors = { founder: '#00f2fe', admin: '#ff4444', beta: '#ae00ff' };
+const roleNames = { founder: 'EYMEN (KURUCU)', admin: 'ADMİN', beta: 'BETA TESTER' };
+const AUTO_WORDS = ["matematik","fizik","kimya","biyoloji","tarih","coğrafya","felsefe","edebiyat","geometri","cebir","türkçe","inkılap","denklem","integral","türev","logaritma","trigonometri","olasılık","istatistik","atom","hücre","genetik","evrim","fotosentez","kuvvet","enerji","elektrik","manyetizma","ışık","ses","dalga","osmanlı","cumhuriyet","atatürk","lgs","yks","ayt","tyt","sınav","ders","konu","çalışma","başarı","hedef","vizyon","quantum"];
+
+// ---- SABİTLER ----
+const TAG_MAP = { lgs:'tag-lgs', yks:'tag-yks', temel:'tag-temel', lise:'tag-lise' };
+const TAG_LBL = { lgs:'⚡ LGS', yks:'🎯 YKS', temel:'TEMEL', lise:'LİSE' };
+
+// ---- NAVİGASYON ----
+function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById('app').style.display = 'none';
+    if(id) { const e = document.getElementById('scr-'+id); if(e) e.classList.remove('hidden'); }
+}
+
+// ---- SERVER ----
+function selServer(el,s) {
+    document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    curServer = s;
+    if(curGrade) loadLessonsFromCloud(curGrade, curServer);
+}
+
+// ---- ROL & GİRİŞ (Cloud Code) ----
+function selRole(r) {
+    curRole = r;
+    document.getElementById('login-box').style.display = 'block';
+    document.getElementById('login-role-title').innerText = roleNames[r] + ' GİRİŞİ';
+    document.getElementById('err-msg').style.display = 'none';
+    document.getElementById('pass').value = '';
+    setTimeout(() => document.getElementById('pass').focus(), 100);
+}
+
+function verify() {
+    const p = document.getElementById('pass').value.trim();
+    Parse.Cloud.run('verifyRole', { role: curRole, password: p })
+        .then(result => {
+            if(result.success) {
+                document.getElementById('err-msg').style.display = 'none';
+                goTo('class');
+                loadClassList();
+                showNotif('✅ ' + roleNames[curRole] + ' girişi başarılı');
+            } else {
+                document.getElementById('err-msg').style.display = 'block';
+                showNotif('❌ Hatalı şifre');
+            }
+        })
+        .catch(err => {
+            showNotif('❌ Hata: ' + err.message);
+        });
+}
+document.addEventListener('keydown', e => { if(e.key === 'Enter' && document.getElementById('pass') === document.activeElement) verify(); });
+
+// ---- ADMİN GİRİŞİ (Cloud Code) ----
+function adminLogin() {
+    const p = document.getElementById('admin-pass').value.trim();
+    Parse.Cloud.run('adminLogin', { password: p })
+        .then(result => {
+            if(result.success) {
+                document.getElementById('admin-login-area').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                refreshAdminPage();
+                showNotif('✅ Admin girişi başarılı');
+            } else {
+                document.getElementById('admin-err').style.display = 'block';
+                showNotif('❌ Hatalı şifre');
+            }
+        })
+        .catch(err => {
+            showNotif('❌ Hata: ' + err.message);
+        });
+}
+
+function refreshAdminPage() {
+    // Admin ekibi
+    Parse.Cloud.run('getAdmins')
+        .then(admins => {
+            const teamTbl = document.getElementById('admin-team-table');
+            if(teamTbl) {
+                let html = '';
+                admins.forEach((a, idx) => {
+                    html += `<tr><td>${idx+1}</td><td style="color:var(--accent)">${a.name}</td><td><span class="dev-badge active">ADMİN</span></td><td><span class="online-dot on"></span>AKTİF</td><td>2026</td></tr>`;
+                });
+                teamTbl.innerHTML = html || '<tr><td colspan="5" style="color:#555;text-align:center;padding:18px">Admin bulunamadı.</td></tr>';
+            }
+        })
+        .catch(() => {});
+
+    // Tüm kullanıcılar
+    Parse.Cloud.run('getAllUsers')
+        .then(users => {
+            const tbl = document.getElementById('admin-user-table');
+            if(!tbl) return;
+            if(!users.length) {
+                tbl.innerHTML = '<tr><td colspan="6" style="color:#555;text-align:center;padding:18px">Kayıtlı kullanıcı yok.</td></tr>';
+                return;
+            }
+            tbl.innerHTML = users.map((u,i) =>
+                `<tr><td>${i+1}</td><td>${u.name}</td><td style="font-size:.68rem">${u.email}</td><td>${u.date}</td><td><span class="online-dot ${u.banned ? 'off' : 'on'}"></span>${u.banned ? 'YASAK' : 'AKTİF'}</td><td><button class="ban-btn ${u.banned ? 'unbanbtn' : ''}" onclick="adminBan('${u.id}', ${u.banned})">${u.banned ? 'KALDIR' : 'YASAK'}</button></td></tr>`
+            ).join('');
+        })
+        .catch(() => {});
+
+    // İstatistikler
+    Parse.Cloud.run('getStats')
+        .then(stats => {
+            const sr = document.getElementById('admin-stats-row');
+            if(sr) sr.innerHTML = `
+                <div class="stat-card"><div class="stat-val">${stats.total}</div><div class="stat-lbl">KAYITLI</div></div>
+                <div class="stat-card"><div class="stat-val" style="color:var(--green)">${stats.active}</div><div class="stat-lbl">AKTİF</div></div>
+                <div class="stat-card"><div class="stat-val" style="color:var(--admin)">${stats.banned}</div><div class="stat-lbl">YASAK</div></div>
+            `;
+        })
+        .catch(() => {});
+}
+
+function adminBan(userId, isBanned) {
+    const action = isBanned ? 'unbanUser' : 'banUser';
+    Parse.Cloud.run(action, { userId })
+        .then(() => {
+            refreshAdminPage();
+            refreshDevPanel();
+            showNotif(isBanned ? '✓ Yasak kaldırıldı' : '⛔ Kullanıcı yasaklandı');
+        })
+        .catch(err => showNotif('❌ Hata: ' + err.message));
+}
+
+// ---- KAYIT (Cloud Code) ----
+function register() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-pass').value;
+    const pass2 = document.getElementById('reg-pass2').value;
+    const err = document.getElementById('reg-err');
+    if(!name || !email || !pass) { err.innerText = '⚠ Tüm alanları doldurun'; err.style.display = 'block'; return; }
+    if(pass !== pass2) { err.innerText = '⚠ Şifreler eşleşmiyor'; err.style.display = 'block'; return; }
+    if(!email.includes('@')) { err.innerText = '⚠ Geçerli e-posta girin'; err.style.display = 'block'; return; }
+
+    Parse.Cloud.run('registerUser', { name, email, password: pass })
+        .then(result => {
+            if(result.success) {
+                showNotif('✓ Kayıt başarılı!');
+                err.style.display = 'none';
+                goTo('gate');
+            } else {
+                err.innerText = '⚠ ' + (result.error || 'Kayıt başarısız');
+                err.style.display = 'block';
+            }
+        })
+        .catch(err => {
+            err.innerText = '⚠ ' + err.message;
+            err.style.display = 'block';
+        });
+}
+
+// ---- SINIF LİSTESİ ----
+function loadClassList() {
+    let grades = [];
+    if(curServer === 'TR') grades = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+    else if(curServer === 'US') grades = ['K','1','2','3','4','5','6','7','8','9','10','11','12'];
+    else if(curServer === 'UK') grades = ['1','2','3','4','5','6','7','8','9','10','11','12','13'];
+    else if(curServer === 'DE') grades = ['1','2','3','4','5','6','7','8','9','10','11','12','13'];
+    else if(curServer === 'AZ') grades = ['1','2','3','4','5','6','7','8','9','10','11'];
+    else if(curServer === 'JP') grades = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+    else grades = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+
+    const grid = document.getElementById('class-grid');
+    grid.innerHTML = grades.map(g => `
+        <div class="class-card" onclick="launch('${g}')">
+            <div class="class-num">${g}.</div>
+            <div class="class-label">SINIF</div>
+            <div class="class-badge" style="color:var(--green)">${curServer}</div>
+        </div>
+    `).join('');
+}
+
+// ---- UYGULAMA BAŞLAT ----
+function launch(g) {
+    curGrade = g;
+    goTo('');
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('grade-label').innerText = g + '. SINIF';
+    document.getElementById('role-dot').style.cssText = 'background:' + roleColors[curRole] + ';box-shadow:0 0 6px ' + roleColors[curRole];
+    document.getElementById('role-name-disp').innerText = roleNames[curRole] || 'KULLANICI';
+    document.getElementById('server-lbl').innerText = 'SERVER: '+curServer;
+    if(curRole === 'founder') document.getElementById('nav-dev').style.display = 'flex';
+    loadLessonsFromCloud(g, curServer);
+    initQuiz();
+    refreshDevPanel();
+    showNotif('✓ '+g+'. SINIF YÜKLENDİ');
+}
+
+// ---- DERSLER (Cloud Code'den) ----
+function loadLessonsFromCloud(grade, server) {
+    Parse.Cloud.run('getCurriculum', { grade, server })
+        .then(data => {
+            renderLessons(data);
+        })
+        .catch(err => {
+            showNotif('⚠ Müfredat yüklenemedi: ' + err.message);
+            renderLessons({});
+        });
+}
+
+function renderLessons(data) {
+    document.getElementById('sc-grade').innerText = curGrade;
+    const keys = Object.keys(data);
+    const stats = document.getElementById('lesson-stats');
+    if(stats) {
+        stats.innerHTML = `
+            <div class="stat-card"><div class="stat-val">${curGrade}.</div><div class="stat-lbl">SINIF</div></div>
+            <div class="stat-card"><div class="stat-val">${keys.length}</div><div class="stat-lbl">DERS</div></div>
+            <div class="stat-card"><div class="stat-val" style="color:var(--gold)">${keys.length * 10}</div><div class="stat-lbl">KONU</div></div>
+            <div class="stat-card"><div class="stat-val" style="color:var(--green)">${keys.length * 5}</div><div class="stat-lbl">VİDEO</div></div>
+        `;
+    }
+    const grid = document.getElementById('lesson-grid');
+    if(!grid) return;
+    if(!keys.length) {
+        grid.innerHTML = '<div style="color:#666;text-align:center;padding:30px">Bu sınıf için henüz ders eklenmemiş.</div>';
+        return;
+    }
+    grid.innerHTML = keys.map(subject => {
+        const d = data[subject];
+        return `<div class="lesson-card" onclick="showDetail('${subject.replace(/'/g,"\\'")}')">
+            <div class="lesson-icon">${d.icon || '📚'}</div>
+            <div class="lesson-name">${subject}</div>
+            <div class="lesson-desc">${d.desc || ''}</div>
+            <span class="lesson-tag ${TAG_MAP[d.tag] || 'tag-temel'}">${TAG_LBL[d.tag] || 'TEMEL'}</span>
+        </div>`;
+    }).join('');
+    document.getElementById('lesson-list').style.display = 'block';
+    document.getElementById('lesson-detail').style.display = 'none';
+}
+
+function showDetail(subject) {
+    // Önce cloud'dan tekrar çekelim (güncel veri için)
+    Parse.Cloud.run('getCurriculum', { grade: curGrade, server: curServer })
+        .then(data => {
+            if(!data[subject]) { showNotif('⚠ Ders bilgisi bulunamadı'); return; }
+            const d = data[subject];
+            document.getElementById('d-title').innerText = subject + ' — ' + curGrade + '. SINIF';
+            document.getElementById('d-grade').innerText = 'TdevKuantum · MEB: ' + (d.mebLink || '#');
+            const tHTML = (d.topics || []).map(t => `<li>${t}</li>`).join('') || '<li>Konu listesi yakında.</li>';
+            const vHTML = (d.videos || []).map(v =>
+                `<div class="video-card" onclick="openYT('${v.query || v.title}')">
+                    <div class="video-thumb"><span class="play-icon">▶</span></div>
+                    <div class="video-info"><div class="video-title">${v.title || 'Video'}</div><div class="video-src">YouTube → ${v.query || ''}</div></div>
+                </div>`
+            ).join('') || '<div style="color:#555;font-size:.7rem">Video bulunamadı.</div>';
+
+            document.getElementById('d-content').innerHTML = `
+                <div class="detail-box"><h3>📋 KONU LİSTESİ</h3><ul>${tHTML}</ul></div>
+                <div class="meb-grid">
+                    <div class="meb-card s1"><h4>📄 MEB SENARYO 1</h4><p>${d.meb1 || '—'}</p></div>
+                    <div class="meb-card s2"><h4>📄 MEB SENARYO 2</h4><p>${d.meb2 || '—'}</p></div>
+                </div>
+                <div class="detail-box"><h3>📚 MEB MÜFREDAT KAYNAĞI</h3><p><a href="${d.mebLink || '#'}" target="_blank" style="color:var(--accent)">👉 ${d.mebLink || 'Bağlantı yok'}</a></p></div>
+                <div class="detail-box"><h3>🎬 VİDEO GALERİSİ</h3><div class="video-grid">${vHTML}</div></div>
+            `;
+            document.getElementById('lesson-list').style.display = 'none';
+            document.getElementById('lesson-detail').style.display = 'block';
+        })
+        .catch(err => {
+            showNotif('⚠ Detay yüklenemedi: ' + err.message);
+        });
+}
+
+function openYT(q) {
+    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
+}
+
+function backLesson() {
+    loadLessonsFromCloud(curGrade, curServer);
+}
+
+// ---- TABS ----
+function showTab(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const tab = document.getElementById('tab-'+id); if(tab) tab.classList.add('active');
+    if(el) el.classList.add('active');
+    const titles = { lessons:'DERS MODÜLLERİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER' };
+    document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
+    if(id === 'devpanel') refreshDevPanel();
+}
+
+// ---- GELİŞTİRİCİ PANELİ (Cloud) ----
+function refreshDevPanel() {
+    Parse.Cloud.run('getAllUsers')
+        .then(users => {
+            const setEl = (id,v) => { const e = document.getElementById(id); if(e) e.innerText = v; };
+            setEl('dev-tot', users.length);
+            setEl('dev-act', users.filter(u => !u.banned).length);
+            setEl('dev-ban', users.filter(u => u.banned).length);
+            const tbl = document.getElementById('dev-user-tbl');
+            if(!tbl) return;
+            if(!users.length) { tbl.innerHTML = '<tr><td colspan="5" style="color:#555;padding:14px">Kayıtlı kullanıcı yok.</td></tr>'; return; }
+            tbl.innerHTML = users.map((u,i) =>
+                `<tr><td>${u.name}</td><td style="font-size:.68rem">${u.email}</td><td>${u.date}</td><td><span class="dev-badge ${u.banned ? 'banned-badge' : 'active'}">${u.banned ? 'YASAK' : 'AKTİF'}</span></td><td><button class="ban-btn ${u.banned ? 'unbanbtn' : ''}" onclick="adminBan('${u.id}', ${u.banned})">${u.banned ? 'AÇ' : 'YASAK'}</button></td></tr>`
+            ).join('');
+        })
+        .catch(() => {});
+}
+
+// ---- DOĞRU / YANLIŞ (Cloud) ----
+let qAll = []; // tüm sorular cache
+
+function initQuiz() {
+    const g = document.getElementById('qg'); if(g) g.value = curGrade || '8';
+    // Cloud'dan soruları çek
+    Parse.Cloud.run('getQuestions', { grade: curGrade })
+        .then(questions => {
+            qAll = questions;
+            fillQLesson();
+            nextQ();
+        })
+        .catch(() => {
+            qAll = [];
+            fillQLesson();
+            nextQ();
+        });
+}
+
+function fillQLesson() {
+    const g = (document.getElementById('qg')||{}).value || '8';
+    const subjects = [...new Set(qAll.filter(q => q.grade === g).map(q => q.subject))];
+    const ls = document.getElementById('ql'); if(!ls) return;
+    ls.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('') || '<option value="">Ders yok</option>';
+}
+
+function nextQ() {
+    const g = (document.getElementById('qg')||{}).value || '8';
+    const sub = (document.getElementById('ql')||{}).value || '';
+    const pool = qAll.filter(q => q.grade === g && (sub ? q.subject === sub : true));
+    if(!pool.length) {
+        document.getElementById('q-q').innerText = 'Bu ders için soru hazırlanıyor...';
+        document.getElementById('q-src').innerText = '—';
+        document.getElementById('q-res').style.display = 'none';
+        curQ = null;
+        return;
+    }
+    const rand = pool[Math.floor(Math.random() * pool.length)];
+    curQ = rand;
+    document.getElementById('q-q').innerText = rand.question;
+    document.getElementById('q-src').innerText = g + '. Sınıf · ' + rand.subject;
+    document.getElementById('q-res').style.display = 'none';
+    document.querySelectorAll('.quiz-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+}
+
+function ansQ(ans) {
+    if(!curQ) return;
+    const ok = ans === curQ.answer;
+    if(ok) qCor++; else qWrg++;
+    const tot = qCor + qWrg;
+    document.getElementById('qc').innerText = qCor;
+    document.getElementById('qw').innerText = qWrg;
+    document.getElementById('qt').innerText = tot;
+    document.getElementById('qp').innerText = Math.round(qCor/tot*100) + '%';
+    const r = document.getElementById('q-res');
+    r.className = 'quiz-result ' + (ok ? 'correct' : 'wrong');
+    r.innerText = ok ? '✓ DOĞRU! Tebrikler!' : '✗ YANLIŞ! Doğru: ' + (curQ.answer ? 'DOĞRU' : 'YANLIŞ');
+    r.style.display = 'block';
+    document.querySelectorAll('.quiz-btn').forEach(b => { b.style.opacity = '.4'; b.style.pointerEvents = 'none'; });
+    setTimeout(nextQ, 1800);
+}
+
+// ---- AI CHAT (Yerel) ----
+let aiFile = null;
+const aiDB = {
+    matematik:"Matematik sorularınızda yardımcıyım!",
+    fizik:"Fizik: Newton yasaları...",
+    kimya:"Kimya: organik...",
+    biyoloji:"Biyoloji: hücre...",
+    lgs:"LGS hazırlık",
+    yks:"YKS hazırlık",
+    türkçe:"Türkçe-Edebiyat...",
+    tarih:"Tarih: inkılap...",
+    coğrafya:"Coğrafya...",
+    felsefe:"Felsefe...",
+    merhaba:"Merhaba! Ben TDEV-AI.",
+    selam:"Selam!",
+    teşekkür:"Rica ederim!",
+    fotoğraf:"Fotoğraf analiz ediliyor...",
+    dosya:"Dosya alındı...",
+    default:"Daha spesifik bir soru sorarsanız..."
+};
+
+function aiFileLoad(inp) {
+    const file = inp.files[0]; if(!file) return;
+    aiFile = file;
+    document.getElementById('ai-file-prev').style.display = 'block';
+    document.getElementById('ai-file-name').innerText = file.name + ' (' + Math.round(file.size/1024) + ' KB)';
+    showNotif('📎 ' + file.name + ' yüklendi');
+}
+function sendMsg() {
+    const inp = document.getElementById('chat-in'); const text = inp.value.trim();
+    if(!text && !aiFile) return;
+    const msgText = text || (aiFile ? '[📎 ' + aiFile.name + ' yüklendi]' : '');
+    inp.value = '';
+    addChatMsg('user', msgText);
+    const file = aiFile; aiFile = null;
+    document.getElementById('ai-file-prev').style.display = 'none';
+    document.getElementById('ai-file-inp').value = '';
+    const typing = addTyping();
+    setTimeout(() => {
+        typing.remove();
+        let resp = aiDB.default;
+        if(file) { resp = file.type.startsWith('image/') ? aiDB.fotoğraf : aiDB.dosya; }
+        else { const low = text.toLowerCase(); for(const [k,v] of Object.entries(aiDB)) { if(low.includes(k)) { resp = v; break; } } }
+        addChatMsg('ai', resp);
+    }, 700 + Math.random()*600);
+}
+function addChatMsg(role, text) {
+    const msgs = document.getElementById('chat-msgs');
+    const now = new Date().toLocaleTimeString('tr', { hour:'2-digit', minute:'2-digit' });
+    const div = document.createElement('div'); div.className = 'msg ' + role;
+    div.innerHTML = `<div class="msg-avatar">${role==='ai'?'🤖':'👤'}</div><div><div class="msg-bubble">${text}</div><div class="msg-time">${now}</div></div>`;
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight; return div;
+}
+function addTyping() {
+    const msgs = document.getElementById('chat-msgs');
+    const div = document.createElement('div'); div.className = 'msg ai';
+    div.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight; return div;
+}
+document.addEventListener('keydown', e => { if(e.key === 'Enter' && document.getElementById('chat-in') === document.activeElement) sendMsg(); });
+
+// ---- M5 MODÜLLERİ (Yerel) ----
+function showM5Tab(id, el) {
+    document.querySelectorAll('.m5-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.m5-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('m5-'+id).classList.add('active');
+    el.classList.add('active');
+}
+function setSpd(el, spd) {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active'); m5Spd = spd;
+    document.getElementById('wpm-slider').value = spd;
+    document.getElementById('wpm-val').innerText = spd;
+    if(m5Int){ stopM5(); startM5(); }
+}
+function updateSlider(v) {
+    m5Spd = parseInt(v);
+    document.getElementById('wpm-val').innerText = v;
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+}
+function autoWordSet() {
+    const shuffled = [...AUTO_WORDS].sort(() => Math.random() - .5).slice(0,30);
+    document.getElementById('m5-text').value = shuffled.join(' ');
+    showNotif('🎲 Otomatik kelimeler yüklendi!');
+}
+function startM5() {
+    m5Words = document.getElementById('m5-text').value.trim().split(/\s+/).filter(w=>w);
+    if(!m5Words.length){ showNotif('⚠ Metin girin!'); return; }
+    if(!m5Int) m5Idx = 0;
+    stopM5();
+    const intv = Math.round(60000/m5Spd);
+    m5Int = setInterval(() => {
+        if(m5Idx >= m5Words.length){ stopM5(); document.getElementById('m5-word').innerText = '✓ BİTTİ'; return; }
+        document.getElementById('m5-word').innerText = m5Words[m5Idx];
+        const pct = (m5Idx/m5Words.length*100).toFixed(0);
+        document.getElementById('m5-bar').style.width = pct + '%';
+        document.getElementById('m5-stat').innerText = (m5Idx+1)+'/'+m5Words.length+' · '+m5Spd+' WPM · %'+pct;
+        m5Idx++;
+    }, intv);
+}
+function stopM5(){ if(m5Int){ clearInterval(m5Int); m5Int = null; } }
+function resetM5(){ stopM5(); m5Idx = 0; document.getElementById('m5-word').innerText = 'HAZIR'; document.getElementById('m5-bar').style.width = '0%'; document.getElementById('m5-stat').innerText = 'Metin girin ve başlatın'; }
+
+// ---- HIZLI YAZMA ----
+const TYPE_TEXTS = ["matematik fizik kimya biyoloji tarih coğrafya edebiyat felsefe","tdevkuantum eğitim öğrenme akademi ders platformu","lgs yks ayt tyt sınav hazırlık çalışma başarı hedef","hücre dna genetik evrim biyoloji laboratuvar deney","denklem integral türev logaritma trigonometri geometri","osmanlı cumhuriyet atatürk inkılap tarih kronoloji"];
+let typeText = '', typeCorrect = 0, typeTotal = 0;
+function resetTyping() {
+    typeText = TYPE_TEXTS[Math.floor(Math.random() * TYPE_TEXTS.length)];
+    document.getElementById('type-target').innerHTML = typeText.split('').map((c,i) => `<span id="tc${i}">${c}</span>`).join('');
+    document.getElementById('type-input').value = '';
+    document.getElementById('type-input').focus();
+    if(typeInt) clearInterval(typeInt); typeInt = null; typeStart = null;
+    document.getElementById('type-wpm').innerText = '0';
+    document.getElementById('type-acc').innerText = '100%';
+    document.getElementById('type-time').innerText = '0s';
+}
+function checkTyping(val) {
+    if(!typeStart){ typeStart = Date.now(); typeInt = setInterval(() => { const s = Math.floor((Date.now()-typeStart)/1000); document.getElementById('type-time').innerText = s+'s'; const wpm = Math.round((val.trim().split(' ').filter(w=>w).length)/(s/60)||0); document.getElementById('type-wpm').innerText = wpm; },500); }
+    for(let i=0;i<typeText.length;i++){ const span = document.getElementById('tc'+i); if(!span) continue; if(i<val.length){ span.className = val[i]===typeText[i] ? 'correct' : 'wrong'; } else if(i===val.length){ span.className = 'current'; } else { span.className = ''; } }
+    if(val === typeText){ clearInterval(typeInt); const s = Math.floor((Date.now()-typeStart)/1000); const wpm = Math.round((typeText.trim().split(' ').length)/(s/60)); document.getElementById('type-wpm').innerText = wpm; showNotif('🎉 Tebrikler! '+wpm+' WPM!'); }
+}
+
+// ---- HAFIZA ----
+function startMemory() {
+    const len = 3 + memLevel;
+    memSeq = Array.from({length:len}, () => Math.floor(Math.random()*10)).join('');
+    document.getElementById('mem-display').innerText = memSeq;
+    document.getElementById('mem-info').innerText = 'Diziyi ezberle!';
+    document.getElementById('mem-input').style.display = 'none';
+    document.getElementById('mem-check-btn').style.display = 'none';
+    document.getElementById('mem-result').style.display = 'none';
+    memShow = true;
+    setTimeout(() => {
+        document.getElementById('mem-display').innerText = '? ? ?';
+        document.getElementById('mem-input').style.display = 'block';
+        document.getElementById('mem-input').value = '';
+        document.getElementById('mem-input').focus();
+        document.getElementById('mem-check-btn').style.display = 'inline-block';
+        document.getElementById('mem-info').innerText = 'Şimdi yaz!';
+        memShow = false;
+    }, 2000 + memLevel*500);
+}
+function checkMemory() {
+    const val = document.getElementById('mem-input').value.replace(/\s/g,'');
+    const res = document.getElementById('mem-result');
+    if(val === memSeq){ memLevel++; if(memLevel>memRecord) memRecord=memLevel; res.innerHTML = '✓ DOĞRU! Seviye: '+memLevel; res.style.color = 'var(--green)'; }
+    else { memLevel=1; res.innerHTML = '✗ YANLIŞ! Doğru: '+memSeq; res.style.color = 'var(--admin)'; }
+    res.style.display = 'block';
+    document.getElementById('mem-level').innerText = memLevel;
+    document.getElementById('mem-record').innerText = memRecord;
+    document.getElementById('mem-check-btn').style.display = 'none';
+}
+
+// ---- ODAK ----
+function setFocus(el, mins, lbl) {
+    document.querySelectorAll('#m5-focus .speed-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    focusSecs = mins*60; focusCur = focusSecs;
+    document.getElementById('focus-label').innerText = lbl;
+    resetFocus();
+}
+function startFocus() {
+    if(focusInt) return;
+    focusInt = setInterval(() => {
+        focusCur--;
+        const m = Math.floor(focusCur/60), s = focusCur%60;
+        document.getElementById('focus-time').innerText = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        if(focusCur <= 0){ clearInterval(focusInt); focusInt = null; focusCount++; document.getElementById('focus-count').innerText = focusCount; focusCur = focusSecs; showNotif('⏰ Süre doldu! Mola zamanı.'); }
+    }, 1000);
+}
+function stopFocus(){ if(focusInt){ clearInterval(focusInt); focusInt = null; } }
+function resetFocus(){ stopFocus(); focusCur = focusSecs; const m = Math.floor(focusSecs/60); document.getElementById('focus-time').innerText = String(m).padStart(2,'0')+':00'; }
+
+// ---- DESTEK ----
+function openModal(id){ document.getElementById('modal-'+id).classList.remove('hidden'); }
+function closeModal(id){ document.getElementById('modal-'+id).classList.add('hidden'); }
+function sendSupport() {
+    const name = document.getElementById('sup-name').value.trim();
+    const email = document.getElementById('sup-email').value.trim();
+    const type = document.getElementById('sup-type').value;
+    const msg = document.getElementById('sup-msg').value.trim();
+    if(!name || !msg){ showNotif('⚠ Ad ve mesaj zorunlu!'); return; }
+    const types = { bug:'Hata Bildirimi', oneri:'Öneri', soru:'Soru', diger:'Diğer' };
+    const sub = encodeURIComponent('[TDEV DESTEK] '+types[type]+' — '+name);
+    const body = encodeURIComponent('Gönderen: '+name+'\nE-posta: '+email+'\nTür: '+types[type]+'\n\nMesaj:\n'+msg);
+    window.open('mailto:turkmenmuhammedeymen@gmail.com?subject='+sub+'&body='+body,'_blank');
+    showNotif('✓ Mail uygulaması açılıyor...');
+    ['sup-name','sup-email','sup-msg'].forEach(id => { document.getElementById(id).value = ''; });
+    setTimeout(() => closeModal('support'), 1500);
+}
+
+// ---- BİLDİRİM ----
+function showNotif(msg) {
+    const n = document.getElementById('notif');
+    n.innerText = msg;
+    n.classList.add('show');
+    setTimeout(() => n.classList.remove('show'), 3000);
+}
+
+// ---- BAŞLANGIÇ ----
+window.onload = () => {
+    resetTyping();
+    // Admin panelinde admin login alanı göster
+    document.getElementById('admin-login-area').style.display = 'block';
+    document.getElementById('admin-content').style.display = 'none';
+};
+</script>
+
+</body>
+</html>
