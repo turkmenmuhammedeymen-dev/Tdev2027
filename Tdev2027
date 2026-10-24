@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TDEV QUANTUM VISION 2027</title>
+<title>TdevKuantum | Öğrenme ve Akademi Platformu</title>
 <style>
 /* ============================================================ */
 /* CSS-1: DEĞİŞKENLER, GENEL, KAPAK, GİRİŞ, KAYIT, SINIF, UYGULAMA */
 /* ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
     --accent: #00f2fe;
@@ -346,6 +346,57 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
     .role-grid { grid-template-columns: 1fr; }
     .class-grid { grid-template-columns: repeat(2,1fr); }
 }
+
+/* TdevKuantum Akademi — kurumsal eğitim arayüzü */
+:root {
+  --accent: #2563eb;
+  --accent-2: #0f766e;
+  --bg: #f3f6fb;
+  --card: #ffffff;
+  --border: #dbe4f0;
+  --ink: #172b4d;
+  --muted: #63748b;
+  --navy: #102744;
+}
+html { background: var(--bg); }
+body {
+  font-family: 'DM Sans', 'Manrope', sans-serif !important;
+  color: var(--ink);
+  background: radial-gradient(ellipse at 10% 0%, rgba(37,99,235,.08), transparent 38%), var(--bg) !important;
+}
+body::before, body::after { opacity: 0 !important; pointer-events: none !important; }
+h1,h2,h3,h4,.logo,.brand,.panel-title { font-family: 'Manrope','DM Sans',sans-serif !important; letter-spacing: -.025em; }
+button, input, select, textarea { font: inherit; }
+button { transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+button:hover { transform: translateY(-1px); }
+input,select,textarea {
+  color: var(--ink) !important; background: #fff !important;
+  border: 1px solid var(--border) !important; border-radius: 12px !important;
+}
+input:focus,select:focus,textarea:focus {
+  outline: 3px solid rgba(37,99,235,.13) !important; border-color: var(--accent) !important;
+}
+.card,.panel,.modal-content,.role-card,.feature-card,.stat-card,.lesson-card,.quiz-card {
+  border: 1px solid var(--border) !important; border-radius: 18px !important;
+  box-shadow: 0 8px 28px rgba(16,39,68,.055) !important;
+}
+.sidebar,.side-nav,.admin-sidebar { background: var(--navy) !important; }
+.nav-item,.sidebar a,.side-nav a { border-radius: 10px; }
+.primary-btn,.btn-primary,.login-btn {
+  background: linear-gradient(135deg,#2563eb,#1d4ed8) !important;
+  color: #fff !important; border: 0 !important; border-radius: 12px !important;
+  box-shadow: 0 6px 16px rgba(37,99,235,.18);
+}
+.primary-btn:hover,.btn-primary:hover,.login-btn:hover { box-shadow: 0 9px 22px rgba(37,99,235,.25); }
+.logo,.brand { color: var(--accent) !important; }
+small,.muted,.subtitle,.description { color: var(--muted); }
+@media (max-width: 760px) {
+  .container,.main-content,.dashboard-content { width: 100% !important; max-width: 100% !important; }
+  .sidebar,.side-nav,.admin-sidebar { max-width: 100%; }
+  .card,.panel,.modal-content { border-radius: 14px !important; }
+  button { min-height: 42px; }
+}
+
 </style>
 </head>
 <body>
@@ -357,24 +408,23 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
 <!-- ===== KAPAK SAYAÇ ===== -->
 <div id="scr-coming" class="screen">
     <div class="coming-logo">TDEV <span style="color:var(--gold)">QUANTUM</span></div>
-    <div class="coming-sub">VISION 2027 · GLOBAL EĞİTİM PLATFORMU</div>
-    <p style="font-size:.78rem;color:#555;margin-top:10px;text-align:center;font-family:'Share Tech Mono',monospace">Platform 1 Ocak 2027'de tüm öğrencilere açılıyor</p>
-    <div class="coming-timer">
-        <div class="c-block"><div class="c-num" id="c-days">---</div><div class="c-lbl">GÜN</div></div>
+    <div class="coming-sub">AKADEMİ · ÖĞRENME · GELİŞİM</div>
+    <p style="font-size:.78rem;color:#555;margin-top:10px;text-align:center;font-family:'Share Tech Mono',monospace">Derslerini keşfet, hedeflerini belirle ve kendi öğrenme yolculuğunu başlat.</p>
+    <div class="c-lbl">GÜN</div></div>
         <div class="c-block"><div class="c-num" id="c-hours">--</div><div class="c-lbl">SAAT</div></div>
         <div class="c-block"><div class="c-num" id="c-mins">--</div><div class="c-lbl">DAKİKA</div></div>
         <div class="c-block"><div class="c-num" id="c-secs">--</div><div class="c-lbl">SANİYE</div></div>
     </div>
-    <button class="coming-enter" onclick="goTo('gate')">GELİŞTİRİCİ GİRİŞİ →</button>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:.56rem;color:#333;margin-top:14px">© 2026 TDEV QUANTUM · turkmenmuhammedeymen@gmail.com</div>
+    <button class="coming-enter" onclick="goTo('gate')">PLATFORMA GİRİŞ →</button>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.56rem;color:#333;margin-top:14px">© 2026 TdevKuantum · turkmenmuhammedeymen@gmail.com</div>
 </div>
 
 <!-- ===== GİRİŞ ===== -->
 <div id="scr-gate" class="screen hidden">
     <div style="margin-bottom:22px;text-align:center">
         <div class="coming-logo" style="font-size:clamp(1.8rem,5vw,3.2rem)">TDEV <span style="color:var(--gold)">QUANTUM</span></div>
-        <div class="logo-sub">VISION 2027 · GLOBAL EĞİTİM PLATFORMU</div>
-        <div class="logo-quantum">▌ QUANTUM ENGINE V10.0 · AKTİF ▐</div>
+        <div class="logo-sub">AKADEMİ · ÖĞRENME · GELİŞİM</div>
+        <div class="logo-quantum">▌ TDEVKUANTUM AKADEMİ · ÖĞRENME MOTORU ▐</div>
     </div>
     <div class="server-row">
         <div class="server-btn active" onclick="selServer(this,'TR')"><span class="server-dot"></span>🇹🇷 TÜRKİYE</div>
@@ -415,7 +465,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
         <button class="adminpage-back" onclick="goTo('gate')">← GERİ DÖN</button>
         <div>
             <div style="font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--admin);letter-spacing:3px">ADMİN PANELİ</div>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#555;margin-top:2px">TDEV QUANTUM — YÖNETİCİ EKRANI</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#555;margin-top:2px">TdevKuantum — Yönetim Paneli</div>
         </div>
     </div>
     <div style="width:100%;max-width:900px">
@@ -480,11 +530,11 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
 <div id="app">
     <aside class="sidebar">
         <div class="sidebar-head">
-            <div class="sidebar-logo">TDEV V10</div>
-            <div class="sidebar-ver">QUANTUM 2027 · BUILD 10.6.0</div>
+            <div class="sidebar-logo">TdevKuantum</div>
+            <div class="sidebar-ver">ÖĞRENME PLATFORMU · SÜRÜM 1.0</div>
             <div class="grade-badge" id="grade-label">YÜKLENİYOR</div>
         </div>
-        <div id="countdown"><div class="countdown-label">2027 GERİ SAYIM</div><div id="timer-display">...</div></div>
+<div id="timer-display">...</div></div>
         <div class="nav-section">MODÜLLER</div>
         <div class="nav-btn active" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Dersler</div>
         <div class="nav-btn" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
@@ -762,7 +812,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
 <script src="https://cdnjs.cloudflare.com/ajax/libs/parse/5.0.0/parse.min.js"></script>
 <script>
 // ============================================================
-// TDEV QUANTUM - TAM BACK4APP CLOUD ENTEGRASYONU
+// TdevKuantum - TAM BACK4APP CLOUD ENTEGRASYONU
 // Tüm veriler Parse.Cloud.run üzerinden alınır.
 // Yerel veri (localStorage, sabit DB) KULLANILMAZ.
 // ============================================================
@@ -787,17 +837,6 @@ const AUTO_WORDS = ["matematik","fizik","kimya","biyoloji","tarih","coğrafya","
 // ---- SABİTLER ----
 const TAG_MAP = { lgs:'tag-lgs', yks:'tag-yks', temel:'tag-temel', lise:'tag-lise' };
 const TAG_LBL = { lgs:'⚡ LGS', yks:'🎯 YKS', temel:'TEMEL', lise:'LİSE' };
-
-// ---- SAYAÇ ----
-function updateClock() {
-    const diff = new Date("2027-01-01") - new Date();
-    if (diff <= 0) return;
-    const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-    const set = (id,v) => { const e = document.getElementById(id); if(e) e.innerText = String(v).padStart(2,'0'); };
-    set('c-days',d); set('c-hours',h); set('c-mins',m); set('c-secs',s);
-    const t = document.getElementById('timer-display'); if(t) t.innerText = d+'G·'+h+'S·'+m+'D·'+s+'S';
-}
-setInterval(updateClock,1000); updateClock();
 
 // ---- NAVİGASYON ----
 function goTo(id) {
@@ -1033,7 +1072,7 @@ function showDetail(subject) {
             if(!data[subject]) { showNotif('⚠ Ders bilgisi bulunamadı'); return; }
             const d = data[subject];
             document.getElementById('d-title').innerText = subject + ' — ' + curGrade + '. SINIF';
-            document.getElementById('d-grade').innerText = 'TDEV QUANTUM · MEB: ' + (d.mebLink || '#');
+            document.getElementById('d-grade').innerText = 'TdevKuantum · MEB: ' + (d.mebLink || '#');
             const tHTML = (d.topics || []).map(t => `<li>${t}</li>`).join('') || '<li>Konu listesi yakında.</li>';
             const vHTML = (d.videos || []).map(v =>
                 `<div class="video-card" onclick="openYT('${v.query || v.title}')">
@@ -1165,8 +1204,8 @@ const aiDB = {
     fizik:"Fizik: Newton yasaları...",
     kimya:"Kimya: organik...",
     biyoloji:"Biyoloji: hücre...",
-    lgs:"LGS 2027!",
-    yks:"YKS 2027!",
+    lgs:"LGS hazırlık",
+    yks:"YKS hazırlık",
     türkçe:"Türkçe-Edebiyat...",
     tarih:"Tarih: inkılap...",
     coğrafya:"Coğrafya...",
@@ -1262,7 +1301,7 @@ function stopM5(){ if(m5Int){ clearInterval(m5Int); m5Int = null; } }
 function resetM5(){ stopM5(); m5Idx = 0; document.getElementById('m5-word').innerText = 'HAZIR'; document.getElementById('m5-bar').style.width = '0%'; document.getElementById('m5-stat').innerText = 'Metin girin ve başlatın'; }
 
 // ---- HIZLI YAZMA ----
-const TYPE_TEXTS = ["matematik fizik kimya biyoloji tarih coğrafya edebiyat felsefe","tdev quantum vision 2027 muhammed eymen eğitim platformu","lgs yks ayt tyt sınav hazırlık çalışma başarı hedef","hücre dna genetik evrim biyoloji laboratuvar deney","denklem integral türev logaritma trigonometri geometri","osmanlı cumhuriyet atatürk inkılap tarih kronoloji"];
+const TYPE_TEXTS = ["matematik fizik kimya biyoloji tarih coğrafya edebiyat felsefe","tdevkuantum eğitim öğrenme akademi ders platformu","lgs yks ayt tyt sınav hazırlık çalışma başarı hedef","hücre dna genetik evrim biyoloji laboratuvar deney","denklem integral türev logaritma trigonometri geometri","osmanlı cumhuriyet atatürk inkılap tarih kronoloji"];
 let typeText = '', typeCorrect = 0, typeTotal = 0;
 function resetTyping() {
     typeText = TYPE_TEXTS[Math.floor(Math.random() * TYPE_TEXTS.length)];
