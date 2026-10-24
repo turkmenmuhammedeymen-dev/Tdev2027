@@ -11,7 +11,7 @@
  *   ADMIN_PASSWORD       strong secret; never place in HTML/GitHub
  *   BETA_EMAIL           beta account email
  *   BETA_PASSWORD        strong secret; never place in HTML/GitHub
- *   GOOGLE_APPS_SCRIPT_URL optional deployed Web App URL for sending verification emails
+ *   GOOGLE_SCRIPT_URL (or GOOGLE_APPS_SCRIPT_URL) deployed Web App URL for sending verification emails
  *   RESEND_API_KEY       fallback provider API key
  *   EMAIL_FROM           verified sender, e.g. TdevKuantum <noreply@your-domain>
  *
@@ -122,7 +122,7 @@ function verificationKey(email) {
   return 'emailVerification:' + sha256(normalizeEmail(email));
 }
 async function sendVerificationEmail(email, code, name) {
-  const scriptUrl = configValue('GOOGLE_APPS_SCRIPT_URL');
+  const scriptUrl = (configValue('GOOGLE_SCRIPT_URL') || configValue('GOOGLE_APPS_SCRIPT_URL'));
   const apiKey = configValue('RESEND_API_KEY');
   const from = configValue('EMAIL_FROM');
   const subject = 'TdevKuantum e-posta doğrulama kodu';
@@ -184,7 +184,7 @@ async function sendVerificationEmail(email, code, name) {
   }
 
   const setupMessage = (!scriptUrl && !(apiKey && from))
-    ? 'Back4App Config içine GOOGLE_APPS_SCRIPT_URL ekle veya RESEND_API_KEY ve EMAIL_FROM ayarla.'
+    ? 'Back4App Config içine GOOGLE_SCRIPT_URL (veya GOOGLE_APPS_SCRIPT_URL) ekle veya RESEND_API_KEY ve EMAIL_FROM ayarla.'
     : 'Google Apps Script URL dağıtımını ve e-posta sağlayıcısı ayarlarını kontrol et.';
   console.error('[TdevKuantum] All verification email providers failed:', errors.join(' | ') || 'No provider configured');
   throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. ' + setupMessage);
@@ -458,12 +458,12 @@ Parse.Cloud.define('healthCheck', async () => ({
   success: true,
   service: 'TdevKuantum Cloud Code',
   timestamp: new Date().toISOString(),
-  emailProviderConfigured: !!configValue('RESEND_API_KEY') && !!configValue('EMAIL_FROM')
+  emailProviderConfigured: !!((configValue('GOOGLE_SCRIPT_URL') || configValue('GOOGLE_APPS_SCRIPT_URL')) || (configValue('RESEND_API_KEY') && configValue('EMAIL_FROM')))
 }));
 
 async function sendSupportNotification(name, email, category, message) {
   const recipient = normalizeEmail(configValue('SUPPORT_EMAIL', 'tdevkuantum.official@gmail.com'));
-  const scriptUrl = configValue('GOOGLE_APPS_SCRIPT_URL');
+  const scriptUrl = (configValue('GOOGLE_SCRIPT_URL') || configValue('GOOGLE_APPS_SCRIPT_URL'));
   const apiKey = configValue('RESEND_API_KEY');
   const from = configValue('EMAIL_FROM');
   const subject = '[TdevKuantum Destek] ' + safeText(category || 'Genel', 40) + ' — ' + safeText(name, 100);
@@ -509,7 +509,7 @@ async function sendSupportNotification(name, email, category, message) {
       errors.push('Resend: ' + String(error && error.message || error));
     }
   }
-  throw new Error('Destek mesajı e-postayla gönderilemedi. Back4App Config içinde GOOGLE_APPS_SCRIPT_URL veya RESEND_API_KEY ve EMAIL_FROM ayarlarını kontrol et. ' + errors.join(' | '));
+  throw new Error('Destek mesajı e-postayla gönderilemedi. Back4App Config içinde GOOGLE_SCRIPT_URL (veya GOOGLE_APPS_SCRIPT_URL) veya RESEND_API_KEY ve EMAIL_FROM ayarlarını kontrol et. ' + errors.join(' | '));
 }
 Parse.Cloud.define('sendSupportMessage', async (request) => {
   const user = requireUser(request);
