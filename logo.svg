@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title>TdevKuantum</title><desc>TdevKuantum eğitim ve akademi logosu</desc>
+<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0bd"/><stop offset=".48" stop-color="#e7bd68"/><stop offset="1" stop-color="#a97525"/></linearGradient><linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3e7ce2"/><stop offset="1" stop-color="#173c7d"/></linearGradient></defs>
+<rect width="512" height="512" rx="104" fill="#f3f6fb"/>
+<rect x="14" y="14" width="484" height="484" rx="92" fill="#fff" stroke="#dce4ef" stroke-width="5"/>
+<circle cx="256" cy="216" r="140" fill="#edf3ff" stroke="#d5e2f8" stroke-width="4"/>
+<path d="M128 188 256 126 384 188 256 250Z" fill="url(#blue)"/>
+<path d="M164 207v44c57 48 127 48 184 0v-44l-92 44Z" fill="#2457c5"/>
+<path d="M183 248v63c43 25 103 25 146 0v-63l-73 35Z" fill="url(#gold)"/>
+<path d="M210 292v43m92-43v43" stroke="#b88936" stroke-width="10" stroke-linecap="round"/>
+<path d="M185 342h142" stroke="#2457c5" stroke-width="12" stroke-linecap="round"/>
+<text x="256" y="414" font-family="Manrope,Arial,sans-serif" font-size="49" font-weight="800" text-anchor="middle" fill="#172b4d">Tdev<tspan fill="#2457c5">Kuantum</tspan></text>
+</svg>
