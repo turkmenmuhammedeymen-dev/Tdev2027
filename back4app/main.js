@@ -141,6 +141,7 @@ async function sendVerificationEmail(email, code, name) {
         body: JSON.stringify({
           to: email, email: email, name: safeText(name || 'öğrenci', 100),
           code: code, subject: subject, html: html, app: 'TdevKuantum',
+          token: configValue('APPS_SCRIPT_TOKEN'),
           text: 'TdevKuantum doğrulama kodun: ' + code + ' (10 dakika geçerlidir)'
         })
       });
@@ -475,7 +476,7 @@ async function sendSupportNotification(name, email, category, message) {
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message })
+        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message, token: configValue('APPS_SCRIPT_TOKEN') })
       });
       const body = await response.text();
       if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
