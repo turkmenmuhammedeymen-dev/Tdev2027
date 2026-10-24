@@ -493,7 +493,6 @@ body { background:radial-gradient(ellipse at 8% 0%,rgba(61,115,213,.09),transpar
 .error-msg { color:#b42332 !important; background:#fff1f2; border:1px solid #fecdd3; border-radius:10px; padding:10px 12px; font-size:.82rem; }
 #login-box { display:none !important; }
 .role-grid,.role-card { display:none !important; }
-#scr-adminpage { display:none !important; }
 .sidebar { background:#fff !important; border-right:1px solid #dce4ef !important; color:#172b4d !important; }
 .sidebar-head { background:#fff !important; border-bottom:1px solid #e3eaf3 !important; }
 .sidebar-logo { color:#2457c5 !important; }
