@@ -187,7 +187,8 @@ async function sendVerificationEmail(email, code, name) {
     ? 'Back4App Config içine GOOGLE_SCRIPT_URL (veya GOOGLE_APPS_SCRIPT_URL) ekle veya RESEND_API_KEY ve EMAIL_FROM ayarla.'
     : 'Google Apps Script URL dağıtımını ve e-posta sağlayıcısı ayarlarını kontrol et.';
   console.error('[TdevKuantum] All verification email providers failed:', errors.join(' | ') || 'No provider configured');
-  throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. ' + setupMessage);
+  const providerDetail = errors.length ? (' Ayrıntı: ' + errors.join(' | ').slice(0, 700)) : '';
+  throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. ' + setupMessage + providerDetail);
 }
 async function saveVerification(email, code) {
   const row = new Parse.Object('EmailVerification');
