@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TDEV QUANTUM VISION 2027</title>
+<title>TdevKuantum | Eğitim ve Akademi</title>
 <style>
 /* ============================================================ */
 /* CSS-1: DEĞİŞKENLER, GENEL, KAPAK, GİRİŞ, KAYIT, SINIF, UYGULAMA */
 /* ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
     --accent: #00f2fe;
@@ -346,6 +346,87 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
     .role-grid { grid-template-columns: 1fr; }
     .class-grid { grid-template-columns: repeat(2,1fr); }
 }
+
+/* TdevKuantum — premium eğitim platformu arayüz katmanı */
+:root {
+ --accent:#e7bd68; --accent2:#f8df9c; --gold:#e7bd68; --gold2:#b88735;
+ --admin:#e66c72; --beta:#75a9ff; --green:#65d6b0; --bg:#05080d;
+ --card:rgba(13,20,30,.9); --border:rgba(231,189,104,.22);
+}
+html,body { font-family:'DM Sans',sans-serif; background:#05080d; color:#f3f5f8; }
+.wallpaper { background:#05080d !important; }
+.wallpaper::after { background:radial-gradient(ellipse at 50% 20%,rgba(26,42,60,.48),transparent 56%),linear-gradient(135deg,rgba(3,6,10,.94),rgba(5,10,17,.96)) !important; }
+.grid-overlay { background-image:linear-gradient(rgba(231,189,104,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(231,189,104,.018) 1px,transparent 1px) !important; }
+.scanline { display:none !important; }
+.screen { padding:clamp(16px,3vw,36px); }
+.coming-logo,.logo-main,.sidebar-logo,h1,h2,h3,h4,.role-name,.login-title,.reg-title,.btn-connect,.reg-btn {
+ font-family:'Manrope','DM Sans',sans-serif !important; letter-spacing:normal;
+}
+.coming-logo,.logo-main { background:linear-gradient(110deg,#fff2c9,#e7bd68 52%,#b88335); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:none; font-weight:800; }
+.coming-logo span { color:#e7bd68 !important; -webkit-text-fill-color:#e7bd68; }
+.splash-screen { isolation:isolate; gap:0; overflow:hidden; background:radial-gradient(ellipse at center,rgba(24,40,57,.65),#05080d 66%) !important; }
+.splash-orbit { position:absolute; width:min(76vw,480px); aspect-ratio:1; border:1px solid rgba(231,189,104,.13); border-radius:50%; pointer-events:none; animation:orbitPulse 3.2s ease-in-out infinite; }
+.orbit-two { width:min(92vw,590px); animation-delay:1.2s; border-color:rgba(110,154,196,.11); }
+.brand-emblem { width:clamp(92px,17vw,140px); filter:drop-shadow(0 0 28px rgba(231,189,104,.2)); animation:brandReveal 1.2s cubic-bezier(.2,.8,.2,1) both; }
+.brand-emblem svg,.gate-emblem svg { display:block; width:100%; height:auto; }
+.splash-brand { margin-top:16px; font-family:'Manrope',sans-serif; font-size:clamp(2rem,6vw,3.5rem); font-weight:800; letter-spacing:-.055em; color:#f6f4ed; animation:brandReveal .9s .12s both; }
+.splash-brand span { color:#e7bd68; }
+.splash-tagline { margin-top:8px; color:#b8c0cb; font-size:.68rem; letter-spacing:.24em; text-align:center; animation:brandReveal .9s .22s both; }
+.splash-loader { width:min(260px,70vw); height:3px; margin-top:42px; border-radius:9px; overflow:hidden; background:#1c2632; }
+.splash-loader span { display:block; width:35%; height:100%; background:linear-gradient(90deg,#b88735,#ffe5a0); box-shadow:0 0 14px rgba(231,189,104,.65); animation:loadSweep 2.1s ease-in-out infinite; }
+.splash-status { margin-top:13px; font-size:.58rem; color:#8491a0; letter-spacing:.16em; text-align:center; }
+@keyframes loadSweep { 0%{transform:translateX(-110%)} 100%{transform:translateX(390%)} }
+@keyframes brandReveal { from{opacity:0;transform:translateY(12px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes orbitPulse { 0%,100%{transform:scale(.96);opacity:.4} 50%{transform:scale(1.03);opacity:.9} }
+#scr-gate { background:rgba(3,7,12,.72); backdrop-filter:blur(10px); }
+.gate-brand-lockup { display:flex; flex-direction:column; align-items:center; gap:7px; margin-bottom:26px; }
+.gate-emblem { width:72px; height:72px; filter:drop-shadow(0 0 16px rgba(231,189,104,.16)); }
+.logo-sub { color:#a5afbc; font-family:'DM Sans',sans-serif; font-size:.66rem; letter-spacing:.19em; }
+.logo-quantum { color:#d9b76e; font-family:'DM Sans',sans-serif; font-size:.62rem; letter-spacing:.12em; animation:none; }
+.server-row { gap:8px; max-width:780px; }
+.server-btn { border:1px solid #253142; background:rgba(11,17,26,.86); color:#aab4c2; border-radius:9px; padding:9px 12px; font-family:'DM Sans',sans-serif; font-size:.72rem; }
+.server-btn:hover,.server-btn.active { border-color:#d7b363; color:#f4d891; background:rgba(231,189,104,.09); }
+.server-btn.active .server-dot { background:#e7bd68; box-shadow:0 0 8px rgba(231,189,104,.6); }
+.role-grid { max-width:760px; gap:14px; }
+.role-card { min-height:155px; display:flex; flex-direction:column; justify-content:center; align-items:center; background:linear-gradient(145deg,rgba(17,26,38,.96),rgba(7,12,19,.96)); border:1px solid #263446; border-radius:17px; padding:23px 16px; box-shadow:0 12px 35px rgba(0,0,0,.16); }
+.role-card::before { background:linear-gradient(145deg,rgba(231,189,104,.09),transparent 68%) !important; }
+.role-card:hover { transform:translateY(-4px); border-color:rgba(231,189,104,.7) !important; box-shadow:0 16px 35px rgba(0,0,0,.28) !important; }
+.role-card.founder .role-name,.role-card.admin .role-name,.role-card.beta .role-name { color:#f1d18a; }
+.role-card.admin .role-name { color:#f08b91; } .role-card.beta .role-name { color:#91baff; }
+.role-icon { margin-bottom:12px; font-size:1.7rem; }
+.role-name { font-size:.84rem; font-weight:800; letter-spacing:.025em; }
+.role-desc { color:#a5afbd; font-size:.74rem; margin-top:7px; }
+.role-badge { margin-top:11px; font-family:'DM Sans',sans-serif; font-size:.62rem; padding:4px 10px; border-radius:999px; }
+.founder .role-badge { background:rgba(231,189,104,.1); color:#f0d18a; border-color:rgba(231,189,104,.28); }
+.admin .role-badge { background:rgba(230,108,114,.1); color:#f09a9f; border-color:rgba(230,108,114,.28); }
+.beta .role-badge { background:rgba(117,169,255,.1); color:#a9c7ff; border-color:rgba(117,169,255,.28); }
+#login-box,.reg-box { background:rgba(8,13,21,.97); border:1px solid #2b394a; border-radius:17px; box-shadow:0 18px 55px rgba(0,0,0,.32); }
+.login-title,.reg-title { color:#e7bd68; font-size:.78rem; font-weight:800; }
+.input-field,.reg-input,.modal-input { background:#0a111b !important; color:#f3f5f8 !important; border:1px solid #2b394a !important; border-radius:10px !important; font-family:'DM Sans',sans-serif !important; letter-spacing:normal !important; }
+.input-field:focus,.reg-input:focus,.modal-input:focus { border-color:#d6b365 !important; box-shadow:0 0 0 3px rgba(231,189,104,.1); }
+.btn-connect,.reg-btn { background:linear-gradient(110deg,#f5d991,#c39442) !important; color:#111 !important; border-radius:10px; font-size:.78rem; letter-spacing:.04em; }
+.sidebar { background:#080d14 !important; border-right:1px solid #202d3d !important; }
+.sidebar-head { background:#0b121c !important; border-bottom-color:#202d3d !important; }
+.sidebar-logo { color:#e7bd68 !important; letter-spacing:-.02em !important; }
+.nav-btn { border-radius:9px; color:#a5afbd; }
+.nav-btn:hover,.nav-btn.active { background:rgba(231,189,104,.09) !important; color:#f2d38e !important; border-color:rgba(231,189,104,.2) !important; }
+.card,.panel,.stat-card,.bot-card,.m5-info-card,.admin-card { border-radius:14px; }
+button { transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+button:focus-visible,[role="button"]:focus-visible { outline:2px solid #e7bd68; outline-offset:3px; }
+@media(max-width:650px) {
+ .screen { justify-content:flex-start; padding:22px 16px; }
+ #scr-coming { justify-content:center; }
+ .brand-emblem { width:102px; }
+ .splash-brand { font-size:2.25rem; }
+ .role-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ .role-card { min-height:140px; padding:17px 9px; }
+ .role-name { font-size:.72rem; }
+ .role-desc { font-size:.66rem; }
+ .server-row { gap:6px; }
+ .server-btn { padding:8px 9px; font-size:.65rem; }
+}
+@media(max-width:370px) { .role-grid { grid-template-columns:1fr; } }
+
 </style>
 </head>
 <body>
@@ -354,27 +435,28 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
 <div class="grid-overlay"></div>
 <div class="scanline"></div>
 
-<!-- ===== KAPAK SAYAÇ ===== -->
-<div id="scr-coming" class="screen">
-    <div class="coming-logo">TDEV <span style="color:var(--gold)">QUANTUM</span></div>
-    <div class="coming-sub">VISION 2027 · GLOBAL EĞİTİM PLATFORMU</div>
-    <p style="font-size:.78rem;color:#555;margin-top:10px;text-align:center;font-family:'Share Tech Mono',monospace">Platform 1 Ocak 2027'de tüm öğrencilere açılıyor</p>
-    <div class="coming-timer">
-        <div class="c-block"><div class="c-num" id="c-days">---</div><div class="c-lbl">GÜN</div></div>
-        <div class="c-block"><div class="c-num" id="c-hours">--</div><div class="c-lbl">SAAT</div></div>
-        <div class="c-block"><div class="c-num" id="c-mins">--</div><div class="c-lbl">DAKİKA</div></div>
-        <div class="c-block"><div class="c-num" id="c-secs">--</div><div class="c-lbl">SANİYE</div></div>
+<!-- ===== TdevKuantum AÇILIŞ / SPLASH ===== -->
+<div id="scr-coming" class="screen splash-screen" aria-label="TdevKuantum açılış ekranı">
+    <div class="splash-orbit orbit-one"></div><div class="splash-orbit orbit-two"></div>
+    <div class="brand-emblem" aria-hidden="true">
+        <svg viewBox="0 0 120 120" role="img" aria-label="TdevKuantum amblemi">
+            <defs><linearGradient id="tkGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0bd"/><stop offset=".48" stop-color="#f4c76b"/><stop offset="1" stop-color="#a97525"/></linearGradient></defs>
+            <circle cx="60" cy="60" r="49" fill="none" stroke="url(#tkGold)" stroke-width="1.5" opacity=".75"/>
+            <path d="M28 36 L60 20 L92 36 L60 49 Z" fill="url(#tkGold)"/>
+            <path d="M38 40 L38 46 Q60 61 82 46 L82 40 L60 51 Z" fill="#d8a64d"/>
+            <path d="M39 60 H81 M60 53 V91 M45 91 H75 M45 60 L45 82 M75 60 L75 82" fill="none" stroke="url(#tkGold)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
     </div>
-    <button class="coming-enter" onclick="goTo('gate')">GELİŞTİRİCİ GİRİŞİ →</button>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:.56rem;color:#333;margin-top:14px">© 2026 TDEV QUANTUM · turkmenmuhammedeymen@gmail.com</div>
+    <div class="splash-brand">Tdev<span>Kuantum</span></div>
+    <div class="splash-tagline">EĞİTİM · TEKNOLOJİ · GELECEK</div>
+    <div class="splash-loader"><span></span></div>
+    <div class="splash-status">ÖĞRENME DENEYİMİ HAZIRLANIYOR</div>
 </div>
 
 <!-- ===== GİRİŞ ===== -->
 <div id="scr-gate" class="screen hidden">
     <div style="margin-bottom:22px;text-align:center">
-        <div class="coming-logo" style="font-size:clamp(1.8rem,5vw,3.2rem)">TDEV <span style="color:var(--gold)">QUANTUM</span></div>
-        <div class="logo-sub">VISION 2027 · GLOBAL EĞİTİM PLATFORMU</div>
-        <div class="logo-quantum">▌ QUANTUM ENGINE V10.0 · AKTİF ▐</div>
+        <div class="gate-brand-lockup"><div class="gate-emblem" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="49" fill="none" stroke="#eac16e" stroke-width="2"/><path d="M28 36 L60 20 L92 36 L60 49 Z" fill="#f5d58b"/><path d="M38 40 L38 46 Q60 61 82 46 L82 40 L60 51 Z" fill="#c59645"/><path d="M39 60 H81 M60 53 V91 M45 91 H75 M45 60 L45 82 M75 60 L75 82" fill="none" stroke="#f5d58b" stroke-width="5" stroke-linecap="round"/></svg></div><div class="coming-logo">Tdev<span>Kuantum</span></div><div class="logo-sub">EĞİTİM · TEKNOLOJİ · GELECEK</div><div class="logo-quantum">BİLGİYLE GELECEĞE</div></div>
     </div>
     <div class="server-row">
         <div class="server-btn active" onclick="selServer(this,'TR')"><span class="server-dot"></span>🇹🇷 TÜRKİYE</div>
@@ -415,7 +497,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
         <button class="adminpage-back" onclick="goTo('gate')">← GERİ DÖN</button>
         <div>
             <div style="font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--admin);letter-spacing:3px">ADMİN PANELİ</div>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#555;margin-top:2px">TDEV QUANTUM — YÖNETİCİ EKRANI</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#555;margin-top:2px">TdevKuantum — Yönetim Paneli</div>
         </div>
     </div>
     <div style="width:100%;max-width:900px">
@@ -480,8 +562,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
 <div id="app">
     <aside class="sidebar">
         <div class="sidebar-head">
-            <div class="sidebar-logo">TDEV V10</div>
-            <div class="sidebar-ver">QUANTUM 2027 · BUILD 10.6.0</div>
+            <div class="sidebar-logo">TdevKuantum</div>
+            <div class="sidebar-ver">AKADEMİ · ÖĞRENME PLATFORMU</div>
             <div class="grade-badge" id="grade-label">YÜKLENİYOR</div>
         </div>
         <div id="countdown"><div class="countdown-label">2027 GERİ SAYIM</div><div id="timer-display">...</div></div>
@@ -700,7 +782,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
                     <div class="admin-card">
                         <h3>📋 SİSTEM KAYITLARI</h3>
                         <div class="admin-log" id="dev-log">
-                            <div><span>[SİSTEM]</span> TDEV Quantum V10 başlatıldı.</div>
+                            <div><span>[SİSTEM]</span> TdevKuantum öğrenme sistemi başlatıldı.</div>
                             <div><span>[SİSTEM]</span> 6 global server aktif.</div>
                             <div><span>[BOT]</span> Analiz-Bot-V3 çevrimiçi.</div>
                             <div><span>[BOT]</span> Eymen-Bot-V2 aktif.</div>
@@ -798,6 +880,22 @@ function updateClock() {
     const t = document.getElementById('timer-display'); if(t) t.innerText = d+'G·'+h+'S·'+m+'D·'+s+'S';
 }
 setInterval(updateClock,1000); updateClock();
+
+
+// ---- SPLASH / OTOMATİK GİRİŞ EKRANI ----
+(function initTdevKuantumSplash() {
+    const splash = document.getElementById('scr-coming');
+    const gate = document.getElementById('scr-gate');
+    if (!splash || !gate) return;
+    const enterGate = () => {
+        if (!splash.classList.contains('hidden')) {
+            splash.classList.add('hidden');
+            gate.classList.remove('hidden');
+        }
+    };
+    window.setTimeout(enterGate, 2600);
+    splash.addEventListener('click', enterGate, { once: true });
+})();
 
 // ---- NAVİGASYON ----
 function goTo(id) {
@@ -1262,7 +1360,7 @@ function stopM5(){ if(m5Int){ clearInterval(m5Int); m5Int = null; } }
 function resetM5(){ stopM5(); m5Idx = 0; document.getElementById('m5-word').innerText = 'HAZIR'; document.getElementById('m5-bar').style.width = '0%'; document.getElementById('m5-stat').innerText = 'Metin girin ve başlatın'; }
 
 // ---- HIZLI YAZMA ----
-const TYPE_TEXTS = ["matematik fizik kimya biyoloji tarih coğrafya edebiyat felsefe","tdev quantum vision 2027 muhammed eymen eğitim platformu","lgs yks ayt tyt sınav hazırlık çalışma başarı hedef","hücre dna genetik evrim biyoloji laboratuvar deney","denklem integral türev logaritma trigonometri geometri","osmanlı cumhuriyet atatürk inkılap tarih kronoloji"];
+const TYPE_TEXTS = ["matematik fizik kimya biyoloji tarih coğrafya edebiyat felsefe","tdevkuantum eğitim akademi öğrenme platformu","lgs yks ayt tyt sınav hazırlık çalışma başarı hedef","hücre dna genetik evrim biyoloji laboratuvar deney","denklem integral türev logaritma trigonometri geometri","osmanlı cumhuriyet atatürk inkılap tarih kronoloji"];
 let typeText = '', typeCorrect = 0, typeTotal = 0;
 function resetTyping() {
     typeText = TYPE_TEXTS[Math.floor(Math.random() * TYPE_TEXTS.length)];
