@@ -566,6 +566,14 @@ input,select,textarea { color:#172b4d; }
  .auth-primary,.auth-secondary { width:100%; }
 }
 
+
+/* Password visibility controls */
+.password-field { position:relative; width:100%; min-width:0; }
+.password-field > input { width:100%; box-sizing:border-box; padding-right:78px !important; }
+.password-toggle { position:absolute; right:9px; top:50%; transform:translateY(-50%); z-index:2; border:1px solid rgba(120,145,180,.38); border-radius:8px; padding:6px 9px; background:rgba(20,35,58,.94); color:#dbe8ff; font:600 .72rem/1.2 inherit; cursor:pointer; }
+.password-toggle:focus-visible { outline:2px solid #69a1ff; outline-offset:2px; }
+.password-toggle:hover { background:rgba(37,87,197,.32); }
+.admin-password-field .password-toggle { top:calc(50% - 5px); }
 </style>
 </head>
 <body>
@@ -612,7 +620,7 @@ input,select,textarea { color:#172b4d; }
         <label class="auth-label" for="auth-email">E-posta adresi</label>
         <input type="email" id="auth-email" class="auth-input" placeholder="ornek@eposta.com" autocomplete="email" inputmode="email">
         <label class="auth-label" for="auth-password">Şifre</label>
-        <input type="password" id="auth-password" class="auth-input" placeholder="Şifren" autocomplete="current-password">
+        <div class="password-field"><input type="password" id="auth-password" class="auth-input" placeholder="Şifren" autocomplete="current-password"><button type="button" class="password-toggle" aria-label="Şifreyi göster" aria-pressed="false" onclick="togglePasswordVisibility('auth-password', this)">Göster</button></div>
         <div class="auth-actions">
             <button type="button" class="auth-primary" id="login-button" onclick="loginWithEmail()">Giriş yap</button>
             <button type="button" class="auth-secondary" onclick="goTo('register')">Hesap oluştur</button>
@@ -637,7 +645,7 @@ input,select,textarea { color:#172b4d; }
         <div id="admin-login-area">
             <div class="admin-card" style="max-width:400px">
                 <h3>🔐 ADMİN GİRİŞİ</h3>
-                <input type="password" id="admin-pass" class="modal-input" placeholder="Admin şifresi" style="margin-bottom:10px">
+                <div class="password-field admin-password-field"><input type="password" id="admin-pass" class="modal-input" placeholder="Admin şifresi" style="margin-bottom:10px;padding-right:76px"><button type="button" class="password-toggle" aria-label="Admin şifresini göster" aria-pressed="false" onclick="togglePasswordVisibility('admin-pass', this)">Göster</button></div>
                 <button class="modal-send" onclick="adminLogin()">GİRİŞ YAP</button>
                 <div class="error-msg" id="admin-err" style="display:none">⚠ Hatalı şifre</div>
             </div>
@@ -673,8 +681,8 @@ input,select,textarea { color:#172b4d; }
         <div class="reg-title">YENİ KULLANICI KAYDI</div>
         <input type="text" id="reg-name" class="reg-input" placeholder="Ad Soyad">
         <input type="email" id="reg-email" class="reg-input" placeholder="E-posta">
-        <input type="password" id="reg-pass" class="reg-input" placeholder="Şifre">
-        <input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar">
+        <div class="password-field"><input type="password" id="reg-pass" class="reg-input" placeholder="Şifre" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Şifreyi göster" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass', this)">Göster</button></div>
+        <div class="password-field"><input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Tekrar şifresini göster" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass2', this)">Göster</button></div>
         <div class="reg-actions"><button type="button" class="auth-primary" onclick="register()">Kayıt ol</button><button type="button" class="auth-secondary" onclick="goTo('gate')">Giriş yap</button></div>
         <div class="reg-link">Hesabın varsa giriş yapabilir, yeni hesap için kayıt olabilirsin.</div>
         <div class="error-msg" id="reg-err" role="alert" aria-live="polite" style="display:none;margin-top:8px"></div>
@@ -1063,6 +1071,18 @@ function selServer(el,s) {
     if(curGrade) loadLessonsFromCloud(curGrade, curServer);
 }
 
+
+// ---- ŞİFRE GÖSTER/GİZLE ----
+function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input || !button) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    button.textContent = show ? 'Gizle' : 'Göster';
+    button.setAttribute('aria-label', show ? 'Şifreyi gizle' : 'Şifreyi göster');
+    button.setAttribute('aria-pressed', show ? 'true' : 'false');
+    input.focus({ preventScroll: true });
+}
 
 // ---- E-POSTA/ŞİFRE GİRİŞİ VE E-POSTA DOĞRULAMA ----
 function showAuthError(id, message) {
