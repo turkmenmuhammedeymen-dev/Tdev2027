@@ -644,6 +644,57 @@ input,select,textarea { color:#172b4d; }
   .auth-card,.reg-box { padding:18px 13px; }
   .server-btn { font-size:.62rem; }
 }
+
+/* Public education showcase — landing page */
+#scr-gate { gap:0; }
+.learning-showcase { width:min(100%,1080px); margin:30px auto 0; padding:clamp(18px,3vw,30px); border:1px solid #dce5f2; border-radius:26px; background:rgba(255,255,255,.76); box-shadow:0 24px 70px rgba(26,54,98,.08); }
+.showcase-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:22px; }
+.showcase-kicker { display:inline-flex; align-items:center; gap:8px; color:#2457c5; font-size:.69rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.showcase-kicker::before { content:''; width:22px; height:2px; border-radius:2px; background:#c49b4e; }
+.showcase-title { margin:9px 0 8px; color:#172b4d; font:800 clamp(1.5rem,3.5vw,2.35rem)/1.12 'Manrope',sans-serif; letter-spacing:-.045em; max-width:650px; }
+.showcase-subtitle { max-width:610px; color:#687991; font-size:.91rem; line-height:1.7; }
+.showcase-count { flex:0 0 auto; padding:10px 13px; border:1px solid #dbe5f5; border-radius:13px; background:#f5f8ff; color:#526987; font-size:.72rem; font-weight:750; white-space:nowrap; }
+.showcase-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; }
+.showcase-card { position:relative; min-width:0; overflow:hidden; padding:0 0 15px; border:1px solid #e0e7f1; border-radius:17px; background:#fff; box-shadow:0 5px 18px rgba(24,48,86,.035); transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.showcase-card:hover { transform:translateY(-3px); border-color:#b7c9e8; box-shadow:0 13px 28px rgba(24,48,86,.09); }
+.showcase-art { display:grid; place-items:center; height:112px; margin:9px 9px 0; overflow:hidden; border-radius:11px; background:linear-gradient(135deg,#edf3ff,#f8faff); }
+.showcase-art svg { width:100%; height:100%; max-width:190px; }
+.showcase-card:nth-child(4n+2) .showcase-art { background:linear-gradient(135deg,#edf8f4,#f8fcfa); }
+.showcase-card:nth-child(4n+3) .showcase-art { background:linear-gradient(135deg,#fff5e6,#fffaf3); }
+.showcase-card:nth-child(4n+4) .showcase-art { background:linear-gradient(135deg,#f2efff,#faf9ff); }
+.showcase-card-body { padding:13px 13px 0; }
+.showcase-tag { display:inline-block; margin-bottom:7px; color:#4770b9; font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.showcase-card h3 { margin:0 0 6px; color:#1a2d4a; font:800 .94rem/1.35 'Manrope',sans-serif; letter-spacing:-.02em; }
+.showcase-card p { margin:0; color:#6b7b90; font-size:.76rem; line-height:1.6; }
+.showcase-bottom { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:20px; padding:17px 18px; border:1px solid #dce6f5; border-radius:16px; background:linear-gradient(110deg,#f5f8ff,#fff); }
+.showcase-bottom-copy { display:flex; align-items:flex-start; gap:12px; min-width:0; }
+.showcase-bottom-icon { display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; border-radius:12px; background:#e6eefc; color:#2457c5; font-size:1.1rem; }
+.showcase-bottom strong { display:block; color:#1b3152; font-size:.9rem; margin-bottom:4px; }
+.showcase-bottom p { color:#6a7b92; font-size:.76rem; line-height:1.55; }
+.showcase-cta { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:43px; padding:10px 15px; border:1px solid #2457c5; border-radius:11px; background:#2457c5; color:#fff; font:800 .79rem 'DM Sans',sans-serif; cursor:pointer; box-shadow:0 7px 16px rgba(37,99,235,.15); transition:transform .18s,background .18s; }
+.showcase-cta:hover { transform:translateY(-1px); background:#1d49a8; }
+.showcase-foot { margin:15px 0 2px; color:#8a98aa; font-size:.68rem; line-height:1.6; text-align:center; }
+@media(max-width:900px) { .showcase-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .showcase-heading { align-items:flex-start; flex-direction:column; } .showcase-count { white-space:normal; } }
+@media(max-width:600px) {
+ #scr-gate { align-items:stretch; padding:14px 12px 30px; }
+ #scr-gate > div:first-child { align-self:center; width:100%; }
+ .learning-showcase { margin:12px auto 0; padding:15px; border-radius:19px; }
+ .showcase-heading { gap:10px; margin-bottom:16px; }
+ .showcase-title { font-size:1.55rem; }
+ .showcase-subtitle { font-size:.83rem; }
+ .showcase-grid { gap:9px; }
+ .showcase-card { border-radius:13px; padding-bottom:12px; }
+ .showcase-art { height:86px; margin:7px 7px 0; border-radius:9px; }
+ .showcase-card-body { padding:10px 10px 0; }
+ .showcase-card h3 { font-size:.82rem; }
+ .showcase-card p { font-size:.71rem; }
+ .showcase-tag { font-size:.57rem; }
+ .showcase-bottom { align-items:stretch; flex-direction:column; padding:14px; }
+ .showcase-cta { width:100%; }
+}
+@media(max-width:360px) { .showcase-grid { grid-template-columns:1fr; } .showcase-art { height:105px; } }
+@media(prefers-reduced-motion:reduce) { .showcase-card,.showcase-cta { transition:none; } .showcase-card:hover,.showcase-cta:hover { transform:none; } }
+
 </style>
 </head>
 <body>
@@ -701,9 +752,75 @@ input,select,textarea { color:#172b4d; }
         <div class="error-msg" id="auth-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
         <div class="auth-security-note"><span class="auth-security-dot"></span> Güvenli hesap erişimi</div>
     </section>
+
+    <section class="learning-showcase" aria-labelledby="showcase-title">
+        <div class="showcase-heading">
+            <div>
+                <div class="showcase-kicker">TdevKuantum öğrenme ekosistemi</div>
+                <h2 class="showcase-title" id="showcase-title">Daha planlı çalış. Öğrendiklerini kalıcı hâle getir.</h2>
+                <p class="showcase-subtitle">Derslerini takip et, kendine uygun bir çalışma düzeni kur ve ilerlemeni tek bir öğrenme alanında gör. Tüm araçlar hesabına giriş yaptıktan sonra seni bekliyor.</p>
+            </div>
+            <div class="showcase-count">TEK PLATFORM · ÇOK YÖNLÜ ÖĞRENME</div>
+        </div>
+        <div class="showcase-grid">
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="48" y="17" width="86" height="78" rx="9" fill="#fff" stroke="#b7c9e8" stroke-width="1.5"/><rect x="60" y="29" width="62" height="8" rx="4" fill="#dbe7fb"/><rect x="60" y="45" width="42" height="5" rx="2.5" fill="#a9c2ee"/><rect x="60" y="56" width="57" height="5" rx="2.5" fill="#e4eaf4"/><rect x="60" y="67" width="49" height="5" rx="2.5" fill="#e4eaf4"/><circle cx="123" cy="77" r="16" fill="#2457c5"/><path d="m116 77 5 5 9-11" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M35 32h10M30 42h15M35 52h10" stroke="#91a9cf" stroke-width="3" stroke-linecap="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Ders alanı</span><h3>Sınıf ve ders modülleri</h3><p>Müfredatını keşfet, konu başlıklarına odaklan ve öğrenme içeriğine düzenli ulaş.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="43" y="17" width="94" height="78" rx="10" fill="#fff" stroke="#b5d9ce" stroke-width="1.5"/><rect x="55" y="29" width="70" height="8" rx="4" fill="#d9f0e7"/><g fill="#16866a"><rect x="56" y="46" width="29" height="15" rx="4"/><rect x="92" y="46" width="33" height="15" rx="4" opacity=".18"/><rect x="56" y="68" width="33" height="15" rx="4" opacity=".18"/><rect x="96" y="68" width="29" height="15" rx="4"/></g><path d="m63 53 3 3 6-7M104 75l3 3 6-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="35" cy="79" r="10" fill="#ccebe0"/><path d="m31 79 3 3 5-6" stroke="#16866a" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Konu pekiştirme</span><h3>Doğru / yanlış testleri</h3><p>Kısa sorularla konuları tekrar et, doğru ve yanlışlarını takip et.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><circle cx="90" cy="54" r="31" fill="#ffedcf"/><circle cx="90" cy="54" r="22" fill="#fff" stroke="#e8c78e" stroke-width="1.5"/><path d="M81 48a9 9 0 0 1 18 0c0 6-9 6-9 13" stroke="#b88936" stroke-width="3" stroke-linecap="round"/><circle cx="90" cy="67" r="2" fill="#b88936"/><path d="M90 13v7M90 88v7M49 54h7M124 54h7M61 25l5 5M114 78l5 5M119 25l-5 5M66 78l-5 5" stroke="#d4a75a" stroke-width="3" stroke-linecap="round"/><rect x="110" y="72" width="31" height="20" rx="6" fill="#b88936"/><path d="M118 82h15" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Yardımcı öğrenme</span><h3>TDEV-AI öğrenme desteği</h3><p>Konuları anlamana yardımcı olacak dijital öğrenme araçlarına eriş.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="45" y="18" width="90" height="76" rx="9" fill="#fff" stroke="#c7bce9" stroke-width="1.5"/><rect x="45" y="18" width="90" height="20" rx="9" fill="#6f5ab7"/><path d="M45 29h90v9H45z" fill="#6f5ab7"/><path d="M62 14v11M118 14v11" stroke="#6f5ab7" stroke-width="4" stroke-linecap="round"/><g fill="#e8e2fa"><rect x="58" y="48" width="14" height="12" rx="3"/><rect x="82" y="48" width="14" height="12" rx="3"/><rect x="106" y="48" width="14" height="12" rx="3"/></g><g fill="#8e7acb"><rect x="58" y="68" width="14" height="12" rx="3"/><rect x="82" y="68" width="14" height="12" rx="3"/></g><rect x="106" y="68" width="14" height="12" rx="3" fill="#d8c7f5"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Rutin oluştur</span><h3>Kişisel çalışma planı</h3><p>Günlük hedeflerini belirle, görevlerini tamamladıkça işaretle.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="55" y="15" width="70" height="83" rx="8" fill="#fff" stroke="#b8cbe8" stroke-width="1.5"/><path d="M70 35h40M70 46h40M70 57h30M70 68h38" stroke="#d7e2f2" stroke-width="4" stroke-linecap="round"/><path d="m108 74 8 8 17-22" stroke="#2457c5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><rect x="42" y="29" width="10" height="51" rx="5" fill="#d8e5fa"/><path d="M46 36v37" stroke="#6e96dc" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Kişisel arşiv</span><h3>Dijital not defteri</h3><p>Konu notlarını kaydet, düzenle ve ihtiyacın olduğunda tekrar aç.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><g transform="rotate(-9 77 57)"><rect x="43" y="25" width="67" height="52" rx="8" fill="#fff" stroke="#a8c2ee" stroke-width="1.5"/><rect x="53" y="37" width="47" height="6" rx="3" fill="#dce8fb"/><rect x="53" y="49" width="35" height="5" rx="2.5" fill="#a8c2ee"/><rect x="53" y="60" width="42" height="5" rx="2.5" fill="#e1e9f5"/></g><g transform="rotate(8 111 60)"><rect x="78" y="39" width="63" height="48" rx="8" fill="#2457c5"/><path d="M89 53h40M89 64h31M89 75h20" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".9"/></g><circle cx="133" cy="25" r="10" fill="#c5e9dc"/><path d="m128 25 3 3 6-7" stroke="#16866a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Aktif hatırlama</span><h3>Bilgi ve tekrar kartları</h3><p>Soru-cevap kartları hazırla, bildiklerini işaretle ve tekrar et.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="43" y="18" width="94" height="77" rx="10" fill="#fff" stroke="#e8c995" stroke-width="1.5"/><rect x="56" y="30" width="68" height="8" rx="4" fill="#f8e8c8"/><g fill="#f0d9ae"><rect x="56" y="47" width="12" height="12" rx="3"/><rect x="74" y="47" width="12" height="12" rx="3"/><rect x="92" y="47" width="12" height="12" rx="3"/><rect x="110" y="47" width="12" height="12" rx="3"/></g><path d="M57 77h15l7-8 9 12 10-18 8 10h17" stroke="#c58b2b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="125" cy="77" r="4" fill="#c58b2b"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Sınav takibi</span><h3>Deneme ve sonuç günlüğü</h3><p>Deneme sonuçlarını kaydet, soru sayılarını ve başarı oranını izle.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="43" y="19" width="94" height="75" rx="10" fill="#fff" stroke="#b8cbe8" stroke-width="1.5"/><path d="M57 77V61M76 77V49M95 77V57M114 77V36" stroke="#8caee9" stroke-width="10" stroke-linecap="round"/><path d="m55 51 20-13 18 8 24-20" stroke="#2457c5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="117" cy="26" r="5" fill="#2457c5"/><path d="M58 84h64" stroke="#dce5f2" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Gelişim analizi</span><h3>İlerleme ve istatistikler</h3><p>Çalışma kayıtlarını bir arada gör, ilerlemeni verilerle takip et.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><circle cx="90" cy="56" r="34" fill="#fff" stroke="#c6b9ec" stroke-width="1.5"/><circle cx="90" cy="56" r="25" fill="#f0ecfb" stroke="#b7a6e7" stroke-width="1.5"/><path d="M90 39v18l13 8" stroke="#6f5ab7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M64 34 57 27M116 34l7-7" stroke="#6f5ab7" stroke-width="3" stroke-linecap="round"/><rect x="114" y="69" width="26" height="20" rx="6" fill="#6f5ab7"/><path d="M122 79h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Odaklanma</span><h3>Odak sayacı</h3><p>Çalışma oturumlarını zamanla, dikkatini tek bir göreve yönelt.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="44" y="19" width="92" height="76" rx="10" fill="#fff" stroke="#b8cbe8" stroke-width="1.5"/><path d="M57 36h30M57 47h20" stroke="#dce5f2" stroke-width="4" stroke-linecap="round"/><circle cx="112" cy="40" r="12" fill="#fce5e7"/><path d="M112 34v8M112 47v1" stroke="#bd4b57" stroke-width="2.5" stroke-linecap="round"/><path d="M59 66h62M59 78h46" stroke="#e2e9f3" stroke-width="5" stroke-linecap="round"/><path d="m103 72 6 6 12-14" stroke="#16866a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Hedefli tekrar</span><h3>Yanlış defteri</h3><p>Zorlandığın konuları kaydet, tekrar tarihlerini takip et ve yeniden dene.</p></div>
+            </article>
+            <article class="showcase-card">
+                <div class="showcase-art" aria-hidden="true"><svg viewBox="0 0 180 112" fill="none"><rect x="48" y="20" width="84" height="72" rx="10" fill="#fff" stroke="#b8cbe8" stroke-width="1.5"/><rect x="61" y="33" width="58" height="7" rx="3.5" fill="#dce8fb"/><rect x="61" y="47" width="37" height="5" rx="2.5" fill="#b2c8ed"/><rect x="61" y="58" width="49" height="5" rx="2.5" fill="#e0e8f3"/><rect x="61" y="69" width="43" height="5" rx="2.5" fill="#e0e8f3"/><circle cx="119" cy="77" r="13" fill="#16866a"/><path d="m113 77 4 4 8-9" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="showcase-card-body"><span class="showcase-tag">Düzenli çalışma</span><h3>Tek çalışma alanı</h3><p>Plan, not, tekrar ve ilerleme araçlarını tek bir öğrenci panelinde birleştir.</p></div>
+            </article>
+        </div>
+        <div class="showcase-bottom">
+            <div class="showcase-bottom-copy">
+                <div class="showcase-bottom-icon" aria-hidden="true">✦</div>
+                <div><strong>Öğrenme yolculuğuna kendi hedefinle başla.</strong><p>Hesabına giriş yap; çalışma alanına geçip sana uygun düzeni oluşturmaya başla.</p></div>
+            </div>
+            <button type="button" class="showcase-cta" onclick="document.getElementById('auth-email').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('auth-email').focus({preventScroll:true})">Girişe dön <span aria-hidden="true">↗</span></button>
+        </div>
+        <p class="showcase-foot">TdevKuantum · Eğitim, teknoloji ve kişisel gelişim. Bazı araçların kullanılabilirliği hesap ve sunucu yapılandırmasına bağlıdır.</p>
+    </section>
+
 </div>
 
-<!-- ===== ŞİFRE SIFIRLAMA ===== -->
+<!-- ===== ŞİFRE SIFIRLAMA =====
 <div id="scr-password-reset" class="screen hidden">
     <section class="auth-card reset-card" aria-labelledby="reset-heading">
         <div class="verification-icon" aria-hidden="true">🔐</div>
