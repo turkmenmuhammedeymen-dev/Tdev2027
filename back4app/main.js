@@ -611,7 +611,33 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   q.equalTo('server', server === 'GB' ? 'UK' : server);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
-  if (row && row.get('subjects') && typeof row.get('subjects') === 'object') return row.get('subjects');
+  if (row && row.get('subjects') && typeof row.get('subjects') === 'object') {
+    const sourceUrl = safeText(row.get('sourceUrl'), 500);
+    const sourceName = safeText(row.get('sourceName'), 160);
+    const curriculumYear = safeText(row.get('curriculumYear'), 20);
+    const verifiedAt = row.get('verifiedAt');
+    const officialVerified = row.get('isOfficial') === true &&
+      /^https:\/\//i.test(sourceUrl) && !!sourceName && !!curriculumYear && !!verifiedAt;
+    const curriculumMeta = {
+      status: officialVerified ? 'verified' : 'unverified',
+      statusLabel: officialVerified ? 'Resmî kaynak ve sürüm bilgisi doğrulanmış' : 'Veritabanı kaydı var; resmîlik/güncellik doğrulanmamış',
+      countryCode: server === 'GB' ? 'UK' : server,
+      grade: gradeInput,
+      sourceUrl: /^https:\/\//i.test(sourceUrl) ? sourceUrl : '',
+      sourceName: sourceName || '',
+      curriculumYear: curriculumYear || '',
+      verifiedAt: verifiedAt ? new Date(verifiedAt).toISOString() : ''
+    };
+    const storedSubjects = row.get('subjects');
+    const decorated = {};
+    Object.keys(storedSubjects).forEach((subject) => {
+      const item = storedSubjects[subject];
+      decorated[subject] = item && typeof item === 'object' && !Array.isArray(item)
+        ? Object.assign({}, item, { curriculumMeta: curriculumMeta })
+        : item;
+    });
+    return decorated;
+  }
   return defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
 });
 
@@ -973,6 +999,25 @@ function tkLearningObjectives(server) {
   };
   return bank[server] || ['Explain the topic in your own words', 'Solve an example or connect it to everyday life'];
 }
+function tkCurriculumSource(server) {
+  const sources = {
+    TR: { name: 'Türkiye Cumhuriyeti Millî Eğitim Bakanlığı — Müfredat portalı', url: 'https://mufredat.meb.gov.tr/' },
+    US: { name: 'U.S. Department of Education — education information', url: 'https://www.ed.gov/' },
+    UK: { name: 'UK Department for Education — government education guidance', url: 'https://www.gov.uk/government/organisations/department-for-education' },
+    DE: { name: 'Kultusministerkonferenz (KMK) — German education system', url: 'https://www.kmk.org/' },
+    AZ: { name: 'Azerbaijan Ministry of Science and Education', url: 'https://edu.gov.az/' },
+    JP: { name: 'Japan Ministry of Education, Culture, Sports, Science and Technology (MEXT)', url: 'https://www.mext.go.jp/en/' }
+  };
+  if (server === 'GB') server = 'UK';
+  if (sources[server]) return Object.assign({ status: 'portal-not-verified', isOfficialCurriculum: false }, sources[server]);
+  return {
+    status: 'not-verified',
+    isOfficialCurriculum: false,
+    name: 'UNESCO-IBE global curriculum reference',
+    url: 'https://www.ibe.unesco.org/en/node/63'
+  };
+}
+
 function defaultCurriculum(gradeText, server, requestedCountryName) {
   const grade = String(gradeText).toUpperCase() === 'K' ? 0 : Number(gradeText);
   const gradeLabel = String(gradeText).toUpperCase() === 'K' ? 'Kindergarten' : String(grade);
@@ -980,6 +1025,8 @@ function defaultCurriculum(gradeText, server, requestedCountryName) {
   const subjects = tkStageSubjects(grade, server);
   const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',GB:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
   const countryName = safeText(requestedCountryName, 100) || countryNames[server] || server;
+  const source = tkCurriculumSource(server);
+  const curriculumMeta = { status: 'not-verified', statusLabel: 'Genel öğrenme rehberi — bu ülkenin güncel resmî müfredatı doğrulanmadı', countryCode: server, countryName: countryName, grade: gradeLabel, sourceUrl: source.url, sourceName: source.name, curriculumYear: '', verifiedAt: '' };
   const result = {};
   subjects.forEach((subject) => {
     const bank = tkLocalizedTopicFor(subject, grade, server) || tkTopicFor(subject, grade);
@@ -1001,14 +1048,10 @@ function defaultCurriculum(gradeText, server, requestedCountryName) {
       tag: server === 'TR' && grade === 8 ? 'lgs' : (grade >= 9 && grade <= 12 ? 'lise' : 'temel'),
       topics: topics,
       videos: topics.slice(0, 3).map(t => t.videos[0]),
-      meb1: 'Bu içerik doğrulanmış resmî müfredat kaydı değil, genel öğrenme rehberidir. Ülkenin güncel resmî kazanımları ayrıca kontrol edilmelidir.',
-      meb2: 'Konu başlıkları öğrenmeyi desteklemek için hazırlanmıştır; sınav kapsamı veya resmî kazanım garantisi değildir.',
-      mebLink: server === 'TR' ? 'https://mufredat.meb.gov.tr/' :
-        server === 'US' ? 'https://www.ed.gov/' :
-        (server === 'UK' || server === 'GB') ? 'https://www.gov.uk/government/organisations/department-for-education' :
-        server === 'DE' ? 'https://www.kmk.org/' :
-        server === 'AZ' ? 'https://edu.gov.az/' :
-        server === 'JP' ? 'https://www.mext.go.jp/en/' : 'https://www.unesco.org/en/education'
+      curriculumMeta: curriculumMeta,
+      meb1: 'Bu içerik genel öğrenme rehberidir; ' + countryName + ' için güncel resmî müfredat olarak doğrulanmamıştır. Resmî kazanım ve sınav kapsamı için aşağıdaki kaynakta ilgili eğitim kademesini kontrol et.',
+      meb2: 'Konu başlıkları öğrenmeyi desteklemek için hazırlanmıştır; resmî sınav kapsamı veya ulusal kazanım garantisi değildir.',
+      mebLink: source.url
     };
   });
   return result;
@@ -1334,7 +1377,7 @@ const TK_SCHEMA = {
   UserProfile: { username:'string', email:'string', displayName:'string', role:'string', grade:'number', school:'string', isBanned:'boolean', emailVerified:'boolean', referralCode:'string', createdAtISO:'string', lastLoginAtISO:'string' },
   EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', deliveryFailed:'boolean', createdAtISO:'string' },
   PasswordReset: { emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean' },
-  Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', subjects:'object', order:'number', active:'boolean' },
+  Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', subjects:'object', order:'number', active:'boolean', isOfficial:'boolean', sourceUrl:'string', sourceName:'string', curriculumYear:'string', verifiedAt:'date', language:'string', educationStage:'string' },
   Question: { grade:'number', server:'string', subject:'string', topic:'string', question:'string', options:'array', correctAnswer:'string', explanation:'string', difficulty:'string', active:'boolean', order:'number' },
   SupportMessage: { email:'string', name:'string', subject:'string', category:'string', message:'string', status:'string', userId:'string', createdAtISO:'string' },
   AuditLog: { actorId:'string', actorEmail:'string', action:'string', targetId:'string', details:'object', ipHash:'string', createdAtISO:'string' },
