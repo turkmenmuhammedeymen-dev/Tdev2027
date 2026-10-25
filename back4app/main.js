@@ -14,6 +14,9 @@
  *   GOOGLE_SCRIPT_URL (or GOOGLE_APPS_SCRIPT_URL) deployed Web App URL for sending verification emails
  *   RESEND_API_KEY       fallback provider API key
  *   EMAIL_FROM           verified sender, e.g. TdevKuantum <noreply@your-domain>
+ *   AI_API_KEY           optional server-only key for the TDEV-AI tutor
+ *   AI_MODEL             optional model name (default gpt-4o-mini)
+ *   AI_BASE_URL          optional HTTPS OpenAI-compatible chat-completions URL
  *
  * Optional:
  *   ALLOWED_ORIGINS      comma-separated site origins
@@ -874,7 +877,7 @@ Parse.Cloud.define('getQuestionsForGrade', async (request) => {
   if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12) return [];
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
-  if (/^(TR|US|UK|DE|AZ|JP)$/.test(server)) q.equalTo('server', server);
+  if (/^[A-Z]{2}$/.test(server)) q.equalTo('server', server);
   q.equalTo('active', true);
   q.limit(100);
   const rows = await q.find({ useMasterKey: true });
