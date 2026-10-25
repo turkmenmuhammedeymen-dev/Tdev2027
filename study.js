@@ -91,6 +91,7 @@
     document.getElementById('plan-date').value = today();
     document.getElementById('plan-minutes').value = '25';
     renderStudyPlans();
+    window.renderLearningProgress();
   };
   function renderStudyPlans() {
     const host = document.getElementById('study-plan-list'); if (!host) return;
@@ -108,12 +109,12 @@
     renderFocusClock();
     renderStudyPlans();
     const result = await cloud('getStudyPlans', {});
-    if (result && result.success && Array.isArray(result.items)) { mergeCloud('plans', result.items); renderStudyPlans(); }
+    if (result && result.success && Array.isArray(result.items)) { mergeCloud('plans', result.items); renderStudyPlans(); window.renderLearningProgress(); }
   };
   window.toggleStudyPlan = async function (itemId) {
     const list = read('plans'); const item = list.find(function (x) { return x.id === itemId; }); if (!item) return;
     item.done = !item.done; item.updatedAt = new Date().toISOString(); item.completedAt = item.done ? item.updatedAt : '';
-    write('plans', list); renderStudyPlans(); await cloud('saveStudyPlan', { item: item }); window.renderLearningProgress();
+    write('plans', list); renderStudyPlans(); const result = await cloud('saveStudyPlan', { item: item }); if (!result || result.success !== true) notify('Plan durumu bu cihazda güncellendi; bulut eşitlemesi doğrulanamadı.'); window.renderLearningProgress();
   };
   function topicNoteId(grade, server, subject, topic) {
     const slug = function (value) {
@@ -152,6 +153,7 @@
     write('notes', list);
     const result = await cloud('saveStudyNote', { item: item });
     renderStudyNotes();
+    window.renderLearningProgress();
     notify(result && result.success === true
       ? 'Konu notu kaydedildi ve buluta eşitlendi.'
       : 'Konu notu bu cihazda kaydedildi; bulut eşitlemesi doğrulanamadı.');
@@ -171,7 +173,7 @@
     const list = read('notes'); list.unshift(item); write('notes', list);
     const result = await cloud('saveStudyNote', { item: item });
     notify(result && result.success === true ? 'Not kaydedildi ve buluta eşitlendi.' : 'Not bu cihazda kaydedildi. Bulut eşitlemesi doğrulanamadı.');
-    document.getElementById('study-note-form').reset(); renderStudyNotes();
+    document.getElementById('study-note-form').reset(); renderStudyNotes(); window.renderLearningProgress();
   };
   function renderStudyNotes() {
     const host = document.getElementById('study-note-list'); if (!host) return;
@@ -186,7 +188,7 @@
   window.loadStudyNotes = async function () {
     renderStudyNotes();
     const result = await cloud('getStudyNotes', {});
-    if (result && result.success && Array.isArray(result.items)) { mergeCloud('notes', result.items); renderStudyNotes(); }
+    if (result && result.success && Array.isArray(result.items)) { mergeCloud('notes', result.items); renderStudyNotes(); window.renderLearningProgress(); }
   };
   window.addStudyCard = async function (event) {
     event.preventDefault();
@@ -292,7 +294,7 @@
   window.loadStudyMistakes=async function(){
     const date=document.getElementById('mistake-review-date'); if(date&&!date.value) date.value=today();
     renderStudyMistakes(); const result=await cloud('getStudyMistakes',{});
-    if(result&&result.success&&Array.isArray(result.items)){mergeCloud('mistakes',result.items);renderStudyMistakes();}
+    if(result&&result.success&&Array.isArray(result.items)){mergeCloud('mistakes',result.items);renderStudyMistakes();} window.renderLearningProgress();
   };
   window.toggleStudyMistake=async function(itemId){
     const list=read('mistakes'), item=list.find(function(x){return x.id===itemId;}); if(!item)return;
@@ -375,7 +377,7 @@
     const data = { exportedAt: new Date().toISOString(), plans: read('plans'), notes: read('notes'), cards: read('cards'), practice: read('practice'), mistakes: read('mistakes') };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob), a = document.createElement('a');
-    a.href = url; a.download = 'tdevkuantum-ogrenme-verilerim.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    a.href = url; a.download = 'tdevkuantum-ogrenme-verilerim.json'; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     notify('Verilerin dışa aktarıldı.');
   };
   window.clearLocalLearningData = function () {
@@ -384,7 +386,7 @@
       localStorage.removeItem(KEYS[key]);
       if (LEGACY_KEYS[key]) localStorage.removeItem(LEGACY_KEYS[key]);
     });
-    renderStudyPlans(); renderStudyNotes(); renderStudyCards(); renderPracticeLog(); window.renderLearningProgress();
+    renderStudyPlans(); renderStudyNotes(); renderStudyCards(); renderPracticeLog(); renderStudyMistakes(); window.renderLearningProgress();
     notify('Bu cihazdaki öğrenme verileri temizlendi.');
   };
   document.addEventListener('DOMContentLoaded', function () {
