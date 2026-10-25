@@ -799,11 +799,11 @@ Parse.Cloud.define('registerUser', async (request) => {
   let grade = Number(gradeInput);
   let stage = educationStage;
   if (profileType === 'student') {
-    if (!/^(K|[1-9]|1[0-3])$/.test(gradeInput) || (gradeInput === 'K' && countryCode !== 'US')) {
-      return resultError('Öğrenci hesabı için geçerli sınıf seçmelisin.', 'GRADE_REQUIRED');
+    if (!/^(?:[1-9]|1[0-2])$/.test(gradeInput)) {
+      return resultError('Öğrenci sınıfı 1 ile 12 arasında olmalıdır.', 'GRADE_REQUIRED');
     }
-    grade = gradeInput === 'K' ? 0 : Number(gradeInput);
-    stage = grade === 0 ? 'primary' : (grade <= 4 ? 'primary' : (grade <= 8 ? 'middle' : 'high'));
+    grade = Number(gradeInput);
+    stage = grade <= 4 ? 'primary' : (grade <= 8 ? 'middle' : 'high');
     if (!schoolName || !schoolAddress) return resultError('Öğrenci hesabı için okul adı ve okul adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
   } else if (profileType === 'guardian') {
     stage = ''; grade = 0;
