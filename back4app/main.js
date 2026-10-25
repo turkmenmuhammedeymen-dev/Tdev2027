@@ -442,8 +442,8 @@ function academicYearForCountry(countryCode, now) {
   return String(year) + '-' + String(year + 1);
 }
 function normalizedSchoolKey(countryCode, schoolName, schoolAddress) {
-  const name = safeText(schoolName, 160).toLocaleLowerCase('tr').replace(/\\s+/g, ' ').trim();
-  const address = safeText(schoolAddress, 240).toLocaleLowerCase('tr').replace(/\\s+/g, ' ').trim();
+  const name = safeText(schoolName, 160).toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
+  const address = safeText(schoolAddress, 240).toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
   return name && address ? sha256(safeText(countryCode, 2).toUpperCase() + '|' + name + '|' + address) : '';
 }
 async function applyAnnualGradePromotion(user) {
@@ -816,7 +816,7 @@ Parse.Cloud.define('registerUser', async (request) => {
   if (profileType === 'principal' && (!schoolName || !schoolAddress)) {
     return resultError('Müdür hesabı için okul adı ve adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
   }
-  const schoolKey = (schoolName && schoolAddress) ? sha256(countryCode + '|' + schoolName.toLocaleLowerCase('tr').replace(/\\s+/g,' ').trim() + '|' + schoolAddress.toLocaleLowerCase('tr').replace(/\\s+/g,' ').trim()) : '';
+  const schoolKey = (schoolName && schoolAddress) ? sha256(countryCode + '|' + schoolName.toLocaleLowerCase('tr').replace(/\s+/g,' ').trim() + '|' + schoolAddress.toLocaleLowerCase('tr').replace(/\s+/g,' ').trim()) : '';
   user.set('role', 'member');
   user.set('profileType', profileType);
   user.set('countryCode', countryCode);
