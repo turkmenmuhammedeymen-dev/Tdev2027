@@ -28,7 +28,7 @@ Never put an AI key in `index.html`, `study.js`, a public repository, or a user-
 
 ## Curriculum accuracy
 
-The country selector includes a broad list of countries. The built-in curriculum is a **general learning guide**, not a claim that all national curricula have been completely verified. Current built-in subject profiles are most detailed for Türkiye, the United States, the United Kingdom, Germany, Azerbaijan and Japan. Other countries receive a clearly labelled general guide until official, grade-specific records are added.
+The country selector includes a broad list of countries. The built-in curriculum is a **general learning guide**, not a claim that all national curricula have been completely verified. Localized subject-name profiles are included for a selection of countries. The built-in topics remain general learning guides; country-specific official syllabus coverage is only assured when a verified record exists in Back4App. Other countries receive a clearly labelled general guide until official, grade-specific records are added.
 
 For an official country curriculum, create a `Curriculum` record in Back4App for each `server` country code and `grade` (1–12), with the verified subject map in `subjects`. Each subject may contain:
 - `icon`, `desc`, `tag`
