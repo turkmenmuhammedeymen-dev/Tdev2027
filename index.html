@@ -1062,12 +1062,12 @@ input,select,textarea { color:#172b4d; }
 
             <!-- BOTLAR -->
             <div id="tab-bots" class="tab">
-                <div class="sec-title">AKTİF — <span>SİSTEM BOTLARI</span></div>
+                <div class="sec-title">ÖĞRENME <span>ARAÇLARI</span></div>
                 <div class="bots-grid">
-                    <div class="bot-card"><div class="bot-header"><div class="bot-name">ANALİZ-BOT-V3</div><div class="bot-status"><div class="status-dot status-online"></div><span style="color:var(--green)">ONLİNE</span></div></div><div class="bot-desc">MEB müfredatını tarar, LGS/YKS soru havuzu oluşturur.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">2.4K</div><div class="bot-stat-lbl">SORU</div></div><div class="bot-stat"><div class="bot-stat-val">99.2%</div><div class="bot-stat-lbl">DOĞRULUK</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:87%"></div></div></div>
-                    <div class="bot-card"><div class="bot-header"><div class="bot-name">EYMEN-BOT-V2</div><div class="bot-status"><div class="status-dot status-active"></div><span style="color:var(--accent)">AKTİF</span></div></div><div class="bot-desc">Kurucu Muhammed Eymen'in kişisel asistanı. Platform yönetimi.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">∞</div><div class="bot-stat-lbl">YETKİ</div></div><div class="bot-stat"><div class="bot-stat-val">7/24</div><div class="bot-stat-lbl">AKTİF</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:100%;background:linear-gradient(90deg,var(--gold2),var(--gold))"></div></div></div>
-                    <div class="bot-card"><div class="bot-header"><div class="bot-name">VERİ-BOT-V1</div><div class="bot-status"><div class="status-dot status-active"></div><span style="color:var(--accent)">AKTİF</span></div></div><div class="bot-desc">Öğrenci performans verisi toplar, çalışma planı oluşturur.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">5.8K</div><div class="bot-stat-lbl">VERİ</div></div><div class="bot-stat"><div class="bot-stat-val">0.2s</div><div class="bot-stat-lbl">YANIT</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:73%"></div></div></div>
-                    <div class="bot-card"><div class="bot-header"><div class="bot-name">VİDEO-BOT-V1</div><div class="bot-status"><div class="status-dot status-standby"></div><span style="color:var(--gold)">STANDBY</span></div></div><div class="bot-desc">Video içeriklerini sınıflandırır, transkript oluşturur.</div><div class="bot-stats"><div class="bot-stat"><div class="bot-stat-val">342</div><div class="bot-stat-lbl">VİDEO</div></div><div class="bot-stat"><div class="bot-stat-val">56%</div><div class="bot-stat-lbl">KATALOG</div></div></div><div class="bot-progress"><div class="bot-progress-fill" style="width:56%;background:linear-gradient(90deg,var(--gold2),var(--gold))"></div></div></div>
+                    <article class="bot-card"><div class="bot-header"><div class="bot-name">KONU REHBERİ</div><span class="bot-status">DERS İÇERİĞİ</span></div><div class="bot-desc">Seçtiğin ülke ve sınıfa göre ders başlıklarını, konu açıklamalarını, öğrenme hedeflerini ve kaynak aramalarını açar. Resmî müfredat olduğu ayrıca belirtilmedikçe içerik genel rehber olarak sunulur.</div></article>
+                    <article class="bot-card"><div class="bot-header"><div class="bot-name">KİŞİSEL NOTLAR</div><span class="bot-status">KAYIT</span></div><div class="bot-desc">Konuya özel notlarını cihazda saklar ve oturum açıldığında Back4App bulut eşitlemesini dener. Eşitleme sonucu ekranda açıkça bildirilir.</div></article>
+                    <article class="bot-card"><div class="bot-header"><div class="bot-name">TDEV-AI</div><span class="bot-status">YAPILANDIRMAYA BAĞLI</span></div><div class="bot-desc">Back4App Config üzerinden bir AI sağlayıcısı yapılandırıldığında soruları adım adım açıklayabilir. Sağlayıcı ayarı yoksa bu durum gizlenmez ve sınırlı konu rehberi kullanılır.</div></article>
+                    <article class="bot-card"><div class="bot-header"><div class="bot-name">ÇALIŞMA ARAÇLARI</div><span class="bot-status">KULLANICI KONTROLÜ</span></div><div class="bot-desc">Plan, bilgi kartı, tekrar oturumu ve yanlış defteri öğrencinin kendi hedeflerini takip etmesi için tasarlanmıştır; resmî sınav sonucu veya başarı garantisi üretmez.</div></article>
                 </div>
             </div>
 
@@ -1519,7 +1519,7 @@ function launch(g) {
     document.getElementById('grade-label').innerText = g + '. SINIF';
     document.getElementById('role-dot').style.cssText = 'background:' + roleColors[curRole] + ';box-shadow:0 0 6px ' + roleColors[curRole];
     document.getElementById('role-name-disp').innerText = roleNames[curRole] || 'KULLANICI';
-    document.getElementById('server-lbl').innerText = 'SERVER: '+curServer;
+    document.getElementById('server-lbl').innerText = 'ÜLKE: ' + (document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer);
     if(curRole === 'founder') document.getElementById('nav-dev').style.display = 'flex';
     loadLessonsFromCloud(g, curServer);
     initQuiz();
@@ -1806,7 +1806,7 @@ async function sendMsg() {
             try {
                 const result = await Parse.Cloud.run('tdevAIChat', { message: text, grade: String(curGrade || ''), country: curServer });
                 if (result && result.success && result.answer) responseText = String(result.answer);
-                else if (result && result.error) responseText = String(result.error);
+                
             } catch (cloudError) {
                 console.info('[TDEV-AI] Cloud tutor unavailable:', cloudError && cloudError.message);
             }
