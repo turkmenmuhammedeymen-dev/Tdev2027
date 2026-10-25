@@ -654,6 +654,57 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   return defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
 });
 
+Parse.Cloud.define('getCurriculumCoverage', async (request) => {
+  // This endpoint reports source/coverage metadata only; it never claims that
+  // every country's syllabus has been imported into the database.
+  requireUser(request);
+  const currentYear = '2026-2027';
+  let database = { totalRecords: null, recordsMarkedOfficial: null, countAvailable: false };
+  try {
+    const totalQuery = new Parse.Query('Curriculum');
+    const officialQuery = new Parse.Query('Curriculum');
+    officialQuery.equalTo('isOfficial', true);
+    const counts = await Promise.all([
+      totalQuery.count({ useMasterKey: true }),
+      officialQuery.count({ useMasterKey: true })
+    ]);
+    database = {
+      totalRecords: Number(counts[0]) || 0,
+      recordsMarkedOfficial: Number(counts[1]) || 0,
+      countAvailable: true
+    };
+  } catch (error) {
+    console.warn('[TdevKuantum] Curriculum coverage count unavailable:', String(error && error.message || error).slice(0, 180));
+  }
+  return {
+    success: true,
+    currentYear: currentYear,
+    checkedAt: '2026-10-25',
+    database: database,
+    sources: [
+      { id: 'meb-programs', countryCode: 'TR', category: 'general', name: 'MEB Talim ve Terbiye Kurulu — Öğretim Programları', url: 'https://mufredat.meb.gov.tr/Programlar.aspx', sourceType: 'official', note: 'Resmî program listesi; platforma aktarım ve sürüm doğrulaması ayrıca yapılmalıdır.' },
+      { id: 'tymm-programs', countryCode: 'TR', category: 'general', name: 'Türkiye Yüzyılı Maarif Modeli — Öğretim Programları', url: 'https://tymm.meb.gov.tr/ogretim-programlari', sourceType: 'official', note: 'Ders, kademe, sınıf ve ünite ayrıntıları resmî portalda kontrol edilir.' },
+      { id: 'tymm-basic-plans', countryCode: 'TR', category: 'general', name: 'TYMM 2026–2027 — Temel Eğitim Çerçeve Planları', url: 'https://tymm.meb.gov.tr/taslak-cerceve-planlari/temel-egitim', sourceType: 'official', note: '2026–2027 uygulama bilgisi ve yıllık planlar için.' },
+      { id: 'tymm-secondary-plans', countryCode: 'TR', category: 'general', name: 'TYMM 2026–2027 — Ortaöğretim Çerçeve Planları', url: 'https://tymm.meb.gov.tr/taslak-cerceve-planlari/ortaogretim', sourceType: 'official', note: '2026–2027 lise uygulama bilgisi ve yıllık planlar için.' },
+      { id: 'vocational-programs', countryCode: 'TR', category: 'vocational', name: 'MTEGM — Mesleki ve Teknik Öğretim Programları', url: 'https://meslek.meb.gov.tr/', sourceType: 'official', note: 'Alan, dal, sınıf, ders bilgi formları ve çerçeve programları; okul türü ve öğretim yılına göre kontrol edilmelidir.' },
+      { id: 'vocational-fields', countryCode: 'TR', category: 'vocational', name: 'Mesleğim Hayatım — Alan/Dal Listeleri', url: 'https://meslegimhayatim.meb.gov.tr/meslegim-gelecegim-ve-kariyerim/alandal-listesi', sourceType: 'official', note: 'Güncel alan/dal listeleri için resmî bağlantı.' },
+      { id: 'imamhatip-programs', countryCode: 'TR', category: 'imamhatip', name: 'Din Öğretimi Genel Müdürlüğü — Öğretim Programları', url: 'https://dogm.meb.gov.tr/www/ogretim-programlari-arsivi/icerik/2064', sourceType: 'official', note: 'İmam hatip ortaokulu ve Anadolu imam hatip lisesi meslek dersleri; ders ve sınıf bazında program yılı ayrıca kontrol edilmelidir.' },
+      { id: 'imamhatip-timetables', countryCode: 'TR', category: 'imamhatip', name: 'Din Öğretimi Genel Müdürlüğü — Haftalık Ders Çizelgeleri', url: 'https://dogm.meb.gov.tr/www/haftalik-ders-cizelgeleri/icerik/11%20class%3D', sourceType: 'official', note: 'İHO ve AİHL ders çizelgeleri ve uygulama yılı için.' },
+      { id: 'uk-national-curriculum', countryCode: 'GB', category: 'international', name: 'United Kingdom — National Curriculum (England)', url: 'https://www.gov.uk/national-curriculum', sourceType: 'official', note: 'Bu kaynak İngiltere içindir; İskoçya, Galler ve Kuzey İrlanda için ayrı kaynaklar gerekir.' },
+      { id: 'germany-kmk', countryCode: 'DE', category: 'international', name: 'Deutschland — Kultusministerkonferenz (KMK)', url: 'https://www.kmk.org/', sourceType: 'official', note: 'Eğitim düzenlemeleri eyaletlere göre değişir; tek bir ulusal konu listesi olarak yorumlanmamalıdır.' },
+      { id: 'us-education', countryCode: 'US', category: 'international', name: 'United States — U.S. Department of Education', url: 'https://www.ed.gov/', sourceType: 'official', note: 'ABD’de müfredat ve standartlar eyalet/yerel düzeyde değişir; bu bağlantı tek bir ulusal müfredat anlamına gelmez.' },
+      { id: 'azerbaijan-ministry', countryCode: 'AZ', category: 'international', name: 'Azerbaijan — Ministry of Science and Education', url: 'https://edu.gov.az/en', sourceType: 'official', note: 'Ülke, sınıf ve öğretim yılı bazında içerik ayrıca doğrulanmalıdır.' },
+      { id: 'japan-mext', countryCode: 'JP', category: 'international', name: 'Japan — Ministry of Education (MEXT)', url: 'https://www.mext.go.jp/en/', sourceType: 'official', note: 'Resmî eğitim rehberleri; ders ve sınıf bazında aktarım ayrıca doğrulanmalıdır.' },
+      { id: 'unesco-ibe', countryCode: 'GLOBAL', category: 'international', name: 'UNESCO-IBE — Curriculum Resources', url: 'https://www.ibe.unesco.org/en', sourceType: 'reference', note: 'Uluslararası başvuru kaynağıdır; tek başına bir ülkenin güncel resmî müfredatının doğrulandığı anlamına gelmez.' }
+    ],
+    notices: [
+      'Ülke seçimi, o ülkenin bütün ders ve sınıflarının platforma aktarılmış olduğunu göstermez.',
+      'Genel öğrenme rehberi ile resmî öğretim programı ayrı tutulur.',
+      'Meslekî-teknik ve imam hatip içerikleri alan/dal, okul türü, sınıf ve program yılı bazında doğrulanmadan resmî olarak işaretlenmemelidir.'
+    ]
+  };
+});
+
 // Seed content is a learning guide, not a claim that every item is an official
 // national syllabus. The database Curriculum class takes precedence for verified
 // country/grade-specific material. Unverified countries are labelled accordingly.
