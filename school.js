@@ -8,7 +8,7 @@ let activeClass=null, profile=null, classrooms=[];
 function ensureRegistrationFields(){
  const root=$('reg-student-fields'); if(!root)return;
  if(!$('reg-country-code')){const wrap=document.createElement('div');wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-country-code">Ülke / müfredat (zorunlu)<select id="reg-country-code" required><option value="TR">Türkiye</option><option value="AZ">Azerbaycan</option><option value="GB">Birleşik Krallık</option><option value="DE">Almanya</option><option value="US">Amerika Birleşik Devletleri</option><option value="JP">Japonya</option></select></label>';root.prepend(wrap);}
- if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-school-name">Okul adı (zorunlu)<input id="reg-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
+ if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-school-name">Okul adı (zorunlu)<input id="reg-student-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-student-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
  if(!$('reg-guardian-note')){const wrap=document.createElement('div');wrap.id='reg-guardian-note';wrap.className='school-account-extra';wrap.hidden=true;wrap.innerHTML='<p class="school-note">Veli hesabında okul veya sınıf seçimi gerekmez. Hesap oluşturduktan sonra öğrencinin TDEV ID kodunu “Öğrencilerim” bölümüne girerek bağlantı kurabilirsin.</p>';root.append(wrap);}
 }
 window.updateRegistrationFields=function(){
@@ -20,10 +20,10 @@ window.updateRegistrationFields=function(){
  if(school)school.style.display=type==='student'?'':'none';
  if(guardian)guardian.hidden=type!=='guardian';
  const grade=$('reg-grade');if(grade&&!grade.options.length||grade&&grade.options.length<2){if(grade){grade.innerHTML='<option value="">Sınıfını seç</option>'+Array.from({length:13},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. sınıf</option>').join('');}}
- ['reg-grade','reg-school-name','reg-school-address'].forEach(id=>{const el=$(id);if(el)el.required=type==='student';});
+ ['reg-grade','reg-student-school-name','reg-student-school-address'].forEach(id=>{const el=$(id);if(el)el.required=type==='student';});
  ['reg-stage'].forEach(id=>{const el=$(id);if(el)el.required=['teacher','principal'].includes(type);});
- if($('reg-school-name') && type!=='student' && type!=='teacher' && type!=='principal') $('reg-school-name').required=false;
- if($('reg-school-address') && type!=='student' && type!=='teacher' && type!=='principal') $('reg-school-address').required=false;
+ if($('reg-school-name')) $('reg-school-name').required=['teacher','principal'].includes(type);
+ if($('reg-school-address')) $('reg-school-address').required=['teacher','principal'].includes(type);
 };
 function showPanel(){
  const tab=$('tab-school');if(!tab)return;
