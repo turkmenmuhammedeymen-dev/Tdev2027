@@ -814,16 +814,6 @@ Parse.Cloud.define('registerUser', async (request) => {
   const existing = await existingQuery.first({ useMasterKey: true });
   if (existing) return resultError('Bu e-posta ile bir hesap zaten var. Giriş yapmayı dene.', 'EMAIL_EXISTS');
 
-  const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
-  if (verificationRequired) {
-    try {
-      await assertVerificationProviderReady();
-    } catch (error) {
-      console.error('[TdevKuantum] Registration blocked: email provider is not ready:', String(error && error.message || error).slice(0, 300));
-      return resultError('E-posta servisi hazır değil; hesap oluşturulmadı. ' + String(error && error.message || error).slice(0, 400), 'EMAIL_PROVIDER_NOT_READY');
-    }
-  }
-
   const user = new Parse.User();
   user.set('username', email);
   user.set('email', email);
@@ -861,6 +851,16 @@ Parse.Cloud.define('registerUser', async (request) => {
     return resultError('Müdür hesabı için okul adı ve adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
   }
   const schoolKey = (schoolName && schoolAddress) ? sha256(countryCode + '|' + schoolName.toLocaleLowerCase('tr').replace(/\s+/g,' ').trim() + '|' + schoolAddress.toLocaleLowerCase('tr').replace(/\s+/g,' ').trim()) : '';
+  const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
+  if (verificationRequired) {
+    try {
+      await assertVerificationProviderReady();
+    } catch (error) {
+      console.error('[TdevKuantum] Registration blocked: email provider is not ready:', String(error && error.message || error).slice(0, 300));
+      return resultError('E-posta servisi hazır değil; hesap oluşturulmadı. ' + String(error && error.message || error).slice(0, 400), 'EMAIL_PROVIDER_NOT_READY');
+    }
+  }
+
   user.set('role', 'member');
   user.set('profileType', profileType);
   user.set('countryCode', countryCode);
