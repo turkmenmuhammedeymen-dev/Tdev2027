@@ -2377,7 +2377,7 @@ async function sendMsg() {
                     : null;
                 if (topicMatch) responseText = topicMatch.item.title + '\n\n' + topicMatch.item.explanation;
                 else if (low.includes('merhaba') || low.includes('selam')) responseText = 'Merhaba! Ben TDEV-AI eğitim yardımcısıyım. Hangi sınıfta olduğunu, dersi ve takıldığın soruyu yaz; adım adım açıklamaya çalışayım.';
-                else responseText = 'Mesajını aldım. Şu anda sunucuda bir yapay zekâ sağlayıcısı yapılandırılmadıysa cevaplar sınırlı kalabilir. Tam yanıtlar için Back4App Config içine AI_API_KEY ve isteğe bağlı AI_MODEL eklenmeli. İstersen sorunu ders, sınıf ve konu bilgisiyle yeniden yaz; elimdeki konu rehberinde eşleşme varsa açıklamasını gösterebilirim.';
+                else responseText = 'Mesajını aldım. Sunucuda yapay zekâ sağlayıcısı yapılandırılmadıysa cevaplar sınırlı kalabilir. Tam yanıtlar için Back4App Config içine NVIDIA_API_KEY (NVIDIA NIM) veya AI_API_KEY eklenmeli; NVIDIA için NVIDIA_BASE_URL ve isteğe bağlı NVIDIA_MODEL kullanılabilir. İstersen sorunu ders, sınıf ve konu bilgisiyle yeniden yaz; elimdeki konu rehberinde eşleşme varsa açıklamasını gösterebilirim.';
             }
         }
         typing.remove();
