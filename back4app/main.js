@@ -474,6 +474,7 @@ function academicProfile(user) {
     profileType: profileType,
     publicId: safeText(user.get('publicId'), 40),
     displayName: safeText(user.get('displayName') || user.get('name'), 100),
+    avatarUrl: safeText(user.get('avatarUrl'), 500),
     countryCode: countryCode,
     grade: profileType === 'student' ? (grade === 0 && countryCode === 'US' ? 'K' : String(grade || 8)) : '',
     educationStage: profileType === 'guardian' ? '' : educationStage,
@@ -638,11 +639,11 @@ Parse.Cloud.define('getClassroomRoster', async (request) => {
     const memberEvents = events.filter(e => e.get('userId') === uid);
     const quizzes = memberEvents.filter(e => e.get('eventType') === 'quiz_answer' && e.get('hasAnswer') === true);
     const correct = quizzes.filter(e => e.get('isCorrect') === true).length;
-    let publicInfo = { id: uid, name: uid === user.id ? safeText(user.get('displayName') || user.get('name'), 100) : 'Öğrenci', role: member.get('role') };
+    let publicInfo = { id: uid, userId: uid, name: uid === user.id ? safeText(user.get('displayName') || user.get('name'), 100) : 'Öğrenci', role: member.get('role') };
     if (access.role !== 'student') {
       const userQuery = new Parse.Query(Parse.User); userQuery.equalTo('objectId', uid);
       const memberUser = await userQuery.first({ useMasterKey: true });
-      if (memberUser) publicInfo = { id: uid, name: safeText(memberUser.get('displayName') || memberUser.get('name') || memberUser.get('username'), 100), email: safeText(memberUser.get('email') || memberUser.get('username'), 160), role: member.get('role') };
+      if (memberUser) publicInfo = { id: uid, userId: uid, publicId: safeText(memberUser.get('publicId'), 40), profileType: safeText(memberUser.get('profileType'), 20), name: safeText(memberUser.get('displayName') || memberUser.get('name') || memberUser.get('username'), 100), email: safeText(memberUser.get('email') || memberUser.get('username'), 160), role: member.get('role') };
     }
     roster.push(Object.assign(publicInfo, {
       activityCount: memberEvents.length,
