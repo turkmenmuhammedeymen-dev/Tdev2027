@@ -1674,13 +1674,15 @@ function launch(g) {
     goTo('');
     document.getElementById('app').style.display = 'flex';
     document.getElementById('grade-label').innerText = g === 'K' ? 'KINDERGARTEN' : g + '. SINIF';
-    document.getElementById('role-dot').style.cssText = 'background:' + roleColors[curRole] + ';box-shadow:0 0 6px ' + roleColors[curRole];
+    const roleColor = roleColors[curRole] || '#9ca3af';
+    document.getElementById('role-dot').style.cssText = 'background:' + roleColor + ';box-shadow:0 0 6px ' + roleColor;
     document.getElementById('role-name-disp').innerText = roleNames[curRole] || 'KULLANICI';
     document.getElementById('server-lbl').innerText = 'ÜLKE: ' + (document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer);
-    if(curRole === 'founder') document.getElementById('nav-dev').style.display = 'flex';
+    const devNav = document.getElementById('nav-dev');
+    if (devNav) devNav.style.display = curRole === 'founder' ? 'flex' : 'none';
     loadLessonsFromCloud(g, curServer);
     initQuiz();
-    refreshDevPanel();
+    if (curRole === 'founder' || curRole === 'admin') refreshDevPanel();
     showNotif('✓ '+g+'. SINIF YÜKLENDİ');
 }
 
@@ -1879,14 +1881,6 @@ async function generateCurrentLessonNote() {
 function openYT(q) {
     window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank', 'noopener,noreferrer');
 }
-function backLesson() {
-    loadLessonsFromCloud(curGrade, curServer);
-}
-
-function openYT(q) {
-    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
-}
-
 function backLesson() {
     loadLessonsFromCloud(curGrade, curServer);
 }
