@@ -467,14 +467,16 @@ async function applyAnnualGradePromotion(user) {
 function academicProfile(user) {
   const countryCode = safeText(user.get('countryCode') || 'TR', 2).toUpperCase();
   const rawGrade = user.get('grade');
-  const profileType = ['student','teacher','principal'].includes(user.get('profileType')) ? user.get('profileType') : 'student';
+  const profileType = ['student','teacher','principal','guardian'].includes(user.get('profileType')) ? user.get('profileType') : 'student';
   const grade = Number.isFinite(Number(rawGrade)) && Number(rawGrade) >= 0 ? Number(rawGrade) : 8;
   const educationStage = safeText(user.get('educationStage'), 20) || (grade <= 4 ? 'primary' : (grade <= 8 ? 'middle' : 'high'));
   return {
     profileType: profileType,
+    publicId: safeText(user.get('publicId'), 40),
+    displayName: safeText(user.get('displayName') || user.get('name'), 100),
     countryCode: countryCode,
     grade: profileType === 'student' ? (grade === 0 && countryCode === 'US' ? 'K' : String(grade || 8)) : '',
-    educationStage: educationStage,
+    educationStage: profileType === 'guardian' ? '' : educationStage,
     schoolName: safeText(user.get('schoolName'), 160),
     schoolAddress: safeText(user.get('schoolAddress'), 240),
     schoolKey: safeText(user.get('schoolKey'), 64),
