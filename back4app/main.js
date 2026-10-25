@@ -529,7 +529,7 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(gradeNumber) || gradeNumber < 1 || gradeNumber > 12 || !/^[A-Z]{2}$/.test(server)) return {};
   const q = new Parse.Query('Curriculum');
   q.equalTo('grade', gradeNumber);
-  q.equalTo('server', server);
+  q.equalTo('server', server === 'GB' ? 'UK' : server);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
   if (row && row.get('subjects') && typeof row.get('subjects') === 'object') return row.get('subjects');
@@ -720,6 +720,7 @@ function tkStageSubjects(grade, server) {
     NG: ['English Studies','Mathematics','Basic Science','Social Studies','Civic Education','Computer Studies']
   };
   if (profiles[server]) return profiles[server];
+  if (server === 'GB') return profiles.UK;
   return ['Language Arts','Mathematics','Science','Social Studies','Languages','Digital Literacy','Arts','Physical Education'];
 }
 function tkTopicFor(subject, grade) {
@@ -754,8 +755,8 @@ function tkTopicFor(subject, grade) {
 function defaultCurriculum(gradeText, server, requestedCountryName) {
   const grade = Number(gradeText);
   const subjects = tkStageSubjects(grade, server);
-  const knownCountry = ['TR','US','UK','DE','AZ','JP'].includes(server);
-  const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
+  const knownCountry = ['TR','US','UK','GB','DE','AZ','JP'].includes(server);
+  const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',GB:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
   const countryName = safeText(requestedCountryName, 100) || countryNames[server] || server;
   const result = {};
   subjects.forEach((subject) => {
@@ -782,7 +783,7 @@ function defaultCurriculum(gradeText, server, requestedCountryName) {
       meb2: 'Konu başlıkları öğrenmeyi desteklemek için hazırlanmıştır; sınav kapsamı veya resmî kazanım garantisi değildir.',
       mebLink: server === 'TR' ? 'https://mufredat.meb.gov.tr/' :
         server === 'US' ? 'https://www.ed.gov/' :
-        server === 'UK' ? 'https://www.gov.uk/government/organisations/department-for-education' :
+        (server === 'UK' || server === 'GB') ? 'https://www.gov.uk/government/organisations/department-for-education' :
         server === 'DE' ? 'https://www.kmk.org/' :
         server === 'AZ' ? 'https://edu.gov.az/' :
         server === 'JP' ? 'https://www.mext.go.jp/en/' : 'https://www.unesco.org/en/education'
