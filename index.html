@@ -1527,6 +1527,7 @@ async function loginWithEmail() {
         return;
     }
     if (button) { button.disabled = true; button.textContent = 'Giriş yapılıyor…'; }
+    if (typeof window.showTdevAuthTransition === 'function') window.showTdevAuthTransition();
     const err = document.getElementById(errorId);
     if (err) err.style.display = 'none';
     try {
@@ -1577,12 +1578,14 @@ async function loginWithEmail() {
             curGrade = String(accountProfile.grade || '8');
         }
         const launchGrade = String((accountProfile && accountProfile.profileType === 'student' && accountProfile.grade) || curGrade || '8');
+        if (typeof window.finishTdevAuthTransition === 'function') await window.finishTdevAuthTransition();
         launch(launchGrade);
         const roleLabels = {student:'ÖĞRENCİ',teacher:'ÖĞRETMEN',principal:'MÜDÜR',guardian:'VELİ'};
         const roleDisplay = document.getElementById('role-name-disp');
         if (roleDisplay && accountProfile && roleLabels[accountProfile.profileType]) roleDisplay.textContent = roleLabels[accountProfile.profileType];
         showNotif(result.role === 'beta' ? 'Beta hesabıyla giriş başarılı.' : 'Giriş başarılı. Hesabın açılıyor…');
     } catch (error) {
+        if (typeof window.hideTdevAuthTransition === 'function') window.hideTdevAuthTransition();
         showAuthError(errorId, error && error.message ? error.message : 'Giriş yapılamadı.');
     } finally {
         if (button) { button.disabled = false; button.textContent = 'Giriş yap'; }
