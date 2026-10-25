@@ -19,6 +19,14 @@ TdevKuantum is an educational web app with grade-based lesson browsing, topic ex
 4. In that Google Apps Script project, open **Project Settings → Script Properties** and set `APPS_SCRIPT_TOKEN`. Its value must match the Back4App Config value exactly. Never put the token in `index.html`, `study.js`, a public README, or any other public file.
 5. Save the script, then open **Deploy → Manage deployments → Edit → New version → Deploy**. Keep the existing Web App URL in Back4App Config if you updated that deployment; if you created a new deployment URL, update `GOOGLE_SCRIPT_URL` too.
 6. Open the deployed Apps Script Web App URL with a browser. Its JSON health response should contain `"configured": true`. Then run the Back4App `healthCheck` Cloud Function and inspect `emailDiagnostics`; the token check should pass without sending an email. No secret token is returned.
+
+### Email token troubleshooting
+
+- The Apps Script property name must be exactly `APPS_SCRIPT_TOKEN`; its value must be identical to Back4App Config `APPS_SCRIPT_TOKEN`. Do not add quotation marks around the value.
+- If the deployed `Code.gs` is an older version without the `action: "healthcheck"` branch, the current Cloud Code can recognize the legacy response `A valid recipient email is required.` only after the Apps Script has accepted the supplied token. This is a compatibility fallback, not proof that mail delivery works.
+- Prefer copying the complete current `apps-script/Code.gs` from this repository into the Apps Script editor and deploying **New version**. The current script returns `tokenValid: true` for a token-only health check and avoids sending a real email during diagnostics.
+- If the Apps Script GET response says `configured: true` but the Back4App `healthCheck` reports token validation failed, verify that the Back4App URL points to the same Apps Script project where you saved the property, then redeploy the Web App if you changed the code.
+- After `healthCheck` succeeds, run a real registration or resend request. Only a received verification email confirms delivery; `configured: true` alone does not.
 7. Test registration with an address you control. If delivery fails after the account has been created, use **Doğrulama kodunu tekrar gönder** on the verification screen after correcting the configuration. The resend endpoint applies a short rate limit.
 8. Sign in and test one topic note, one flashcard, one quiz question and a long chat message. The UI distinguishes local saves from confirmed cloud sync.
 
