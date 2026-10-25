@@ -2274,6 +2274,7 @@ function ansQ(ans) {
     const answerValue = curQ.answer;
     const correctAnswer = typeof answerValue === 'boolean' ? answerValue : ['true','doğru','1','yes'].includes(String(answerValue).trim().toLocaleLowerCase('tr'));
     const ok = ans === correctAnswer;
+    if (window.Parse && Parse.User && Parse.User.current && Parse.User.current()) Parse.Cloud.run('trackLearningActivity', {eventType:'quiz_answer',isCorrect:ok,grade:String(curQ.grade||document.getElementById('qg')?.value||''),subject:String(curQ.subject||document.getElementById('ql')?.value||'')}).catch(()=>{});
     if(ok) qCor++; else qWrg++;
     const tot = qCor + qWrg;
     document.getElementById('qc').innerText = qCor;
@@ -2302,6 +2303,7 @@ async function sendMsg() {
     const text = inp.value.trim();
     if (!text && !aiFile) return;
     const msgText = text || (aiFile ? '[📎 ' + aiFile.name + ' eklendi]' : '');
+    if (text && window.Parse && Parse.User && Parse.User.current && Parse.User.current()) Parse.Cloud.run('trackLearningActivity',{eventType:'ai_question',grade:String(curGrade||''),subject:String(document.getElementById('ql')?.value||'')}).catch(()=>{});
     inp.value = '';
     inp.style.height = 'auto';
     addChatMsg('user', msgText);
