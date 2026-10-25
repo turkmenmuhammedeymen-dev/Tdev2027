@@ -135,6 +135,11 @@ for (const functionName of [
     'Public auth endpoint uses sessionless request: ' + functionName);
 }
 
+check(cloudCode.includes('async function assertVerificationProviderReady()') &&
+      cloudCode.includes("await assertVerificationProviderReady();") &&
+      cloudCode.includes("'EMAIL_PROVIDER_NOT_READY'"),
+  'Registration checks email-provider readiness before creating an account');
+
 check(cloudCode.includes('StudyCard:') && cloudCode.includes("Parse.Cloud.define('saveStudyCard'") &&
       cloudCode.includes("Parse.Cloud.define('getStudyCards'"),
   'Flashcards have a server schema and cloud sync endpoints');
