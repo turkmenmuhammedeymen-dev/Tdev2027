@@ -382,6 +382,43 @@
     }
   };
 
+  window.submitCurriculumBulkForm = async function (event) {
+    if (event) event.preventDefault();
+    const role = String(window.currentCurriculumRole || '').toLowerCase();
+    const panel = document.getElementById('curriculum-admin-import');
+    if (!panel || panel.style.display === 'none' || !['founder','admin'].includes(role)) {
+      if (typeof window.showNotif === 'function') window.showNotif('Bu işlem için kurucu/yönetici yetkisi gerekir.');
+      return;
+    }
+    const input = document.getElementById('cp-bulk-json');
+    let records;
+    try { records = JSON.parse(input.value); }
+    catch (_) { if (typeof window.showNotif === 'function') window.showNotif('Toplu kayıt geçerli bir JSON dizisi olmalı.'); return; }
+    if (!Array.isArray(records) || records.length < 1 || records.length > 20) {
+      if (typeof window.showNotif === 'function') window.showNotif('Bir seferde 1–20 kayıt aktarabilirsin.');
+      return;
+    }
+    if (input.value.length > 500000) {
+      if (typeof window.showNotif === 'function') window.showNotif('JSON verisi 500.000 karakteri aşamaz.');
+      return;
+    }
+    try {
+      const result = await Parse.Cloud.run('saveCurriculumProgramsBulk', { records: records });
+      if (!result || result.success !== true) throw new Error((result && result.error) || (result && result.message) || 'Kayıt sonucu doğrulanamadı.');
+      const failureText = Array.isArray(result.errors) && result.errors.length
+        ? ' İlk hata: kayıt ' + (Number(result.errors[0].index) + 1) + ' — ' + String(result.errors[0].error || 'Doğrulama hatası').slice(0, 140)
+        : '';
+      if (typeof window.showNotif === 'function') window.showNotif((result.message || 'Toplu aktarım tamamlandı.') + failureText);
+      input.value = '';
+      importedProgramsRequested = false;
+      serverCoverageRequested = false;
+      await loadImportedPrograms(true);
+      await loadServerCoverage();
+    } catch (error) {
+      if (typeof window.showNotif === 'function') window.showNotif('Toplu aktarım başarısız: ' + String(error && error.message || 'Sunucu hatası').slice(0, 220));
+    }
+  };
+
   window.filterCurriculumCenter = function () {
     renderCards();
     renderImportedPrograms();
