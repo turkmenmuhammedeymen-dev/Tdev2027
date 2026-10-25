@@ -87,11 +87,11 @@ function secureEqual(a, b) {
   const bb = Buffer.from(String(b || ''), 'utf8');
   return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
 }
-function roleForEmail(email) {
+async function roleForEmail(email) {
   const e = normalizeEmail(email);
-  if (e && e === normalizeEmail(configValue('FOUNDER_EMAIL', CONFIG_DEFAULTS.FOUNDER_EMAIL))) return 'founder';
-  if (e && e === normalizeEmail(configValue('ADMIN_EMAIL'))) return 'admin';
-  if (e && e === normalizeEmail(configValue('BETA_EMAIL'))) return 'beta';
+  if (e && e === normalizeEmail(await configValueAsync('FOUNDER_EMAIL', CONFIG_DEFAULTS.FOUNDER_EMAIL))) return 'founder';
+  if (e && e === normalizeEmail(await configValueAsync('ADMIN_EMAIL'))) return 'admin';
+  if (e && e === normalizeEmail(await configValueAsync('BETA_EMAIL'))) return 'beta';
   return 'member';
 }
 function staffEmailForRole(role) {
@@ -100,18 +100,18 @@ function staffEmailForRole(role) {
   if (role === 'beta') return normalizeEmail(configValue('BETA_EMAIL'));
   return '';
 }
-function isConfiguredSpecialLogin(email, password) {
-  const role = roleForEmail(email);
+async function isConfiguredSpecialLogin(email, password) {
+  const role = await roleForEmail(email);
   if (role === 'founder') {
-    const expected = configValue('FOUNDER_PASSWORD');
+    const expected = await configValueAsync('FOUNDER_PASSWORD');
     return !!expected && secureEqual(password, expected) ? role : null;
   }
   if (role === 'admin') {
-    const expected = configValue('ADMIN_PASSWORD');
+    const expected = await configValueAsync('ADMIN_PASSWORD');
     return !!expected && secureEqual(password, expected) ? role : null;
   }
   if (role === 'beta') {
-    const expected = configValue('BETA_PASSWORD');
+    const expected = await configValueAsync('BETA_PASSWORD');
     return !!expected && secureEqual(password, expected) ? role : null;
   }
   return null;
@@ -123,19 +123,19 @@ function requireUser(request) {
   if (!request || !request.user) throw new Parse.Error(Parse.Error.SESSION_MISSING, 'Bu işlem için giriş yapmalısın.');
   return request.user;
 }
-function requireStaff(request, allowedRoles) {
+async function requireStaff(request, allowedRoles) {
   const user = requireUser(request);
   const email = normalizeEmail(user.get('email') || user.get('username'));
-  const role = roleForEmail(email);
+  const role = await roleForEmail(email);
   if (!allowedRoles.includes(role)) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu işlem için yetkin yok.');
   return { user, email, role };
 }
-function publicUser(user) {
+async function publicUser(user) {
   return {
     id: user.id,
     name: safeText(user.get('displayName') || user.get('name') || user.get('username'), 100),
     email: normalizeEmail(user.get('email') || user.get('username')),
-    role: roleForEmail(user.get('email') || user.get('username')),
+    role: await roleForEmail(user.get('email') || user.get('username')),
     banned: user.get('banned') === true,
     emailVerified: user.get('emailVerified') === true,
     date: user.createdAt ? user.createdAt.toISOString().slice(0, 10) : ''
@@ -235,7 +235,7 @@ async function setVerified(user) {
 }
 
 Parse.Cloud.define('registerUser', async (request) => {
-  const enabled = configValue('REGISTRATION_ENABLED', CONFIG_DEFAULTS.REGISTRATION_ENABLED).toLowerCase() !== 'false';
+  const enabled = (await configValueAsync('REGISTRATION_ENABLED', CONFIG_DEFAULTS.REGISTRATION_ENABLED)).toLowerCase() !== 'false';
   if (!enabled) return resultError('Yeni kayıtlar şu anda kapalı.', 'REGISTRATION_CLOSED');
 
   const name = safeText(request.params && request.params.name, 100);
@@ -245,7 +245,7 @@ Parse.Cloud.define('registerUser', async (request) => {
     return resultError('Ad, geçerli e-posta ve en az 8 karakterli şifre gerekli.', 'INVALID_INPUT');
   }
   // Config-defined staff credentials are reserved for the corresponding role.
-  const reservedRole = roleForEmail(email);
+  const reservedRole = await roleForEmail(email);
   if (reservedRole !== 'member') return resultError('Bu e-posta adresi özel bir hesap için ayrılmış. Giriş ekranını kullan.', 'RESERVED_ACCOUNT');
 
   const existingQuery = new Parse.Query(Parse.User);
@@ -264,7 +264,7 @@ Parse.Cloud.define('registerUser', async (request) => {
   user.set('emailVerified', false);
   await user.signUp(null, { useMasterKey: true });
 
-  const verificationRequired = configValue('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY).toLowerCase() !== 'false';
+  const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
   if (verificationRequired) {
     const code = String(crypto.randomInt(100000, 1000000));
     try {
@@ -311,12 +311,12 @@ Parse.Cloud.define('loginUser', async (request) => {
   const password = String((request.params && request.params.password) || '');
   if (!validEmail(email) || !password) return resultError('E-posta ve şifre gerekli.', 'INVALID_INPUT');
 
-  const specialRole = isConfiguredSpecialLogin(email, password);
+  const specialRole = await isConfiguredSpecialLogin(email, password);
   if (specialRole) {
     const staffQuery = new Parse.Query(Parse.User);
     staffQuery.equalTo('username', email);
     let staffUser = await staffQuery.first({ useMasterKey: true });
-    const configuredPassword = configValue(specialRole === 'founder' ? 'FOUNDER_PASSWORD' : (specialRole === 'admin' ? 'ADMIN_PASSWORD' : 'BETA_PASSWORD'));
+    const configuredPassword = await configValueAsync(specialRole === 'founder' ? 'FOUNDER_PASSWORD' : (specialRole === 'admin' ? 'ADMIN_PASSWORD' : 'BETA_PASSWORD'));
     if (!configuredPassword) return resultError('Bu özel hesap için şifre Back4App Config içinde ayarlanmamış.', 'STAFF_PASSWORD_NOT_CONFIGURED');
     if (!staffUser) {
       staffUser = new Parse.User();
@@ -355,10 +355,11 @@ Parse.Cloud.define('loginUser', async (request) => {
       try { await user.logOut(); } catch (_) {}
       return resultError('Bu hesap devre dışı bırakılmış.', 'ACCOUNT_BANNED');
     }
-    if (configValue('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY).toLowerCase() !== 'false' && user.get('emailVerified') !== true) {
+    if ((await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false' && user.get('emailVerified') !== true) {
       return { success: false, verificationRequired: true, error: 'Önce e-posta adresini doğrula.', code: 'EMAIL_NOT_VERIFIED' };
     }
-    const role = roleForEmail(email) !== 'member' ? roleForEmail(email) : (safeText(user.get('role'), 30) || 'member');
+    const configuredRole = await roleForEmail(email);
+    const role = configuredRole !== 'member' ? configuredRole : 'member';
     return { success: true, role: role, name: safeText(user.get('displayName') || user.get('name') || user.get('username'), 100), email: email, sessionToken: user.getSessionToken() };
   } catch (error) {
     console.warn('[TdevKuantum] Login rejected:', error && error.code);
@@ -424,24 +425,25 @@ Parse.Cloud.define('getQuestions', async (request) => {
 });
 
 Parse.Cloud.define('getAdmins', async (request) => {
-  requireStaff(request, ['founder', 'admin']);
+  await requireStaff(request, ['founder', 'admin']);
   const q = new Parse.Query(Parse.User);
   q.limit(200);
   q.ascending('createdAt');
   const users = await q.find({ useMasterKey: true });
-  return users.filter(u => ['founder', 'admin'].includes(roleForEmail(u.get('email') || u.get('username'))))
+  const roles = await Promise.all(users.map(u => roleForEmail(u.get('email') || u.get('username'))));
+  return users.filter((u, index) => ['founder', 'admin'].includes(roles[index]))
     .map(u => ({ id: u.id, name: safeText(u.get('displayName') || u.get('name') || u.get('username'), 100), email: normalizeEmail(u.get('email') || u.get('username')) }));
 });
 Parse.Cloud.define('getAllUsers', async (request) => {
-  requireStaff(request, ['founder', 'admin']);
+  await requireStaff(request, ['founder', 'admin']);
   const q = new Parse.Query(Parse.User);
   q.limit(1000);
   q.descending('createdAt');
   const users = await q.find({ useMasterKey: true });
-  return users.map(publicUser);
+  return Promise.all(users.map(publicUser));
 });
 Parse.Cloud.define('getStats', async (request) => {
-  requireStaff(request, ['founder', 'admin']);
+  await requireStaff(request, ['founder', 'admin']);
   const q = new Parse.Query(Parse.User);
   q.limit(1000);
   const users = await q.find({ useMasterKey: true });
@@ -452,11 +454,11 @@ Parse.Cloud.define('getStats', async (request) => {
   };
 });
 async function setBanned(userId, banned, request) {
-  requireStaff(request, ['founder', 'admin']);
+  await requireStaff(request, ['founder', 'admin']);
   if (!userId || typeof userId !== 'string') throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Geçersiz kullanıcı.');
   const user = await new Parse.Query(Parse.User).get(userId, { useMasterKey: true });
   const email = normalizeEmail(user.get('email') || user.get('username'));
-  if (roleForEmail(email) === 'founder') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Kurucu hesabı bu panelden kapatılamaz.');
+  if (await roleForEmail(email) === 'founder') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Kurucu hesabı bu panelden kapatılamaz.');
   user.set('banned', banned);
   await user.save(null, { useMasterKey: true });
   return { success: true, userId: user.id, banned: banned };
