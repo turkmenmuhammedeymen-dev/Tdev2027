@@ -1,4 +1,4 @@
-name: Validate TDEV scripts
+name: Validate TdevKuantum
 
 on:
   push:
@@ -7,39 +7,18 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  syntax:
+  static-validation:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Check Cloud Code and study script syntax
-        run: |
-          node --check back4app/main.js
-          node --check study.js
-      - name: Check inline JavaScript in index.html
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-          html = Path("index.html").read_text(encoding="utf-8")
-          blocks = re.findall(r'<script\b([^>]*)>([\s\S]*?)</script\s*>', html, flags=re.I)
-          count = 0
-          for attrs, body in blocks:
-              if re.search(r'\bsrc\s*=', attrs, flags=re.I):
-                  continue
-              if re.search(r'application/ld\+json', attrs, flags=re.I):
-                  continue
-              count += 1
-              Path(f"/tmp/tdev-inline-{count}.js").write_text(body, encoding="utf-8")
-          print(f"Extracted {count} inline JavaScript block(s).")
-          PY
-          for file in /tmp/tdev-inline-*.js; do
-            [ -e "$file" ] || continue
-            node --check "$file"
-          done
+      - name: Validate syntax and integration contracts
+        run: node scripts/validate-project.js
