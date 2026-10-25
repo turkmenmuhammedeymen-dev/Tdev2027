@@ -676,11 +676,28 @@ Parse.Cloud.define('getCurriculumCoverage', async (request) => {
   } catch (error) {
     console.warn('[TdevKuantum] Curriculum coverage count unavailable:', String(error && error.message || error).slice(0, 180));
   }
+  let importedPrograms = { totalRecords: null, recordsMarkedOfficial: null, countAvailable: false };
+  try {
+    const programTotal = new Parse.Query('CurriculumProgram');
+    const programOfficial = new Parse.Query('CurriculumProgram');
+    programOfficial.equalTo('isOfficial', true);
+    const counts = await Promise.all([
+      programTotal.count({ useMasterKey: true }),
+      programOfficial.count({ useMasterKey: true })
+    ]);
+    importedPrograms = {
+      totalRecords: Number(counts[0]) || 0,
+      recordsMarkedOfficial: Number(counts[1]) || 0,
+      countAvailable: true
+    };
+  } catch (error) {
+    console.warn('[TdevKuantum] Imported curriculum program count unavailable:', String(error && error.message || error).slice(0, 160));
+  }
   return {
     success: true,
     currentYear: currentYear,
     checkedAt: '2026-10-25',
-    database: database,
+    database: Object.assign({}, database, { importedPrograms: importedPrograms }),
     sources: [
       { id: 'meb-programs', countryCode: 'TR', category: 'general', name: 'MEB Talim ve Terbiye Kurulu — Öğretim Programları', url: 'https://mufredat.meb.gov.tr/Programlar.aspx', sourceType: 'official', note: 'Resmî program listesi; platforma aktarım ve sürüm doğrulaması ayrıca yapılmalıdır.' },
       { id: 'tymm-programs', countryCode: 'TR', category: 'general', name: 'Türkiye Yüzyılı Maarif Modeli — Öğretim Programları', url: 'https://tymm.meb.gov.tr/ogretim-programlari', sourceType: 'official', note: 'Ders, kademe, sınıf ve ünite ayrıntıları resmî portalda kontrol edilir.' },
@@ -1444,6 +1461,7 @@ const TK_SCHEMA = {
   EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', deliveryFailed:'boolean', createdAtISO:'string' },
   PasswordReset: { emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean' },
   Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', subjects:'object', order:'number', active:'boolean', isOfficial:'boolean', sourceUrl:'string', sourceName:'string', curriculumYear:'string', verifiedAt:'date', language:'string', educationStage:'string' },
+  CurriculumProgram: { recordKey:'string', countryCode:'string', countryName:'string', grade:'number', gradeLabel:'string', subject:'string', title:'string', programType:'string', schoolType:'string', field:'string', branch:'string', programCode:'string', programStatus:'string', curriculumYear:'string', sourceUrl:'string', sourceName:'string', sourceCheckedAt:'date', verifiedAt:'date', isOfficial:'boolean', active:'boolean', topics:'object', createdAtISO:'string', updatedAtISO:'string' },
   Question: { grade:'number', server:'string', subject:'string', topic:'string', question:'string', options:'array', correctAnswer:'string', explanation:'string', difficulty:'string', active:'boolean', order:'number' },
   SupportMessage: { email:'string', name:'string', subject:'string', category:'string', message:'string', status:'string', userId:'string', createdAtISO:'string' },
   AuditLog: { actorId:'string', actorEmail:'string', action:'string', targetId:'string', details:'object', ipHash:'string', createdAtISO:'string' },
@@ -1551,6 +1569,154 @@ Parse.Cloud.define('deleteStudyRecord', async (request) => {
   const row = await query.first({ useMasterKey: true });
   if (row) await row.destroy({ useMasterKey: true });
   return { success: true };
+});
+
+// ---- RESMÎ MÜFREDAT KAYITLARI: yönetici içe aktarma ve kullanıcıya güvenli listeleme ----
+function trustedCurriculumSource(sourceUrl, countryCode) {
+  const host = String(sourceUrl || '').toLowerCase().replace(/^https:\/\//, '').split(/[\/:?#]/)[0];
+  const trustedByCountry = {
+    TR: ['meb.gov.tr'],
+    GB: ['gov.uk'],
+    DE: ['kmk.org'],
+    US: ['ed.gov'],
+    AZ: ['edu.gov.az'],
+    JP: ['mext.go.jp']
+  };
+  return (trustedByCountry[String(countryCode || '').toUpperCase()] || []).some((domain) =>
+    host === domain || host.endsWith('.' + domain)
+  );
+}
+function curriculumProgramKey(record) {
+  return sha256([
+    record.countryCode, record.grade, record.programType, record.schoolType,
+    record.field, record.branch, record.subject, record.curriculumYear
+  ].map((part) => String(part || '').trim().toLowerCase()).join('|'));
+}
+function curriculumProgramPayload(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Parse.Error(Parse.Error.INVALID_JSON, 'Müfredat kaydı geçersiz.');
+  }
+  const countryCode = safeText(value.countryCode, 5).toUpperCase();
+  const countryName = safeText(value.countryName, 100);
+  const grade = Number(value.grade);
+  const programType = safeText(value.programType, 24).toLowerCase();
+  const curriculumYear = safeText(value.curriculumYear, 20);
+  const sourceUrl = safeText(value.sourceUrl, 500);
+  const sourceName = safeText(value.sourceName, 180);
+  const sourceCheckedAt = value.sourceCheckedAt ? new Date(value.sourceCheckedAt) : null;
+  const verifiedAt = value.verifiedAt ? new Date(value.verifiedAt) : null;
+  const topics = value.topics;
+  const validYear = /^(20\d{2})(?:-(20\d{2}))?$/.test(curriculumYear);
+  const validSourceUrl = /^https:\/\//i.test(sourceUrl);
+  const validTopics = topics && typeof topics === 'object' && !Array.isArray(topics);
+  if (!/^[A-Z]{2}$/.test(countryCode) || !countryName ||
+      !Number.isInteger(grade) || grade < 0 || grade > 13 ||
+      !['general', 'vocational', 'imamhatip', 'international'].includes(programType) ||
+      !safeText(value.subject, 120) || !safeText(value.title, 180) ||
+      !validYear || !validSourceUrl || !sourceName || !validTopics ||
+      JSON.stringify(topics).length > 60000) {
+    throw new Parse.Error(Parse.Error.INVALID_JSON, 'Ülke, sınıf, program türü, ders, başlık, öğretim yılı, HTTPS kaynak ve konu verilerini kontrol et. Konu verisi 60 KB sınırını aşamaz.');
+  }
+  if (sourceCheckedAt && Number.isNaN(sourceCheckedAt.getTime())) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Kaynak kontrol tarihi geçersiz.');
+  if (verifiedAt && Number.isNaN(verifiedAt.getTime())) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Doğrulama tarihi geçersiz.');
+  const official = value.isOfficial === true &&
+    trustedCurriculumSource(sourceUrl, countryCode) &&
+    !!sourceCheckedAt && !!verifiedAt && !!sourceName && validYear;
+  const record = {
+    countryCode: countryCode,
+    countryName: countryName,
+    grade: grade,
+    gradeLabel: safeText(value.gradeLabel, 40) || (grade === 0 ? 'K' : String(grade)),
+    subject: safeText(value.subject, 120),
+    title: safeText(value.title, 180),
+    programType: programType,
+    schoolType: safeText(value.schoolType, 120),
+    field: safeText(value.field, 120),
+    branch: safeText(value.branch, 120),
+    programCode: safeText(value.programCode, 100),
+    programStatus: official ? 'verified' : 'unverified',
+    curriculumYear: curriculumYear,
+    sourceUrl: sourceUrl,
+    sourceName: sourceName,
+    sourceCheckedAt: sourceCheckedAt && !Number.isNaN(sourceCheckedAt.getTime()) ? sourceCheckedAt : null,
+    verifiedAt: verifiedAt && !Number.isNaN(verifiedAt.getTime()) && official ? verifiedAt : null,
+    isOfficial: official,
+    active: value.active !== false,
+    topics: topics
+  };
+  record.recordKey = curriculumProgramKey(record);
+  return record;
+}
+function publicCurriculumProgram(row) {
+  return {
+    id: row.id,
+    countryCode: row.get('countryCode'),
+    countryName: row.get('countryName'),
+    grade: row.get('grade'),
+    gradeLabel: row.get('gradeLabel'),
+    subject: row.get('subject'),
+    title: row.get('title'),
+    programType: row.get('programType'),
+    schoolType: row.get('schoolType'),
+    field: row.get('field'),
+    branch: row.get('branch'),
+    programCode: row.get('programCode'),
+    programStatus: row.get('programStatus'),
+    curriculumYear: row.get('curriculumYear'),
+    sourceUrl: row.get('sourceUrl'),
+    sourceName: row.get('sourceName'),
+    sourceCheckedAt: row.get('sourceCheckedAt') ? new Date(row.get('sourceCheckedAt')).toISOString() : '',
+    verifiedAt: row.get('verifiedAt') ? new Date(row.get('verifiedAt')).toISOString() : '',
+    isOfficial: row.get('isOfficial') === true,
+    topics: row.get('topics') || {}
+  };
+}
+Parse.Cloud.define('getCurriculumPrograms', async (request) => {
+  requireUser(request);
+  try {
+    const params = request.params || {};
+    const query = new Parse.Query('CurriculumProgram');
+    query.equalTo('active', true);
+    const countryCode = safeText(params.countryCode, 5).toUpperCase();
+    const programType = safeText(params.programType, 24).toLowerCase();
+    const field = safeText(params.field, 120);
+    const branch = safeText(params.branch, 120);
+    const grade = params.grade === undefined || params.grade === null || params.grade === '' ? null : Number(params.grade);
+    if (/^[A-Z]{2}$/.test(countryCode)) query.equalTo('countryCode', countryCode);
+    if (['general', 'vocational', 'imamhatip', 'international'].includes(programType)) query.equalTo('programType', programType);
+    if (field) query.equalTo('field', field);
+    if (branch) query.equalTo('branch', branch);
+    if (grade !== null && Number.isInteger(grade) && grade >= 0 && grade <= 13) query.equalTo('grade', grade);
+    query.descending('updatedAtISO');
+    query.limit(100);
+    const rows = await query.find({ useMasterKey: true });
+    return { success: true, storageReady: true, limit: 100, items: rows.map(publicCurriculumProgram) };
+  } catch (error) {
+    console.warn('[TdevKuantum] Curriculum program query unavailable:', String(error && error.message || error).slice(0, 180));
+    return { success: true, storageReady: false, limit: 100, items: [] };
+  }
+});
+Parse.Cloud.define('saveCurriculumProgram', async (request) => {
+  const staff = await requireStaff(request, ['founder', 'admin']);
+  const record = curriculumProgramPayload(request.params && request.params.record);
+  const query = new Parse.Query('CurriculumProgram');
+  query.equalTo('recordKey', record.recordKey);
+  let row = await query.first({ useMasterKey: true });
+  if (!row) {
+    const CurriculumProgram = Parse.Object.extend('CurriculumProgram');
+    row = new CurriculumProgram();
+    row.set('createdAtISO', new Date().toISOString());
+  }
+  Object.keys(record).forEach((key) => row.set(key, record[key]));
+  row.set('updatedAtISO', new Date().toISOString());
+  await row.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'curriculum.program_saved', row.id, {
+    countryCode: record.countryCode, grade: record.grade, programType: record.programType,
+    field: record.field, branch: record.branch, isOfficial: record.isOfficial, actorRole: staff.role
+  });
+  return { success: true, item: publicCurriculumProgram(row), message: record.isOfficial
+    ? 'Müfredat kaydı kaydedildi; kaynak ve tarih bilgileriyle doğrulanmış olarak işaretlendi.'
+    : 'Müfredat kaydı kaydedildi ancak resmî/güncel olduğu doğrulanmadı.' };
 });
 
 Parse.Cloud.define('setupDatabaseSchema', async (request) => {
