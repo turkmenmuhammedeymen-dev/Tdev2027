@@ -1643,6 +1643,12 @@ function showTopicDetail(index) {
         '<label class="topic-note-label" for="topic-note-body">Kendi konu notun</label><textarea id="topic-note-body" rows="5" maxlength="12000" placeholder="Önemli tanımlar, örnekler ve kendi cümlelerinle açıklama…">' +
         escapeHtml(note) + '</textarea><button type="button" class="study-action" onclick="saveCurrentTopicNote()">NOTU KAYDET</button>';
     document.querySelectorAll('[data-topic-index]').forEach(button => button.classList.toggle('active', Number(button.dataset.topicIndex) === index));
+    if (typeof window.loadCurriculumTopicNote === 'function') {
+        window.loadCurriculumTopicNote(curGrade, curServer, currentLessonSubject, topic.title).then(savedBody => {
+            const field = document.getElementById('topic-note-body');
+            if (field && currentTopicIndex === index && savedBody && !field.value) field.value = savedBody;
+        }).catch(() => {});
+    }
 }
 async function saveCurrentTopicNote() {
     if (currentTopicIndex < 0 || !currentLessonData) { showNotif('Önce bir konu seç.'); return; }
