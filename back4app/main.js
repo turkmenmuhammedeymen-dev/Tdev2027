@@ -1973,6 +1973,8 @@ const TK_SCHEMA = {
   StudyCard: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   School: { schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', principalId:'string', createdAtISO:'string' },
+  GuardianStudent: { guardianId:'string', studentId:'string', status:'string', createdAtISO:'string', removedAtISO:'string' },
+  ClassroomMessage: { classroomId:'string', authorId:'string', authorName:'string', authorRole:'string', message:'string', createdAtISO:'string' },
   Classroom: { ownerId:'string', name:'string', schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', educationStage:'string', grade:'string', invitationCode:'string', active:'boolean', academicYear:'string', managerIds:'array', createdAtISO:'string' },
   ClassroomMembership: { classroomId:'string', userId:'string', role:'string', status:'string', createdAtISO:'string' },
   ClassroomFile: { classroomId:'string', uploaderId:'string', name:'string', url:'string', fileType:'string', size:'number', createdAtISO:'string' },
