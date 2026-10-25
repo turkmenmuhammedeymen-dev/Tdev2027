@@ -89,7 +89,7 @@ const cloudCode = files['back4app/main.js'];
 const definedFunctions = new Set(
   [...cloudCode.matchAll(/Parse\.Cloud\.define\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
 );
-const appCode = html + '\n' + files['study.js'];
+const appCode = html + '\n' + files['study.js'] + '\n' + files['school.js'];
 const calledFunctions = new Set(
   [...appCode.matchAll(/Parse\.Cloud\.run\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
 );
