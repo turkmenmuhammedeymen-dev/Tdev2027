@@ -124,11 +124,19 @@
     const result = await cloud('getStudyNotes', {});
     if (result && result.success && Array.isArray(result.items)) { mergeCloud('notes', result.items); renderStudyNotes(); }
   };
-  window.addStudyCard = function (event) {
+  window.addStudyCard = async function (event) {
     event.preventDefault();
     const item = { id: id(), front: document.getElementById('card-front').value.trim(), back: document.getElementById('card-back').value.trim(), known: false, createdAt: new Date().toISOString() };
     if (!item.front || !item.back) return;
-    const list = read('cards'); list.unshift(item); write('cards', list); event.target.reset(); renderStudyCards(); notify('Bilgi kartı oluşturuldu.');
+    item.updatedAt = item.createdAt;
+    const list = read('cards'); list.unshift(item); write('cards', list); event.target.reset(); renderStudyCards();
+    const result = await cloud('saveStudyCard', { item: item });
+    notify(result && result.success === true ? 'Bilgi kartı oluşturuldu ve buluta eşitlendi.' : 'Kart bu cihazda oluşturuldu. Bulut eşitlemesi doğrulanamadı.');
+  };
+  window.loadStudyCards = async function () {
+    renderStudyCards();
+    const result = await cloud('getStudyCards', {});
+    if (result && result.success && Array.isArray(result.items)) { mergeCloud('cards', result.items); renderStudyCards(); window.renderLearningProgress(); }
   };
   window.renderStudyCards = function () {
     const host = document.getElementById('study-card-list'); if (!host) return;
@@ -149,8 +157,12 @@
   };
   window.markStudyCard = function (itemId, known) {
     const list = read('cards'); const card = list.find(function (x) { return x.id === itemId; }); if (!card) return;
-    card.known = known; card.lastReviewedAt = new Date().toISOString(); card.reviewCount = (card.reviewCount || 0) + 1;
-    write('cards', list); renderStudyCards(); window.renderLearningProgress();
+    card.known = known; card.lastReviewedAt = new Date().toISOString(); card.updatedAt = card.lastReviewedAt; card.reviewCount = (card.reviewCount || 0) + 1;
+    write('cards', list); renderStudyCards();
+    cloud('saveStudyCard', { item: card }).then(function (result) {
+      if (!result || result.success !== true) notify('Kart bu cihazda güncellendi; bulut eşitlemesi doğrulanamadı.');
+    });
+    window.renderLearningProgress();
   };
   window.savePractice = async function (event) {
     event.preventDefault();
@@ -184,7 +196,7 @@
   window.deleteStudyItem = async function (key, itemId) {
     if (!Object.prototype.hasOwnProperty.call(KEYS, key)) return;
     write(key, read(key).filter(function (x) { return x.id !== itemId; }));
-    const cloudClass = { plans:'StudyPlan', notes:'StudyNote', practice:'StudyProgress', mistakes:'StudyMistake' }[key];
+    const cloudClass = { plans:'StudyPlan', notes:'StudyNote', cards:'StudyCard', practice:'StudyProgress', mistakes:'StudyMistake' }[key];
     if (cloudClass) { const result = await cloud('deleteStudyRecord', { className: cloudClass, itemId: itemId }); if (!result || result.success !== true) notify('Kayıt bu cihazdan silindi; sunucu kopyasının silindiği doğrulanamadı.'); }
     if (key === 'plans') renderStudyPlans();
     if (key === 'notes') renderStudyNotes();
