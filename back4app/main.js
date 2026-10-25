@@ -533,7 +533,7 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
   if (row && row.get('subjects') && typeof row.get('subjects') === 'object') return row.get('subjects');
-  return defaultCurriculum(String(gradeNumber), server);
+  return defaultCurriculum(String(gradeNumber), server, safeText(request.params && request.params.countryName, 100));
 });
 
 // Seed content is a learning guide, not a claim that every item is an official
@@ -674,7 +674,51 @@ function tkStageSubjects(grade, server) {
     UK: ['English','Mathematics','Science','History','Geography','Computing','Modern Foreign Languages','Art and Design','Physical Education'],
     DE: ['Deutsch','Mathematik','Naturwissenschaften','Geschichte','Geographie','Englisch','Informatik','Kunst','Sport'],
     AZ: ['Azərbaycan dili','Riyaziyyat','Təbiət','Azərbaycan tarixi','İngilis dili','İnformatika','Fiziki tərbiyə'],
-    JP: ['国語','数学','理科','社会','英語','技術・家庭','美術','保健体育']
+    JP: ['国語','数学','理科','社会','英語','技術・家庭','美術','保健体育'],
+    FR: ['Français','Mathématiques','Sciences et technologie','Histoire-Géographie','Langues vivantes','Enseignement moral et civique','Arts','Éducation physique'],
+    ES: ['Lengua Castellana y Literatura','Matemáticas','Ciencias de la Naturaleza','Ciencias Sociales','Inglés','Educación Física','Educación Artística'],
+    IT: ['Italiano','Matematica','Scienze','Storia','Geografia','Inglese','Tecnologia','Arte e immagine','Educazione fisica'],
+    PT: ['Português','Matemática','Estudo do Meio','Ciências Naturais','História e Geografia','Inglês','Educação Física'],
+    BR: ['Língua Portuguesa','Matemática','Ciências','História','Geografia','Língua Inglesa','Arte','Educação Física'],
+    MX: ['Español','Matemáticas','Ciencias','Historia','Geografía','Formación Cívica y Ética','Inglés','Educación Física'],
+    CA: ['English / French Language Arts','Mathematics','Science','Social Studies','Indigenous Education','Arts','Physical Education'],
+    AU: ['English','Mathematics','Science','Humanities and Social Sciences','Health and Physical Education','Technologies','The Arts'],
+    NZ: ['English','Mathematics and Statistics','Science','Social Sciences','Technology','The Arts','Health and Physical Education'],
+    IN: ['English','Hindi','Mathematics','Science','Social Science','Computer Science','Environmental Studies'],
+    CN: ['语文','数学','科学','道德与法治','历史','地理','英语','信息科技','体育与健康'],
+    KR: ['국어','수학','사회','과학','영어','정보','체육','예술'],
+    TW: ['國語','數學','自然科學','社會','英語','科技','藝術','健康與體育'],
+    TH: ['ภาษาไทย','คณิตศาสตร์','วิทยาศาสตร์','สังคมศึกษา','ภาษาอังกฤษ','เทคโนโลยี','สุขศึกษาและพลศึกษา'],
+    VN: ['Ngữ văn','Toán','Khoa học tự nhiên','Lịch sử và Địa lý','Ngoại ngữ','Tin học','Công nghệ','Giáo dục thể chất'],
+    ID: ['Bahasa Indonesia','Matematika','Ilmu Pengetahuan Alam','Ilmu Pengetahuan Sosial','Bahasa Inggris','Informatika','Pendidikan Pancasila'],
+    MY: ['Bahasa Melayu','English','Mathematics','Science','Sejarah','Reka Bentuk dan Teknologi','Pendidikan Jasmani'],
+    SG: ['English Language','Mother Tongue Languages','Mathematics','Science','Social Studies','Character and Citizenship Education','Physical Education'],
+    SA: ['اللغة العربية','الرياضيات','العلوم','الدراسات الاجتماعية','اللغة الإنجليزية','التربية الإسلامية','المهارات الرقمية'],
+    AE: ['اللغة العربية','الرياضيات','العلوم','الدراسات الاجتماعية','اللغة الإنجليزية','التربية الإسلامية','التصميم والتكنولوجيا'],
+    EG: ['اللغة العربية','الرياضيات','العلوم','الدراسات الاجتماعية','اللغة الإنجليزية','تكنولوجيا المعلومات'],
+    PK: ['Urdu','English','Mathematics','General Science','Pakistan Studies','Islamiyat','Computer Science'],
+    BD: ['বাংলা','English','গণিত','বিজ্ঞান','বাংলাদেশ ও বিশ্বপরিচয়','তথ্য ও যোগাযোগ প্রযুক্তি'],
+    LK: ['සිංහල / தமிழ்','English','Mathematics','Science','History','Civic Education','Information Technology'],
+    NL: ['Nederlands','Rekenen / Wiskunde','Natuur en techniek','Geschiedenis','Aardrijkskunde','Engels','Burgerschap'],
+    SE: ['Svenska','Matematik','Naturorienterande ämnen','Samhällsorienterande ämnen','Engelska','Teknik','Idrott och hälsa'],
+    NO: ['Norsk','Matematikk','Naturfag','Samfunnsfag','Engelsk','Kunst og håndverk','Kroppsøving'],
+    FI: ['Suomi / Svenska','Matematiikka','Ympäristöoppi','Yhteiskuntaoppi','Englanti','Käsityö','Liikunta'],
+    PL: ['Język polski','Matematyka','Przyroda / Biologia','Historia','Geografia','Język obcy','Informatyka'],
+    GR: ['Νεοελληνική Γλώσσα','Μαθηματικά','Φυσικές Επιστήμες','Ιστορία','Γεωγραφία','Αγγλικά','Πληροφορική'],
+    AT: ['Deutsch','Mathematik','Sachunterricht / Naturwissenschaften','Geschichte und Sozialkunde','Geographie','Englisch','Digitale Grundbildung'],
+    CH: ['Deutsch / Français / Italiano','Mathematik','Naturwissenschaften','Geschichte','Geografie','Fremdsprachen','Medien und Informatik'],
+    RU: ['Русский язык','Математика','Окружающий мир / Естествознание','История','География','Иностранный язык','Информатика'],
+    UA: ['Українська мова','Математика','Природничі науки','Історія України','Географія','Англійська мова','Інформатика'],
+    KZ: ['Қазақ тілі','Орыс тілі','Математика','Жаратылыстану','Қазақстан тарихы','Ағылшын тілі','Информатика'],
+    UZ: ['Ona tili','Matematika','Tabiiy fanlar','O‘zbekiston tarixi','Ingliz tili','Informatika'],
+    IL: ['עברית','מתמטיקה','מדעים','היסטוריה','גאוגרפיה','אנגלית','אזרחות'],
+    IR: ['فارسی','ریاضی','علوم تجربی','مطالعات اجتماعی','زبان انگلیسی','مطالعات دینی'],
+    IQ: ['اللغة العربية','الرياضيات','العلوم','الاجتماعيات','اللغة الإنجليزية','الحاسوب'],
+    KE: ['English','Kiswahili','Mathematics','Integrated Science','Social Studies','Creative Arts','Agriculture'],
+    NG: ['English Studies','Mathematics','Basic Science','Social Studies','Civic Education','Computer Studies'],
+    ZA: ['English / Home Language','Mathematics','Natural Sciences','Social Sciences','Technology','Life Orientation'],
+    GH: ['English Language','Mathematics','Integrated Science','Social Studies','Computing','Creative Arts'],
+    NG: ['English Studies','Mathematics','Basic Science','Social Studies','Civic Education','Computer Studies']
   };
   if (profiles[server]) return profiles[server];
   return ['Language Arts','Mathematics','Science','Social Studies','Languages','Digital Literacy','Arts','Physical Education'];
@@ -697,12 +741,12 @@ function tkTopicFor(subject, grade) {
   const bank = TK_TOPIC_BANK[aliases[subject] || 'Social Studies'] || TK_TOPIC_BANK['Social Studies'];
   return bank;
 }
-function defaultCurriculum(gradeText, server) {
+function defaultCurriculum(gradeText, server, requestedCountryName) {
   const grade = Number(gradeText);
   const subjects = tkStageSubjects(grade, server);
   const knownCountry = ['TR','US','UK','DE','AZ','JP'].includes(server);
   const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
-  const countryName = countryNames[server] || server;
+  const countryName = safeText(requestedCountryName, 100) || countryNames[server] || server;
   const result = {};
   subjects.forEach((subject) => {
     const bank = tkTopicFor(subject, grade);
