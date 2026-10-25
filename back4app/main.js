@@ -432,6 +432,330 @@ Parse.Cloud.define('completeTdevPasswordReset', async (request) => {
   return { success: true, message: 'Şifren başarıyla güncellendi.' };
 });
 
+// ---- AKADEMİK PROFİL, EĞİTİM YILI VE SINIF YÖNETİMİ ----
+function academicYearForCountry(countryCode, now) {
+  const code = safeText(countryCode, 2).toUpperCase();
+  const starts = { JP:4, KR:3, IN:6, BD:1, PK:4, AU:2, NZ:2, BR:2, ZA:1, AR:3, CL:3, UY:3, TH:5, PH:6, SG:1, MY:1, ID:7, EG:9, SA:8, AE:8, TR:9, US:8, CA:9, GB:9, DE:8, FR:9, ES:9, IT:9 };
+  const month = starts[code] || 9;
+  const date = now || new Date();
+  const year = date.getFullYear() - ((date.getMonth() + 1) < month ? 1 : 0);
+  return String(year) + '-' + String(year + 1);
+}
+function normalizedSchoolKey(countryCode, schoolName, schoolAddress) {
+  const name = safeText(schoolName, 160).toLocaleLowerCase('tr').replace(/\\s+/g, ' ').trim();
+  const address = safeText(schoolAddress, 240).toLocaleLowerCase('tr').replace(/\\s+/g, ' ').trim();
+  return name && address ? sha256(safeText(countryCode, 2).toUpperCase() + '|' + name + '|' + address) : '';
+}
+async function applyAnnualGradePromotion(user) {
+  if (!user) return;
+  const countryCode = safeText(user.get('countryCode') || 'TR', 2).toUpperCase();
+  const currentYear = academicYearForCountry(countryCode);
+  const previousYear = safeText(user.get('educationYear'), 20);
+  if (!previousYear) {
+    user.set('educationYear', currentYear);
+    await user.save(null, { useMasterKey: true });
+    return;
+  }
+  if (previousYear === currentYear) return;
+  if ((user.get('profileType') || 'student') === 'student') {
+    const grade = Number(user.get('grade'));
+    if (Number.isInteger(grade) && grade >= 1 && grade < 12) user.set('grade', grade + 1);
+  }
+  user.set('educationYear', currentYear);
+  await user.save(null, { useMasterKey: true });
+}
+function academicProfile(user) {
+  const countryCode = safeText(user.get('countryCode') || 'TR', 2).toUpperCase();
+  const rawGrade = user.get('grade');
+  const profileType = ['student','teacher','principal'].includes(user.get('profileType')) ? user.get('profileType') : 'student';
+  const grade = Number.isFinite(Number(rawGrade)) && Number(rawGrade) >= 0 ? Number(rawGrade) : 8;
+  const educationStage = safeText(user.get('educationStage'), 20) || (grade <= 4 ? 'primary' : (grade <= 8 ? 'middle' : 'high'));
+  return {
+    profileType: profileType,
+    countryCode: countryCode,
+    grade: grade === 0 && countryCode === 'US' ? 'K' : String(grade || 8),
+    educationStage: educationStage,
+    schoolName: safeText(user.get('schoolName'), 160),
+    schoolAddress: safeText(user.get('schoolAddress'), 240),
+    schoolKey: safeText(user.get('schoolKey'), 64),
+    educationYear: safeText(user.get('educationYear'), 20),
+    pendingInviteCode: safeText(user.get('inviteCodePending'), 80)
+  };
+}
+async function getClassroomForId(classroomId) {
+  const query = new Parse.Query('Classroom');
+  query.equalTo('objectId', safeText(classroomId, 100));
+  query.equalTo('active', true);
+  return query.first({ useMasterKey: true });
+}
+async function classroomAccess(user, classroom, allowStudent) {
+  if (!user || !classroom) return { allowed: false, role: '' };
+  const userId = user.id;
+  if (classroom.get('ownerId') === userId) return { allowed: true, role: 'owner' };
+  const profileType = user.get('profileType') || 'student';
+  if (profileType === 'principal' && user.get('schoolKey') && user.get('schoolKey') === classroom.get('schoolKey')) return { allowed: true, role: 'principal' };
+  const q = new Parse.Query('ClassroomMembership');
+  q.equalTo('classroomId', classroom.id);
+  q.equalTo('userId', userId);
+  q.equalTo('status', 'active');
+  const membership = await q.first({ useMasterKey: true });
+  if (membership && (membership.get('role') === 'manager' || (allowStudent && membership.get('role') === 'student'))) return { allowed: true, role: membership.get('role'), membership: membership };
+  return { allowed: false, role: '' };
+}
+function classroomSummary(row) {
+  return {
+    id: row.id, name: safeText(row.get('name'), 120),
+    schoolName: safeText(row.get('schoolName'), 160),
+    schoolAddress: safeText(row.get('schoolAddress'), 240),
+    countryCode: safeText(row.get('countryCode'), 2),
+    educationStage: safeText(row.get('educationStage'), 20),
+    grade: safeText(row.get('grade'), 10),
+    invitationCode: safeText(row.get('invitationCode'), 80),
+    academicYear: safeText(row.get('academicYear'), 20),
+    ownerId: safeText(row.get('ownerId'), 100)
+  };
+}
+Parse.Cloud.define('getMyProfile', async (request) => {
+  const user = requireUser(request);
+  await applyAnnualGradePromotion(user);
+  return { success: true, profile: academicProfile(user), user: await publicUser(user) };
+});
+
+Parse.Cloud.define('createClassroom', async (request) => {
+  const user = requireUser(request);
+  if (!['teacher','principal'].includes(user.get('profileType'))) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Yalnızca öğretmen veya müdür sınıf oluşturabilir.');
+  const params = request.params || {};
+  const name = safeText(params.name, 120);
+  const schoolName = safeText(params.schoolName, 160);
+  const schoolAddress = safeText(params.schoolAddress, 240);
+  const countryCode = safeText(user.get('countryCode') || params.countryCode || 'TR', 2).toUpperCase();
+  const educationStage = safeText(params.educationStage, 20).toLowerCase();
+  const grade = safeText(params.grade, 10).toUpperCase();
+  if (!name || !schoolName || !schoolAddress || !['primary','middle','high'].includes(educationStage) || !/^(K|[1-9]|1[0-3])$/.test(grade)) {
+    throw new Parse.Error(Parse.Error.INVALID_JSON, 'Grup adı, okul adı/adresi, kademe ve sınıf zorunludur.');
+  }
+  const key = normalizedSchoolKey(countryCode, schoolName, schoolAddress);
+  const ownKey = safeText(user.get('schoolKey'), 64);
+  if (ownKey && ownKey !== key) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Sınıfı kayıtlı olduğun okulun adı ve adresiyle oluşturmalısın.');
+  if (!ownKey) {
+    user.set('schoolName', schoolName); user.set('schoolAddress', schoolAddress); user.set('schoolKey', key);
+    await user.save(null, { useMasterKey: true });
+  }
+  const row = new Parse.Object('Classroom');
+  row.set('ownerId', user.id); row.set('name', name); row.set('schoolKey', key);
+  row.set('schoolName', schoolName); row.set('schoolAddress', schoolAddress);
+  row.set('countryCode', countryCode); row.set('educationStage', educationStage);
+  row.set('grade', grade); row.set('invitationCode', crypto.randomBytes(18).toString('hex'));
+  row.set('active', true); row.set('academicYear', academicYearForCountry(countryCode));
+  row.set('managerIds', []); row.set('createdAtISO', new Date().toISOString());
+  await row.save(null, { useMasterKey: true });
+  const membership = new Parse.Object('ClassroomMembership');
+  membership.set('classroomId', row.id); membership.set('userId', user.id);
+  membership.set('role', 'owner'); membership.set('status', 'active');
+  membership.set('createdAtISO', new Date().toISOString());
+  await membership.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'classroom.created', row.id, { schoolKey: key, grade: grade });
+  return { success: true, classroom: classroomSummary(row) };
+});
+
+Parse.Cloud.define('getMyClassrooms', async (request) => {
+  const user = requireUser(request);
+  const type = user.get('profileType') || 'student';
+  const rowsById = new Map();
+  if (type === 'principal') {
+    const key = safeText(user.get('schoolKey'), 64);
+    if (key) {
+      const q = new Parse.Query('Classroom'); q.equalTo('schoolKey', key); q.equalTo('active', true); q.descending('createdAt'); q.limit(200);
+      (await q.find({ useMasterKey: true })).forEach(row => rowsById.set(row.id, row));
+    }
+  } else if (type === 'teacher') {
+    const owned = new Parse.Query('Classroom'); owned.equalTo('ownerId', user.id); owned.equalTo('active', true); owned.descending('createdAt'); owned.limit(200);
+    (await owned.find({ useMasterKey: true })).forEach(row => rowsById.set(row.id, row));
+    const memberships = new Parse.Query('ClassroomMembership'); memberships.equalTo('userId', user.id); memberships.equalTo('role', 'manager'); memberships.equalTo('status', 'active'); memberships.limit(200);
+    const managed = await memberships.find({ useMasterKey: true });
+    for (const membership of managed) { const row = await getClassroomForId(membership.get('classroomId')); if (row) rowsById.set(row.id, row); }
+  } else {
+    const memberships = new Parse.Query('ClassroomMembership'); memberships.equalTo('userId', user.id); memberships.equalTo('status', 'active'); memberships.limit(100);
+    for (const membership of await memberships.find({ useMasterKey: true })) { const row = await getClassroomForId(membership.get('classroomId')); if (row) rowsById.set(row.id, row); }
+  }
+  const items = [];
+  for (const row of rowsById.values()) {
+    const countQuery = new Parse.Query('ClassroomMembership'); countQuery.equalTo('classroomId', row.id); countQuery.equalTo('status', 'active'); countQuery.limit(1000);
+    const members = await countQuery.find({ useMasterKey: true });
+    items.push(Object.assign(classroomSummary(row), { memberCount: members.filter(m => m.get('role') === 'student').length }));
+  }
+  return { success: true, items: items };
+});
+
+Parse.Cloud.define('joinClassroomByInvite', async (request) => {
+  const user = requireUser(request);
+  if ((user.get('profileType') || 'student') !== 'student') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Sınıf davetine yalnızca öğrenci hesabıyla katılabilirsin.');
+  const code = safeText(request.params && request.params.inviteCode, 80);
+  if (!/^[a-f0-9]{36}$/i.test(code)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Davet bağlantısı geçersiz.');
+  const q = new Parse.Query('Classroom'); q.equalTo('invitationCode', code); q.equalTo('active', true);
+  const classroom = await q.first({ useMasterKey: true });
+  if (!classroom) throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Bu davet bağlantısı geçersiz veya kapatılmış.');
+  const grade = String(user.get('grade') || '');
+  if (grade && classroom.get('grade') && grade !== String(classroom.get('grade'))) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu sınıf daveti senin kayıtlı sınıf düzeyinle eşleşmiyor.');
+  const existingQuery = new Parse.Query('ClassroomMembership'); existingQuery.equalTo('classroomId', classroom.id); existingQuery.equalTo('userId', user.id);
+  let membership = await existingQuery.first({ useMasterKey: true });
+  if (!membership) { membership = new Parse.Object('ClassroomMembership'); membership.set('classroomId', classroom.id); membership.set('userId', user.id); membership.set('role', 'student'); membership.set('status', 'active'); membership.set('createdAtISO', new Date().toISOString()); await membership.save(null, { useMasterKey: true }); }
+  user.set('inviteCodePending', '');
+  await user.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'classroom.student_joined', classroom.id, { studentId: user.id });
+  return { success: true, classroom: { id: classroom.id, name: safeText(classroom.get('name'), 120), grade: safeText(classroom.get('grade'), 10) } };
+});
+
+Parse.Cloud.define('assignClassroomManager', async (request) => {
+  const user = requireUser(request);
+  const classroom = await getClassroomForId(request.params && request.params.classroomId);
+  if (!classroom || classroom.get('ownerId') !== user.id) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Yalnızca sınıfı oluşturan öğretmen yönetici atayabilir.');
+  const targetId = safeText(request.params && request.params.userId, 100);
+  const q = new Parse.Query('ClassroomMembership'); q.equalTo('classroomId', classroom.id); q.equalTo('userId', targetId); q.equalTo('status', 'active');
+  const membership = await q.first({ useMasterKey: true });
+  if (!membership || membership.get('role') === 'owner') throw new Parse.Error(Parse.Error.INVALID_JSON, 'Bu öğrenci sınıf üyesi değil veya yönetici yapılamaz.');
+  membership.set('role', request.params && request.params.makeManager === false ? 'student' : 'manager');
+  await membership.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'classroom.manager_updated', classroom.id, { targetId: targetId, manager: membership.get('role') === 'manager' });
+  return { success: true };
+});
+
+Parse.Cloud.define('getClassroomRoster', async (request) => {
+  const user = requireUser(request);
+  const classroom = await getClassroomForId(request.params && request.params.classroomId);
+  const access = await classroomAccess(user, classroom, true);
+  if (!access.allowed) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu sınıfın kayıtlarını görme yetkin yok.');
+  const membershipsQuery = new Parse.Query('ClassroomMembership'); membershipsQuery.equalTo('classroomId', classroom.id); membershipsQuery.equalTo('status', 'active'); membershipsQuery.limit(500);
+  let memberships = await membershipsQuery.find({ useMasterKey: true });
+  if (access.role === 'student') memberships = memberships.filter(m => m.get('userId') === user.id);
+  const eventsQuery = new Parse.Query('LearningActivity'); eventsQuery.equalTo('classroomId', classroom.id); eventsQuery.limit(1000);
+  const events = await eventsQuery.find({ useMasterKey: true });
+  const roster = [];
+  for (const member of memberships) {
+    const uid = member.get('userId');
+    const memberEvents = events.filter(e => e.get('userId') === uid);
+    const quizzes = memberEvents.filter(e => e.get('eventType') === 'quiz_answer' && e.get('hasAnswer') === true);
+    const correct = quizzes.filter(e => e.get('isCorrect') === true).length;
+    let publicInfo = { id: uid, name: uid === user.id ? safeText(user.get('displayName') || user.get('name'), 100) : 'Öğrenci', role: member.get('role') };
+    if (access.role !== 'student') {
+      const userQuery = new Parse.Query(Parse.User); userQuery.equalTo('objectId', uid);
+      const memberUser = await userQuery.first({ useMasterKey: true });
+      if (memberUser) publicInfo = { id: uid, name: safeText(memberUser.get('displayName') || memberUser.get('name') || memberUser.get('username'), 100), email: safeText(memberUser.get('email') || memberUser.get('username'), 160), role: member.get('role') };
+    }
+    roster.push(Object.assign(publicInfo, {
+      activityCount: memberEvents.length,
+      lessonOpens: memberEvents.filter(e => e.get('eventType') === 'lesson_open').length,
+      aiQuestions: memberEvents.filter(e => e.get('eventType') === 'ai_question').length,
+      resourceClicks: memberEvents.filter(e => e.get('eventType') === 'external_resource').length,
+      quizTotal: quizzes.length, quizCorrect: correct,
+      quizSuccessRate: quizzes.length ? Math.round(correct / quizzes.length * 100) : null
+    }));
+  }
+  return { success: true, classroom: classroomSummary(classroom), items: roster };
+});
+
+Parse.Cloud.define('getSchoolOverview', async (request) => {
+  const user = requireUser(request);
+  if (user.get('profileType') !== 'principal') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Okul analizlerini yalnızca müdür hesabı görüntüleyebilir.');
+  const key = safeText(user.get('schoolKey'), 64);
+  if (!key) return { success: true, items: [] };
+  const q = new Parse.Query('Classroom'); q.equalTo('schoolKey', key); q.equalTo('active', true); q.limit(200);
+  const classrooms = await q.find({ useMasterKey: true });
+  const items = [];
+  for (const classroom of classrooms) {
+    const membersQuery = new Parse.Query('ClassroomMembership'); membersQuery.equalTo('classroomId', classroom.id); membersQuery.equalTo('status', 'active'); membersQuery.limit(1000);
+    const members = await membersQuery.find({ useMasterKey: true });
+    const students = members.filter(m => m.get('role') === 'student');
+    const activityQuery = new Parse.Query('LearningActivity'); activityQuery.equalTo('classroomId', classroom.id); activityQuery.limit(1000);
+    const events = await activityQuery.find({ useMasterKey: true });
+    const quizzes = events.filter(e => e.get('eventType') === 'quiz_answer' && e.get('hasAnswer') === true);
+    const correct = quizzes.filter(e => e.get('isCorrect') === true).length;
+    const ownerQuery = new Parse.Query(Parse.User); ownerQuery.equalTo('objectId', classroom.get('ownerId'));
+    const owner = await ownerQuery.first({ useMasterKey: true });
+    items.push(Object.assign(classroomSummary(classroom), {
+      teacherName: owner ? safeText(owner.get('displayName') || owner.get('name'), 100) : 'Öğretmen',
+      studentCount: students.length,
+      activityCount: events.length,
+      lessonOpens: events.filter(e => e.get('eventType') === 'lesson_open').length,
+      aiQuestions: events.filter(e => e.get('eventType') === 'ai_question').length,
+      resourceClicks: events.filter(e => e.get('eventType') === 'external_resource').length,
+      quizTotal: quizzes.length,
+      quizSuccessRate: quizzes.length ? Math.round(correct / quizzes.length * 100) : null
+    }));
+  }
+  return { success: true, items: items };
+});
+
+Parse.Cloud.define('addClassroomFile', async (request) => {
+  const user = requireUser(request);
+  const classroom = await getClassroomForId(request.params && request.params.classroomId);
+  const access = await classroomAccess(user, classroom, true);
+  if (!access.allowed) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Dosya paylaşmak için bu sınıfın üyesi olmalısın.');
+  const name = safeText(request.params && request.params.name, 180);
+  const url = String(request.params && request.params.url || '').trim();
+  const fileType = safeText(request.params && request.params.fileType, 120);
+  const size = Number(request.params && request.params.size);
+  if (!name || !/^https:\/\//i.test(url) || !Number.isFinite(size) || size < 1 || size > 25 * 1024 * 1024) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Dosya adı, HTTPS bağlantısı ve 25 MB altı dosya gerekli.');
+  const row = new Parse.Object('ClassroomFile'); row.set('classroomId', classroom.id); row.set('uploaderId', user.id);
+  row.set('name', name); row.set('url', url); row.set('fileType', fileType); row.set('size', size); row.set('createdAtISO', new Date().toISOString());
+  await row.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'classroom.file_added', row.id, { classroomId: classroom.id, name: name });
+  return { success: true, file: { id: row.id, name: name, url: url, fileType: fileType, size: size, createdAtISO: row.get('createdAtISO') } };
+});
+
+Parse.Cloud.define('getClassroomFiles', async (request) => {
+  const user = requireUser(request);
+  const classroom = await getClassroomForId(request.params && request.params.classroomId);
+  const access = await classroomAccess(user, classroom, true);
+  if (!access.allowed) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu sınıfın dosyalarını görme yetkin yok.');
+  const q = new Parse.Query('ClassroomFile'); q.equalTo('classroomId', classroom.id); q.descending('createdAtISO'); q.limit(200);
+  const rows = await q.find({ useMasterKey: true });
+  return { success: true, items: rows.map(row => ({ id: row.id, name: safeText(row.get('name'), 180), url: String(row.get('url') || ''), fileType: safeText(row.get('fileType'), 120), size: Number(row.get('size') || 0), createdAtISO: safeText(row.get('createdAtISO'), 40), uploaderId: safeText(row.get('uploaderId'), 100) })) };
+});
+
+Parse.Cloud.define('deleteClassroomFile', async (request) => {
+  const user = requireUser(request);
+  const fileId = safeText(request.params && request.params.fileId, 100);
+  const q = new Parse.Query('ClassroomFile'); q.equalTo('objectId', fileId);
+  const row = await q.first({ useMasterKey: true });
+  if (!row) return { success: true };
+  const classroom = await getClassroomForId(row.get('classroomId'));
+  const access = await classroomAccess(user, classroom, false);
+  if (row.get('uploaderId') !== user.id && !['owner','manager','principal'].includes(access.role)) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu dosyayı silme yetkin yok.');
+  await row.destroy({ useMasterKey: true });
+  await writeAuditLog(request, 'classroom.file_deleted', fileId, { classroomId: row.get('classroomId') });
+  return { success: true };
+});
+
+Parse.Cloud.define('trackLearningActivity', async (request) => {
+  const user = requireUser(request);
+  const type = safeText(request.params && request.params.eventType, 40);
+  const allowedTypes = ['lesson_open','curriculum_open','ai_question','quiz_answer','external_resource'];
+  if (!allowedTypes.includes(type)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Öğrenme etkinliği türü geçersiz.');
+  if ((user.get('profileType') || 'student') !== 'student') return { success: true, skipped: true };
+  const userId = user.id;
+  const requestedClassroomId = safeText(request.params && request.params.classroomId, 100);
+  let memberships = [];
+  if (requestedClassroomId) {
+    const q = new Parse.Query('ClassroomMembership'); q.equalTo('classroomId', requestedClassroomId); q.equalTo('userId', userId); q.equalTo('status', 'active');
+    const member = await q.first({ useMasterKey: true }); if (member) memberships = [member];
+  } else {
+    const q = new Parse.Query('ClassroomMembership'); q.equalTo('userId', userId); q.equalTo('status', 'active'); q.limit(1);
+    memberships = await q.find({ useMasterKey: true });
+  }
+  if (!memberships.length) return { success: true, skipped: true };
+  const row = new Parse.Object('LearningActivity');
+  row.set('userId', userId); row.set('classroomId', memberships[0].get('classroomId')); row.set('eventType', type);
+  row.set('grade', safeText(request.params && request.params.grade || user.get('grade'), 10));
+  row.set('subject', safeText(request.params && request.params.subject, 120));
+  row.set('hasAnswer', type === 'quiz_answer' && typeof (request.params && request.params.isCorrect) === 'boolean');
+  row.set('isCorrect', type === 'quiz_answer' && request.params && request.params.isCorrect === true);
+  row.set('countryCode', safeText(user.get('countryCode') || 'TR', 2));
+  row.set('createdAtISO', new Date().toISOString());
+  await row.save(null, { useMasterKey: true });
+  return { success: true };
+});
+
 Parse.Cloud.define('registerUser', async (request) => {
   const enabled = (await configValueAsync('REGISTRATION_ENABLED', CONFIG_DEFAULTS.REGISTRATION_ENABLED)).toLowerCase() !== 'false';
   if (!enabled) return resultError('Yeni kayıtlar şu anda kapalı.', 'REGISTRATION_CLOSED');
@@ -457,7 +781,59 @@ Parse.Cloud.define('registerUser', async (request) => {
   user.set('password', password);
   user.set('displayName', name);
   user.set('name', name);
+  const profileType = safeText(request.params && request.params.profileType, 20).toLowerCase() || 'student';
+  const countryCode = safeText(request.params && request.params.countryCode, 2).toUpperCase() || 'TR';
+  const gradeInput = safeText(request.params && request.params.grade, 10).toUpperCase();
+  const educationStage = safeText(request.params && request.params.educationStage, 20).toLowerCase();
+  const schoolName = safeText(request.params && request.params.schoolName, 160);
+  const schoolAddress = safeText(request.params && request.params.schoolAddress, 240);
+  const inviteCode = safeText(request.params && request.params.inviteCode, 80);
+  if (!['student','teacher','principal'].includes(profileType) || !/^[A-Z]{2}$/.test(countryCode)) {
+    return resultError('Hesap türü ve ülke seçimi geçersiz.', 'INVALID_PROFILE');
+  }
+  let grade = Number(gradeInput);
+  let stage = educationStage;
+  if (profileType === 'student') {
+    if (!/^(K|[1-9]|1[0-3])$/.test(gradeInput) || (gradeInput === 'K' && countryCode !== 'US')) {
+      return resultError('Öğrenci hesabı için geçerli sınıf seçmelisin.', 'GRADE_REQUIRED');
+    }
+    grade = gradeInput === 'K' ? 0 : Number(gradeInput);
+    stage = grade === 0 ? 'primary' : (grade <= 4 ? 'primary' : (grade <= 8 ? 'middle' : 'high'));
+  } else {
+    if (!['primary','middle','high'].includes(stage) || !schoolName || !schoolAddress) {
+      return resultError('Öğretmen ve müdür hesapları için kademe, okul adı ve okul adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
+    }
+    grade = 0;
+  }
+  if (profileType === 'principal' && (!schoolName || !schoolAddress)) {
+    return resultError('Müdür hesabı için okul adı ve adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
+  }
+  const schoolKey = (schoolName && schoolAddress) ? sha256(countryCode + '|' + schoolName.toLocaleLowerCase('tr').replace(/\\s+/g,' ').trim() + '|' + schoolAddress.toLocaleLowerCase('tr').replace(/\\s+/g,' ').trim()) : '';
+  // Config-defined staff credentials are reserved for the corresponding role.
+  const reservedRole = await roleForEmail(email);
+  if (reservedRole !== 'member') return resultError('Bu e-posta adresi özel bir hesap için ayrılmış. Giriş ekranını kullan.', 'RESERVED_ACCOUNT');
+
+  const existingQuery = new Parse.Query(Parse.User);
+  existingQuery.equalTo('username', email);
+  const existing = await existingQuery.first({ useMasterKey: true });
+  if (existing) return resultError('Bu e-posta ile bir hesap zaten var. Giriş yapmayı dene.', 'EMAIL_EXISTS');
+
+  const user = new Parse.User();
+  user.set('username', email);
+  user.set('email', email);
+  user.set('password', password);
+  user.set('displayName', name);
+  user.set('name', name);
   user.set('role', 'member');
+  user.set('profileType', profileType);
+  user.set('countryCode', countryCode);
+  user.set('grade', grade);
+  user.set('educationStage', stage);
+  user.set('educationYear', academicYearForCountry(countryCode));
+  user.set('schoolName', schoolName);
+  user.set('schoolAddress', schoolAddress);
+  user.set('schoolKey', schoolKey);
+  user.set('inviteCodePending', inviteCode);
   user.set('banned', false);
   user.set('emailVerified', false);
   await user.signUp(null, { useMasterKey: true });
@@ -603,6 +979,7 @@ Parse.Cloud.define('loginUser', async (request) => {
     }
     const configuredRole = await roleForEmail(email);
     const role = configuredRole !== 'member' ? configuredRole : 'member';
+    await applyAnnualGradePromotion(user);
     await writeAuditLog(request, 'user.login', user.id, { email: email, role: role });
     return { success: true, role: role, name: safeText(user.get('displayName') || user.get('name') || user.get('username'), 100), email: email, sessionToken: user.getSessionToken() };
   } catch (error) {
@@ -1588,7 +1965,12 @@ const TK_SCHEMA = {
   StudyNote: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyCard: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
-  StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' }
+  StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  School: { schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', principalId:'string', createdAtISO:'string' },
+  Classroom: { ownerId:'string', name:'string', schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', educationStage:'string', grade:'string', invitationCode:'string', active:'boolean', academicYear:'string', managerIds:'array', createdAtISO:'string' },
+  ClassroomMembership: { classroomId:'string', userId:'string', role:'string', status:'string', createdAtISO:'string' },
+  ClassroomFile: { classroomId:'string', uploaderId:'string', name:'string', url:'string', fileType:'string', size:'number', createdAtISO:'string' },
+  LearningActivity: { userId:'string', classroomId:'string', eventType:'string', grade:'string', subject:'string', isCorrect:'boolean', hasAnswer:'boolean', countryCode:'string', createdAtISO:'string' }
 };
 const TK_FIELD_METHODS = { string:'addString', number:'addNumber', boolean:'addBoolean', date:'addDate', array:'addArray', object:'addObject' };
 
