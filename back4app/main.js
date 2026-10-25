@@ -459,17 +459,16 @@ Parse.Cloud.define('getAllUsers', async (request) => {
 });
 Parse.Cloud.define('getStats', async (request) => {
   await requireStaff(request, ['founder', 'admin']);
-  const q = new Parse.Query(Parse.User);
-  q.limit(1000);
-  const users = await q.find({ useMasterKey: true });
   const countClass = async (name) => { try { const query = new Parse.Query(name); return await query.count({ useMasterKey: true }); } catch (_) { return 0; } };
-  const [studyPlans, studyNotes, studySessions, studyCards, studyMistakes, auditEvents] = await Promise.all([
+  const [total, banned, studyPlans, studyNotes, studySessions, studyCards, studyMistakes, auditEvents] = await Promise.all([
+    countClass('_User'),
+    (async () => { try { const query = new Parse.Query(Parse.User); query.equalTo('banned', true); return await query.count({ useMasterKey: true }); } catch (_) { return 0; } })(),
     countClass('StudyPlan'), countClass('StudyNote'), countClass('StudyProgress'), countClass('StudyCard'), countClass('StudyMistake'), countClass('AuditLog')
   ]);
   return {
-    total: users.length,
-    active: users.filter(u => u.get('banned') !== true).length,
-    banned: users.filter(u => u.get('banned') === true).length,
+    total,
+    active: Math.max(0, total - banned),
+    banned,
     studyPlans, studyNotes, studySessions, studyCards, studyMistakes, auditEvents
   };
 });
