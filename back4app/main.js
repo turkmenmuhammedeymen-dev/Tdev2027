@@ -12,8 +12,10 @@
  *   BETA_EMAIL           beta account email
  *   BETA_PASSWORD        strong secret; never place in HTML/GitHub
  *   GOOGLE_SCRIPT_URL (or GOOGLE_APPS_SCRIPT_URL) deployed Web App URL for sending verification emails
- *   RESEND_API_KEY       fallback provider API key
+ *   APPS_SCRIPT_TOKEN    secret token matching Script Properties in apps-script/Code.gs
+ *   RESEND_API_KEY       optional fallback provider API key
  *   EMAIL_FROM           verified sender, e.g. TdevKuantum <noreply@your-domain>
+ *   PASSWORD_RESET_PEPPER optional separate secret for password-reset code hashing
  *   AI_API_KEY           optional server-only key for the TDEV-AI tutor
  *   AI_MODEL             optional model name (default gpt-4o-mini)
  *   AI_BASE_URL          optional HTTPS OpenAI-compatible chat-completions URL
