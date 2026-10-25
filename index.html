@@ -1524,7 +1524,7 @@ function loadClassList() {
     let grades = [];
     if(curServer === 'TR') grades = ['1','2','3','4','5','6','7','8','9','10','11','12'];
     else if(curServer === 'US') grades = ['K','1','2','3','4','5','6','7','8','9','10','11','12'];
-    else if(curServer === 'UK') grades = ['1','2','3','4','5','6','7','8','9','10','11','12','13'];
+    else if(curServer === 'UK' || curServer === 'GB') grades = ['1','2','3','4','5','6','7','8','9','10','11','12','13'];
     else if(curServer === 'DE') grades = ['1','2','3','4','5','6','7','8','9','10','11','12','13'];
     else if(curServer === 'AZ') grades = ['1','2','3','4','5','6','7','8','9','10','11'];
     else if(curServer === 'JP') grades = ['1','2','3','4','5','6','7','8','9','10','11','12'];
@@ -1545,7 +1545,7 @@ function launch(g) {
     curGrade = g;
     goTo('');
     document.getElementById('app').style.display = 'flex';
-    document.getElementById('grade-label').innerText = g + '. SINIF';
+    document.getElementById('grade-label').innerText = g === 'K' ? 'KINDERGARTEN' : g + '. SINIF';
     document.getElementById('role-dot').style.cssText = 'background:' + roleColors[curRole] + ';box-shadow:0 0 6px ' + roleColors[curRole];
     document.getElementById('role-name-disp').innerText = roleNames[curRole] || 'KULLANICI';
     document.getElementById('server-lbl').innerText = 'ÜLKE: ' + (document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer);
@@ -1579,7 +1579,7 @@ let currentLessonSubject = '';
 let currentLessonData = null;
 let currentTopicIndex = -1;
 function renderLessons(data) {
-    document.getElementById('sc-grade').innerText = curGrade;
+    document.getElementById('sc-grade').innerText = curGrade === 'K' ? 'KINDERGARTEN' : curGrade;
     const keys = Object.keys(data || {});
     const grid = document.getElementById('lesson-grid');
     if(!grid) return;
@@ -1611,7 +1611,7 @@ function showDetail(subject) {
             currentLessonData = data[subject];
             currentTopicIndex = -1;
             const d = currentLessonData;
-            document.getElementById('d-title').innerText = subject + ' — ' + curGrade + '. SINIF';
+            document.getElementById('d-title').innerText = subject + ' — ' + (curGrade === 'K' ? 'KINDERGARTEN' : curGrade + '. SINIF');
             const countrySelect = document.getElementById('country-select');
             const countryName = countrySelect && countrySelect.selectedOptions[0] ? countrySelect.selectedOptions[0].textContent : curServer;
             document.getElementById('d-grade').innerText = countryName + ' · Öğrenme rehberi';
