@@ -8,7 +8,13 @@ let activeClass=null, profile=null, classrooms=[];
 function ensureRegistrationFields(){
  const root=$('reg-student-fields'); if(!root)return;
  if(!$('reg-country-code')){const wrap=document.createElement('div');wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-country-code">Ülke / müfredat (zorunlu)<select id="reg-country-code" required><option value="TR">Türkiye</option><option value="AZ">Azerbaycan</option><option value="GB">Birleşik Krallık</option><option value="DE">Almanya</option><option value="US">Amerika Birleşik Devletleri</option><option value="JP">Japonya</option></select></label>';root.prepend(wrap);}
- if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-school-name">Okul adı (zorunlu)<input id="reg-student-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-student-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
+ const country=$('reg-country-code');
+ if(country&&typeof COUNTRY_OPTIONS!=='undefined'&&Array.isArray(COUNTRY_OPTIONS)&&country.options.length<20){
+  const selected=($('country-select')&&$('country-select').value)||country.value||'TR';
+  country.innerHTML=COUNTRY_OPTIONS.map(item=>{const parts=String(item).split('|');return '<option value="'+esc(parts[0])+'">'+esc(parts.slice(1).join('|'))+'</option>';}).join('');
+  if([...country.options].some(option=>option.value===selected))country.value=selected;
+ }
+ if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-school-name">Okul adı (zorunlu)<input id="reg-student-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-student-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><label for="reg-class-name">Sınıf / şube (isteğe bağlı)<input id="reg-class-name" maxlength="40" placeholder="Örn. 10-A"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
  if(!$('reg-guardian-note')){const wrap=document.createElement('div');wrap.id='reg-guardian-note';wrap.className='school-account-extra';wrap.hidden=true;wrap.innerHTML='<p class="school-note">Veli hesabında okul veya sınıf seçimi gerekmez. Hesap oluşturduktan sonra öğrencinin TDEV ID kodunu “Öğrencilerim” bölümüne girerek bağlantı kurabilirsin.</p>';root.append(wrap);}
 }
 window.updateRegistrationFields=function(){
