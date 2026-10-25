@@ -946,7 +946,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
         <input type="email" id="reg-email" class="reg-input" placeholder="E-posta">
         <div class="password-field"><input type="password" id="reg-pass" class="reg-input" placeholder="Şifre" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Şifreyi göster" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass', this)">Göster</button></div>
         <div class="password-field"><input type="password" id="reg-pass2" class="reg-input" placeholder="Şifre tekrar" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Tekrar şifresini göster" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass2', this)">Göster</button></div>
-        <label class="reg-field-label" for="reg-profile-type">Hesap türü (zorunlu)</label><select id="reg-profile-type" class="reg-input" required onchange="updateRegistrationFields()"><option value="student">Öğrenci</option><option value="teacher">Öğretmen</option><option value="principal">Müdür</option></select>
+        <label class="reg-field-label" for="reg-profile-type">Hesap türü (zorunlu)</label><select id="reg-profile-type" class="reg-input" required onchange="updateRegistrationFields()"><option value="student">Öğrenci</option><option value="teacher">Öğretmen</option><option value="principal">Müdür</option><option value="guardian">Veli</option></select>
         <div id="reg-student-fields" class="registration-subpanel"><label class="reg-field-label" for="reg-grade">Sınıf (zorunlu)</label><select id="reg-grade" class="reg-input" required><option value="">Sınıfını seç</option></select></div>
         <div id="reg-staff-fields" class="registration-subpanel" style="display:none"><label class="reg-field-label" for="reg-stage">Eğitim kademesi (zorunlu)</label><select id="reg-stage" class="reg-input"><option value="">Kademeyi seç</option><option value="primary">İlkokul</option><option value="middle">Ortaokul</option><option value="high">Lise</option></select><label class="reg-field-label" for="reg-school-name">Okul adı (zorunlu)</label><input type="text" id="reg-school-name" class="reg-input" maxlength="160" placeholder="Okulun tam adı"><label class="reg-field-label" for="reg-school-address">Okul adresi (zorunlu)</label><input type="text" id="reg-school-address" class="reg-input" maxlength="240" placeholder="İl, ilçe ve okul adresi"></div>
         <div class="reg-actions"><button type="button" class="auth-primary" onclick="register()">Kayıt ol</button><button type="button" class="auth-secondary" onclick="goTo('gate')">Giriş yap</button></div>
@@ -1777,7 +1777,16 @@ async function register() {
     buttons.forEach(button => { button.disabled = true; button.dataset.originalText = button.textContent; button.textContent = 'Kaydediliyor…'; });
     if (err) err.style.display = 'none';
     try {
-        const result = await Parse.Cloud.run('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true });
+        const profileType = document.getElementById('reg-profile-type')?.value || 'student';
+        const countryCode = (document.getElementById('reg-country-code')?.value || document.getElementById('country-select')?.value || 'TR').toUpperCase();
+        const grade = document.getElementById('reg-grade')?.value || '';
+        const educationStage = document.getElementById('reg-stage')?.value || '';
+        const schoolName = (profileType === 'student' ? document.getElementById('reg-student-school-name')?.value : document.getElementById('reg-school-name')?.value)?.trim() || '';
+        const schoolAddress = (profileType === 'student' ? document.getElementById('reg-student-school-address')?.value : document.getElementById('reg-school-address')?.value)?.trim() || '';
+        const inviteCode = new URLSearchParams(location.search).get('invite') || '';
+        if (profileType === 'student' && (!grade || !schoolName || !schoolAddress)) { showError('Öğrenci hesabı için sınıf, okul adı ve okul adresi zorunludur.'); return; }
+        if (['teacher','principal'].includes(profileType) && (!educationStage || !schoolName || !schoolAddress)) { showError('Öğretmen ve müdür hesabı için kademe, okul adı ve okul adresi zorunludur.'); return; }
+        const result = await Parse.Cloud.run('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true, profileType, countryCode, grade, educationStage, schoolName, schoolAddress, inviteCode });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Kayıt tamamlanamadı.');
         showNotif(result.verificationRequired ? 'Doğrulama kodu e-postana gönderildi.' : 'Kayıt başarılı!');
         if (result.verificationRequired) {
