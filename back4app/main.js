@@ -739,7 +739,8 @@ function defaultCurriculum(gradeText, server) {
 
 Parse.Cloud.define('tdevAIChat', async (request) => {
   const user = requireUser(request);
-  const message = safeText(request.params && request.params.message, 8000);
+  const message = String((request.params && request.params.message) || '').trim();
+  if (message.length > 12000) return resultError('Mesaj 12.000 karakteri aşamaz; daha kısa bir mesaj gönder.', 'MESSAGE_TOO_LONG');
   const grade = safeText(request.params && request.params.grade, 2);
   const country = safeText(request.params && request.params.country, 2).toUpperCase();
   if (!message) return resultError('Mesaj boş olamaz.', 'EMPTY_MESSAGE');
@@ -769,7 +770,7 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
         model: model,
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }],
         temperature: 0.35,
-        max_tokens: 1800
+        max_tokens: 2500
       })
     });
     const raw = await response.text();
