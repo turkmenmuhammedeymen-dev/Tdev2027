@@ -162,6 +162,18 @@ async function publicUser(user) {
 function verificationKey(email) {
   return 'emailVerification:' + sha256(normalizeEmail(email));
 }
+async function probeAppsScript(scriptUrl) {
+  const response = await fetch(scriptUrl, { method: 'GET' });
+  const body = await response.text();
+  if (!response.ok) throw new Error('Apps Script sağlık kontrolü HTTP ' + response.status);
+  let data;
+  try { data = JSON.parse(body); } catch (_) { throw new Error('Apps Script GET yanıtı JSON değil; doğru Web App dağıtım URL’sini kontrol et.'); }
+  if (!data || data.success !== true || data.configured !== true) {
+    throw new Error('Apps Script Script Properties içinde APPS_SCRIPT_TOKEN bulunamadı. Doğru projeye eklediğini kontrol et.');
+  }
+  return data;
+}
+
 async function sendVerificationEmail(email, code, name) {
   const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
   const apiKey = await configValueAsync('RESEND_API_KEY');
@@ -176,13 +188,16 @@ async function sendVerificationEmail(email, code, name) {
   // Google Apps Script Web App: deploy with access set so the server can call it.
   if (scriptUrl) {
     try {
+      const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
+      if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
+      await probeAppsScript(scriptUrl);
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email, email: email, name: safeText(name || 'öğrenci', 100),
           code: code, subject: subject, html: html, app: 'TdevKuantum',
-          token: await configValueAsync('APPS_SCRIPT_TOKEN'),
+          token: scriptToken,
           text: 'TdevKuantum doğrulama kodun: ' + code + ' (10 dakika geçerlidir)'
         })
       });
@@ -241,13 +256,16 @@ async function sendPasswordResetEmail(email, code) {
   const errors = [];
   if (scriptUrl) {
     try {
+      const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
+      if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
+      await probeAppsScript(scriptUrl);
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email, email: email, subject: subject, html: html,
           text: 'TdevKuantum şifre yenileme kodun: ' + code + ' (10 dakika geçerlidir)',
-          app: 'TdevKuantum', token: await configValueAsync('APPS_SCRIPT_TOKEN')
+          app: 'TdevKuantum', token: scriptToken
         })
       });
       const body = await response.text();
@@ -314,6 +332,7 @@ async function saveVerification(email, code) {
   row.set('attempts', 0);
   row.set('used', false);
   await row.save(null, { useMasterKey: true });
+  return row;
 }
 async function findVerification(email) {
   const q = new Parse.Query('EmailVerification');
@@ -420,8 +439,16 @@ Parse.Cloud.define('registerUser', async (request) => {
   if (verificationRequired) {
     const code = String(crypto.randomInt(100000, 1000000));
     try {
-      await saveVerification(email, code);
-      await sendVerificationEmail(email, code, name);
+      const verification = await saveVerification(email, code);
+      try {
+        await sendVerificationEmail(email, code, name);
+        verification.set('deliveryFailed', false);
+        await verification.save(null, { useMasterKey: true });
+      } catch (mailError) {
+        verification.set('deliveryFailed', true);
+        await verification.save(null, { useMasterKey: true });
+        throw mailError;
+      }
     } catch (error) {
       // Do not delete the account automatically if email delivery fails; provide a useful message.
       console.error('[TdevKuantum] Registration email error:', error && error.message);
@@ -457,6 +484,40 @@ Parse.Cloud.define('verifyEmailCode', async (request) => {
   verification.set('used', true);
   await verification.save(null, { useMasterKey: true });
   return { success: true, message: 'E-posta doğrulandı.' };
+});
+
+Parse.Cloud.define('resendVerificationCode', async (request) => {
+  const email = normalizeEmail(request.params && request.params.email);
+  if (!validEmail(email)) return resultError('Geçerli bir e-posta adresi gir.', 'INVALID_EMAIL');
+  const genericMessage = 'Eğer bu e-posta doğrulanmamış bir hesaba aitse yeni kod gönderilecektir. Gelen kutunu ve spam klasörünü kontrol et.';
+  const userQuery = new Parse.Query(Parse.User);
+  userQuery.equalTo('username', email);
+  const user = await userQuery.first({ useMasterKey: true });
+  if (!user || user.get('emailVerified') === true) return { success: true, message: genericMessage };
+
+  const recentQuery = new Parse.Query('EmailVerification');
+  recentQuery.equalTo('emailHash', sha256(email));
+  recentQuery.equalTo('used', false);
+  recentQuery.greaterThan('createdAt', new Date(Date.now() - 60 * 1000));
+  recentQuery.descending('createdAt');
+  recentQuery.limit(1);
+  const recent = await recentQuery.first({ useMasterKey: true });
+  if (recent && recent.get('deliveryFailed') !== true) return resultError('Güvenlik için yeni kod istemeden önce bir dakika bekle.', 'RATE_LIMITED');
+
+  const code = String(crypto.randomInt(100000, 1000000));
+  const verification = await saveVerification(email, code);
+  try {
+    await sendVerificationEmail(email, code, user.get('displayName') || user.get('name') || 'öğrenci');
+    verification.set('deliveryFailed', false);
+    await verification.save(null, { useMasterKey: true });
+    await writeAuditLog(null, 'user.email_verification_resent', user.id, { emailHash: sha256(email) });
+    return { success: true, message: genericMessage };
+  } catch (error) {
+    verification.set('deliveryFailed', true);
+    await verification.save(null, { useMasterKey: true });
+    console.error('[TdevKuantum] Resend verification email error:', error && error.message);
+    return resultError(error && error.message ? error.message : 'Doğrulama e-postası gönderilemedi.', 'EMAIL_DELIVERY_FAILED');
+  }
 });
 
 Parse.Cloud.define('loginUser', async (request) => {
@@ -948,14 +1009,35 @@ Parse.Cloud.define('getQuestionsForGrade', async (request) => {
 
 Parse.Cloud.define('healthCheck', async () => {
   const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
+  const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
   const apiKey = await configValueAsync('RESEND_API_KEY');
   const from = await configValueAsync('EMAIL_FROM');
+  let appsScriptConfigured = false;
+  let appsScriptDiagnostic = scriptUrl ? 'Kontrol edilmedi.' : 'Google Apps Script URL ayarlanmamış.';
+  if (scriptUrl) {
+    try {
+      await probeAppsScript(scriptUrl);
+      appsScriptConfigured = true;
+      appsScriptDiagnostic = 'Web App erişilebilir ve Script Properties token mevcut.';
+    } catch (error) {
+      appsScriptDiagnostic = safeText(error && error.message || 'Apps Script kontrolü başarısız.', 220);
+    }
+  }
+  const googleReady = !!(scriptUrl && scriptToken && appsScriptConfigured);
+  const resendReady = !!(apiKey && from);
   return {
     success: true,
     service: 'TdevKuantum Cloud Code',
     timestamp: new Date().toISOString(),
-    emailProviderConfigured: !!(scriptUrl || (apiKey && from)),
-    emailProvider: scriptUrl ? 'google-apps-script' : (apiKey && from ? 'resend' : 'none')
+    emailProviderConfigured: googleReady || resendReady,
+    emailProvider: googleReady ? 'google-apps-script' : (resendReady ? 'resend' : 'misconfigured'),
+    emailDiagnostics: {
+      googleScriptUrlConfigured: !!scriptUrl,
+      back4AppTokenConfigured: !!scriptToken,
+      googleAppsScriptConfigured: appsScriptConfigured,
+      googleAppsScriptStatus: appsScriptDiagnostic,
+      resendConfigured: resendReady
+    }
   };
 });
 
@@ -971,10 +1053,13 @@ async function sendSupportNotification(name, email, category, message) {
   const errors = [];
   if (scriptUrl) {
     try {
+      const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
+      if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
+      await probeAppsScript(scriptUrl);
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message, token: await configValueAsync('APPS_SCRIPT_TOKEN') })
+        body: JSON.stringify({ to: recipient, email: recipient, replyTo: email, name: name, subject: subject, html: htmlBody, text: textBody, app: 'TdevKuantum', category: category, message: message, token: scriptToken })
       });
       const body = await response.text();
       if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
@@ -1043,7 +1128,7 @@ Parse.Cloud.define('sendSupportMessage', async (request) => {
 /* TdevKuantum schema setup. Set SCHEMA_SETUP_TOKEN in Back4App Config. Call setupDatabaseSchema with {token: SCHEMA_SETUP_TOKEN} once, then rotate/remove token. Creates missing classes/fields only; does not delete data. */
 const TK_SCHEMA = {
   UserProfile: { username:'string', email:'string', displayName:'string', role:'string', grade:'number', school:'string', isBanned:'boolean', emailVerified:'boolean', referralCode:'string', createdAtISO:'string', lastLoginAtISO:'string' },
-  EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', createdAtISO:'string' },
+  EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', deliveryFailed:'boolean', createdAtISO:'string' },
   PasswordReset: { emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean' },
   Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', subjects:'object', order:'number', active:'boolean' },
   Question: { grade:'number', server:'string', subject:'string', topic:'string', question:'string', options:'array', correctAnswer:'string', explanation:'string', difficulty:'string', active:'boolean', order:'number' },
