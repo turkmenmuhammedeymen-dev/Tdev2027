@@ -966,7 +966,7 @@ function defaultCurriculum(gradeText, server, requestedCountryName) {
       tag: server === 'TR' && grade === 8 ? 'lgs' : (grade >= 9 && grade <= 12 ? 'lise' : 'temel'),
       topics: topics,
       videos: topics.slice(0, 3).map(t => t.videos[0]),
-      meb1: knownCountry ? 'Bu sayfa genel konu rehberidir; resmî yıllık plan ve kazanımlar ülkenin güncel resmî kaynağından kontrol edilmelidir.' : 'Bu ülke için doğrulanmış resmî müfredat kaydı henüz eklenmedi; aşağıdaki içerik genel öğrenme rehberidir.',
+      meb1: 'Bu içerik doğrulanmış resmî müfredat kaydı değil, genel öğrenme rehberidir. Ülkenin güncel resmî kazanımları ayrıca kontrol edilmelidir.',
       meb2: 'Konu başlıkları öğrenmeyi desteklemek için hazırlanmıştır; sınav kapsamı veya resmî kazanım garantisi değildir.',
       mebLink: server === 'TR' ? 'https://mufredat.meb.gov.tr/' :
         server === 'US' ? 'https://www.ed.gov/' :
@@ -1046,7 +1046,7 @@ Parse.Cloud.define('getQuestions', async (request) => {
   q.equalTo('active', true);
   q.limit(100);
   q.ascending('createdAt');
-  const rows = await q.find({ useMasterKey: true });
+  const rows = isKindergarten ? [] : await q.find({ useMasterKey: true });
   const stored = rows.map((row) => ({
     id: row.id,
     grade: String(row.get('grade') || ''),
@@ -1068,15 +1068,15 @@ Parse.Cloud.define('getQuestions', async (request) => {
       const explanation = safeText(topic.explanation, 1000);
       if (!title || !explanation) return;
       generated.push({
-        id: 'guide-' + server + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-true',
-        grade: String(grade), subject: subject,
+        id: 'guide-' + server + '-' + gradeInput + '-' + subjectIndex + '-' + topicIndex + '-true',
+        grade: gradeInput, subject: subject,
         question: title + ': ' + explanation,
         answer: 'true', explanation: explanation,
         source: 'TdevKuantum genel konu rehberi; resmî sınav sorusu değildir'
       });
       generated.push({
-        id: 'guide-' + server + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-false',
-        grade: String(grade), subject: subject,
+        id: 'guide-' + server + '-' + gradeInput + '-' + subjectIndex + '-' + topicIndex + '-false',
+        grade: gradeInput, subject: subject,
         question: title + ': ' + (server === 'TR' ? 'Bu açıklama doğru değildir: ' : 'This explanation is not correct: ') + explanation,
         answer: 'false', explanation: explanation,
         source: 'TdevKuantum genel konu rehberi; resmî sınav sorusu değildir'
