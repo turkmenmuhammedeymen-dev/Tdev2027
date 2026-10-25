@@ -530,7 +530,6 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   const q = new Parse.Query('Curriculum');
   q.equalTo('grade', gradeNumber);
   q.equalTo('server', server);
-  q.equalTo('active', true);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
   if (row && row.get('subjects') && typeof row.get('subjects') === 'object') return row.get('subjects');
