@@ -678,6 +678,10 @@ input,select,textarea { color:#172b4d; }
                 <h3>📊 PLATFORM İSTATİSTİKİ</h3>
                 <div class="stats-row" id="admin-stats-row"></div>
             </div>
+            <div class="admin-card">
+                <h3>🧾 SON YÖNETİCİ İŞLEMLERİ</h3>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>TARİH</th><th>İŞLEMİ YAPAN</th><th>İŞLEM</th><th>HEDEF KAYIT</th></tr></thead><tbody id="admin-audit-table"><tr><td colspan="4">Yükleniyor…</td></tr></tbody></table></div>
+            </div>
         </div>
     </div>
 </div>
@@ -741,7 +745,7 @@ input,select,textarea { color:#172b4d; }
         <div class="nav-section">ÇALIŞMA ARAÇLARI</div>
         <div class="nav-btn" onclick="showTab('planner',this);loadStudyPlanner()"><span class="nav-icon">🗓️</span>Çalışma Planı</div>
         <div class="nav-btn" onclick="showTab('notes',this);loadStudyNotes()"><span class="nav-icon">📝</span>Not Defterim</div>
-        <div class="nav-btn" onclick="showTab('cards',this);renderStudyCards()"><span class="nav-icon">🧠</span>Bilgi Kartları</div>
+        <div class="nav-btn" onclick="showTab('cards',this);loadStudyCards()"><span class="nav-icon">🧠</span>Bilgi Kartları</div>
         <div class="nav-btn" onclick="showTab('practice',this);loadPracticeLog()"><span class="nav-icon">🎯</span>Tekrar ve Deneme</div>
         <div class="nav-btn" onclick="showTab('mistakes',this);loadStudyMistakes()"><span class="nav-icon">🔎</span>Yanlış Defterim</div>
         <div class="nav-btn" onclick="showTab('focus',this)"><span class="nav-icon">⏱️</span>Odak Sayacı</div>
@@ -1241,7 +1245,22 @@ function refreshAdminPage() {
                 <div class="stat-card"><div class="stat-val">${stats.total}</div><div class="stat-lbl">KAYITLI</div></div>
                 <div class="stat-card"><div class="stat-val" style="color:var(--green)">${stats.active}</div><div class="stat-lbl">AKTİF</div></div>
                 <div class="stat-card"><div class="stat-val" style="color:var(--admin)">${stats.banned}</div><div class="stat-lbl">YASAK</div></div>
+                <div class="stat-card"><div class="stat-val">${Number(stats.studyPlans)||0}</div><div class="stat-lbl">ÇALIŞMA PLANI</div></div>
+                <div class="stat-card"><div class="stat-val">${Number(stats.studyNotes)||0}</div><div class="stat-lbl">ÖĞRENCİ NOTU</div></div>
+                <div class="stat-card"><div class="stat-val">${Number(stats.studyCards)||0}</div><div class="stat-lbl">BİLGİ KARTI</div></div>
+                <div class="stat-card"><div class="stat-val">${Number(stats.studySessions)||0}</div><div class="stat-lbl">ÇALIŞMA OTURUMU</div></div>
+                <div class="stat-card"><div class="stat-val">${Number(stats.studyMistakes)||0}</div><div class="stat-lbl">YANLIŞ KAYDI</div></div>
+                <div class="stat-card"><div class="stat-val">${Number(stats.auditEvents)||0}</div><div class="stat-lbl">DENETİM KAYDI</div></div>
             `;
+        })
+        .catch(() => {});
+
+    // Son yönetici işlemleri: Cloud Code yalnızca kurucu/yöneticiye izin verir.
+    Parse.Cloud.run('getAuditLog', { limit: 30 })
+        .then(events => {
+            const table = document.getElementById('admin-audit-table');
+            if (!table) return;
+            table.innerHTML = events.length ? events.map(event => `<tr><td>${escapeHTML(String(event.createdAtISO || '').replace('T',' ').slice(0,19))}</td><td>${escapeHTML(event.actorEmail || 'sistem')}</td><td>${escapeHTML(event.action || '')}</td><td>${escapeHTML(event.targetId || '—')}</td></tr>`).join('') : '<tr><td colspan="4">Henüz denetim kaydı yok.</td></tr>';
         })
         .catch(() => {});
 }
