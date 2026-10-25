@@ -1700,7 +1700,7 @@ let qAll = []; // tüm sorular cache
 function initQuiz() {
     const g = document.getElementById('qg'); if(g) g.value = curGrade || '8';
     // Cloud'dan soruları çek
-    Parse.Cloud.run('getQuestions', { grade: curGrade })
+    Parse.Cloud.run('getQuestions', { grade: curGrade, server: curServer })
         .then(questions => {
             qAll = questions;
             fillQLesson();
@@ -1741,7 +1741,9 @@ function nextQ() {
 
 function ansQ(ans) {
     if(!curQ) return;
-    const ok = ans === curQ.answer;
+    const answerValue = curQ.answer;
+    const correctAnswer = typeof answerValue === 'boolean' ? answerValue : ['true','doğru','1','yes'].includes(String(answerValue).trim().toLocaleLowerCase('tr'));
+    const ok = ans === correctAnswer;
     if(ok) qCor++; else qWrg++;
     const tot = qCor + qWrg;
     document.getElementById('qc').innerText = qCor;
@@ -1750,7 +1752,7 @@ function ansQ(ans) {
     document.getElementById('qp').innerText = Math.round(qCor/tot*100) + '%';
     const r = document.getElementById('q-res');
     r.className = 'quiz-result ' + (ok ? 'correct' : 'wrong');
-    r.innerText = ok ? '✓ DOĞRU! Tebrikler!' : '✗ YANLIŞ! Doğru: ' + (curQ.answer ? 'DOĞRU' : 'YANLIŞ');
+    r.innerText = ok ? '✓ DOĞRU! Tebrikler!' : '✗ YANLIŞ! Doğru cevap: ' + (correctAnswer ? 'DOĞRU' : 'YANLIŞ') + (curQ.explanation ? '\\n' + curQ.explanation : '');
     r.style.display = 'block';
     document.querySelectorAll('.quiz-btn').forEach(b => { b.style.opacity = '.4'; b.style.pointerEvents = 'none'; });
     setTimeout(nextQ, 1800);
