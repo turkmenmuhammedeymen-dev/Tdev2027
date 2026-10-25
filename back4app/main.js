@@ -183,10 +183,18 @@ async function probeAppsScript(scriptUrl, expectedToken) {
   if (!tokenCheck.ok) throw new Error('Apps Script token kontrolü HTTP ' + tokenCheck.status);
   let tokenData;
   try { tokenData = JSON.parse(tokenBody); } catch (_) { throw new Error('Apps Script token kontrolü JSON döndürmedi; güncel Code.gs dağıtımını kontrol et.'); }
-  if (!tokenData || tokenData.success !== true || tokenData.tokenValid !== true) {
-    throw new Error('Apps Script token doğrulaması başarısız. Back4App APPS_SCRIPT_TOKEN ile Script Properties değeri aynı mı kontrol et ve Code.gs güncellemesini dağıt.');
+  if (tokenData && tokenData.success === true && tokenData.tokenValid === true) {
+    return tokenData;
   }
-  return tokenData;
+  // Backward compatibility: older deployed Code.gs versions validate the token first,
+  // then fall through to recipient validation because they do not implement "healthcheck".
+  // This exact error is only reached after the token comparison has succeeded.
+  if (tokenData && tokenData.success === false &&
+      /A valid recipient email is required/i.test(String(tokenData.error || ''))) {
+    console.warn('[TdevKuantum] Apps Script token accepted; deployed Code.gs uses legacy health-check behavior.');
+    return { success: true, tokenValid: true, legacyHealthcheck: true };
+  }
+  throw new Error('Apps Script token doğrulaması başarısız. Back4App APPS_SCRIPT_TOKEN ile Script Properties değeri aynı mı kontrol et ve Code.gs güncellemesini dağıt.');
 }
 
 async function sendVerificationEmail(email, code, name) {
