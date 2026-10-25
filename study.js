@@ -94,6 +94,44 @@
     item.done = !item.done; item.updatedAt = new Date().toISOString(); item.completedAt = item.done ? item.updatedAt : '';
     write('plans', list); renderStudyPlans(); await cloud('saveStudyPlan', { item: item }); window.renderLearningProgress();
   };
+  function topicNoteId(grade, server, subject, topic) {
+    const slug = function (value) {
+      return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24);
+    };
+    return ('topic-' + slug(server) + '-' + slug(grade) + '-' + slug(subject) + '-' + slug(topic)).slice(0, 100);
+  }
+  window.getCurriculumTopicNote = function (grade, server, subject, topic) {
+    const noteId = topicNoteId(grade, server, subject, topic);
+    const item = read('notes').find(function (note) { return note && note.id === noteId; });
+    return item ? item.body || '' : '';
+  };
+  window.saveCurriculumTopicNote = async function (grade, server, subject, topic, body) {
+    const cleanBody = String(body || '').trim();
+    if (!cleanBody) { notify('Not alanı boş. Önce kendi notunu yaz.'); return false; }
+    if (cleanBody.length > 12000) { notify('Not 12.000 karakteri aşamaz.'); return false; }
+    const noteId = topicNoteId(grade, server, subject, topic);
+    const now = new Date().toISOString();
+    const item = {
+      id: noteId,
+      title: String(subject + ' — ' + topic).slice(0, 120),
+      subject: String(subject).slice(0, 80),
+      body: cleanBody,
+      updatedAt: now
+    };
+    const list = read('notes');
+    const index = list.findIndex(function (note) { return note && note.id === noteId; });
+    if (index >= 0) list[index] = Object.assign({}, list[index], item);
+    else list.unshift(item);
+    write('notes', list);
+    const result = await cloud('saveStudyNote', { item: item });
+    renderStudyNotes();
+    notify(result && result.success === true
+      ? 'Konu notu kaydedildi ve buluta eşitlendi.'
+      : 'Konu notu bu cihazda kaydedildi; bulut eşitlemesi doğrulanamadı.');
+    return true;
+  };
+
   window.saveStudyNote = async function (event) {
     event.preventDefault();
     const item = {
