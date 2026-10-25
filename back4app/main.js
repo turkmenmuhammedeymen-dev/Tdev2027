@@ -278,10 +278,16 @@ async function sendPasswordResetEmail(email, code) {
   }
   throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Şifre yenileme e-postası gönderilemedi. E-posta servisi ayarlarını kontrol et. ' + errors.join(' | ').slice(0, 500));
 }
+async function passwordResetCodeHash(email, code) {
+  // Pepper the six-digit code with a server-only secret so a leaked hash cannot be brute-forced offline.
+  const secret = (await configValueAsync('PASSWORD_RESET_PEPPER')) || (await configValueAsync('APPS_SCRIPT_TOKEN'));
+  if (!secret || secret.length < 32) throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Şifre sıfırlama için sunucu gizli anahtarı yapılandırılmamış.');
+  return sha256(normalizeEmail(email) + ':' + String(code) + ':' + secret);
+}
 async function savePasswordReset(email, code) {
   const row = new Parse.Object('PasswordReset');
   row.set('emailHash', sha256(normalizeEmail(email)));
-  row.set('codeHash', sha256(code));
+  row.set('codeHash', await passwordResetCodeHash(email, code));
   row.set('expiresAt', new Date(Date.now() + 10 * 60 * 1000));
   row.set('attempts', 0);
   row.set('used', false);
@@ -355,7 +361,7 @@ Parse.Cloud.define('completeTdevPasswordReset', async (request) => {
   if (!reset) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
   const attempts = Number(reset.get('attempts') || 0);
   if (attempts >= 5) return resultError('Çok fazla yanlış deneme. Yeni kod iste.', 'RESET_TOO_MANY_ATTEMPTS');
-  if (!secureEqual(reset.get('codeHash'), sha256(code))) {
+  if (!secureEqual(reset.get('codeHash'), await passwordResetCodeHash(email, code))) {
     reset.set('attempts', attempts + 1);
     await reset.save(null, { useMasterKey: true });
     return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_INVALID');
