@@ -599,17 +599,20 @@ Parse.Cloud.define('loginUser', async (request) => {
 });
 
 Parse.Cloud.define('getCurriculum', async (request) => {
-  const gradeInput = safeText(request.params && request.params.grade, 10);
-  const gradeNumber = Number(gradeInput);
+  const gradeInput = safeText(request.params && request.params.grade, 10).toUpperCase();
   const server = safeText(request.params && request.params.server, 5).toUpperCase();
-  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(gradeNumber) || gradeNumber < 1 || gradeNumber > 12 || !/^[A-Z]{2}$/.test(server)) return {};
+  const isKindergarten = gradeInput === 'K' && server === 'US';
+  const gradeNumber = isKindergarten ? 0 : Number(gradeInput);
+  const validGrade = isKindergarten || (Number.isInteger(gradeNumber) && gradeNumber >= 1 && gradeNumber <= 12) ||
+    (gradeNumber === 13 && ['UK', 'GB', 'DE'].includes(server));
+  if (!validGrade || !/^[A-Z]{2}$/.test(server)) return {};
   const q = new Parse.Query('Curriculum');
   q.equalTo('grade', gradeNumber);
   q.equalTo('server', server === 'GB' ? 'UK' : server);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
   if (row && row.get('subjects') && typeof row.get('subjects') === 'object') return row.get('subjects');
-  return defaultCurriculum(String(gradeNumber), server, safeText(request.params && request.params.countryName, 100));
+  return defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
 });
 
 // Seed content is a learning guide, not a claim that every item is an official
@@ -913,10 +916,33 @@ function tkLocalizedTopicFor(subject, grade, server) {
   return localized;
 }
 
+function tkLearningObjectives(server) {
+  const bank = {
+    TR: ['Konuyu kendi cümlenle açıklayabilmek', 'En az bir örnek çözebilmek veya günlük hayatla ilişkilendirebilmek'],
+    DE: ['Das Thema mit eigenen Worten erklären können', 'Mindestens ein Beispiel lösen oder im Alltag anwenden können'],
+    ES: ['Explicar el tema con tus propias palabras', 'Resolver un ejemplo o relacionarlo con la vida cotidiana'],
+    FR: ['Expliquer le sujet avec tes propres mots', 'Résoudre un exemple ou le relier à la vie quotidienne'],
+    PT: ['Explicar o tema com as tuas próprias palavras', 'Resolver um exemplo ou relacioná-lo com a vida quotidiana'],
+    AZ: ['Mövzunu öz sözlərinlə izah etmək', 'Ən azı bir nümunə həll etmək və ya gündəlik həyatla əlaqələndirmək'],
+    JA: ['学んだ内容を自分の言葉で説明する', '例題を解くか、日常生活と結び付ける'],
+    CN: ['能够用自己的话解释主题', '完成一个例题或联系日常生活'],
+    TW: ['能用自己的話解釋主題', '完成一個例題或連結日常生活'],
+    KR: ['배운 내용을 자신의 말로 설명하기', '예제를 풀거나 일상생활과 연결하기'],
+    SA: ['شرح الموضوع بكلماتك الخاصة', 'حل مثال واحد على الأقل أو ربطه بالحياة اليومية'],
+    AE: ['شرح الموضوع بكلماتك الخاصة', 'حل مثال واحد على الأقل أو ربطه بالحياة اليومية'],
+    EG: ['شرح الموضوع بكلماتك الخاصة', 'حل مثال واحد على الأقل أو ربطه بالحياة اليومية'],
+    IQ: ['شرح الموضوع بكلماتك الخاصة', 'حل مثال واحد على الأقل أو ربطه بالحياة اليومية'],
+    RU: ['Объяснить тему своими словами', 'Решить пример или связать тему с повседневной жизнью'],
+    ID: ['Menjelaskan topik dengan kata-kata sendiri', 'Menyelesaikan contoh atau menghubungkannya dengan kehidupan sehari-hari'],
+    VN: ['Giải thích chủ đề bằng lời của mình', 'Giải một ví dụ hoặc liên hệ với cuộc sống hằng ngày']
+  };
+  return bank[server] || ['Explain the topic in your own words', 'Solve an example or connect it to everyday life'];
+}
 function defaultCurriculum(gradeText, server, requestedCountryName) {
-  const grade = Number(gradeText);
+  const grade = String(gradeText).toUpperCase() === 'K' ? 0 : Number(gradeText);
+  const gradeLabel = String(gradeText).toUpperCase() === 'K' ? 'Kindergarten' : String(grade);
+  const gradeQuery = gradeLabel === 'Kindergarten' ? 'Kindergarten' : gradeLabel + '. sınıf';
   const subjects = tkStageSubjects(grade, server);
-  const knownCountry = false; // Fallback guides are not verified official national curricula.
   const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',GB:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
   const countryName = safeText(requestedCountryName, 100) || countryNames[server] || server;
   const result = {};
@@ -924,19 +950,19 @@ function defaultCurriculum(gradeText, server, requestedCountryName) {
     const bank = tkLocalizedTopicFor(subject, grade, server) || tkTopicFor(subject, grade);
     const topicCount = grade <= 4 ? 4 : 6;
     const topics = bank.slice(0, topicCount).map((entry, index) => ({
-      id: server + '-' + grade + '-' + index,
+      id: server + '-' + gradeLabel + '-' + index,
       title: entry[0],
       explanation: entry[1],
-      objectives: ['Konuyu kendi cümlenle açıklayabilmek','En az bir örnek çözebilmek veya günlük hayatla ilişkilendirebilmek'],
+      objectives: tkLearningObjectives(server),
       videos: [{
         title: entry[0] + ' — konu anlatımı',
-        query: subject + ' ' + grade + '. sınıf ' + entry[0] + ' konu anlatımı',
-        url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(subject + ' ' + grade + '. sınıf ' + entry[0] + ' konu anlatımı')
+        query: subject + ' ' + gradeQuery + ' ' + entry[0] + ' konu anlatımı',
+        url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(subject + ' ' + gradeQuery + ' ' + entry[0] + ' konu anlatımı')
       }]
     }));
     result[subject] = {
       icon: /mat|matematik|数学/i.test(subject) ? '📐' : (/fen|science|fizik|kimya|biyoloji|理科/i.test(subject) ? '🔬' : '📚'),
-      desc: grade + '. sınıf · ' + countryName + ' öğrenme rehberi',
+      desc: gradeQuery + ' · ' + countryName + ' öğrenme rehberi',
       tag: server === 'TR' && grade === 8 ? 'lgs' : (grade >= 9 && grade <= 12 ? 'lise' : 'temel'),
       topics: topics,
       videos: topics.slice(0, 3).map(t => t.videos[0]),
@@ -1007,10 +1033,13 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
 });
 
 Parse.Cloud.define('getQuestions', async (request) => {
-  const gradeInput = safeText(request.params && request.params.grade, 10);
-  const grade = Number(gradeInput);
+  const gradeInput = safeText(request.params && request.params.grade, 10).toUpperCase();
   const server = safeText(request.params && request.params.server, 5).toUpperCase();
-  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12 || !/^[A-Z]{2}$/.test(server)) return [];
+  const isKindergarten = gradeInput === 'K' && server === 'US';
+  const grade = isKindergarten ? 0 : Number(gradeInput);
+  const validGrade = isKindergarten || (Number.isInteger(grade) && grade >= 1 && grade <= 12) ||
+    (grade === 13 && ['UK', 'GB', 'DE'].includes(server));
+  if (!validGrade || !/^[A-Z]{2}$/.test(server)) return [];
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
   q.equalTo('server', server === 'GB' ? 'UK' : server);
@@ -1030,7 +1059,7 @@ Parse.Cloud.define('getQuestions', async (request) => {
   if (stored.length) return stored;
   // A useful fallback prevents an empty quiz when a grade has no manually curated
   // Question rows. These are clearly labelled as guide-based practice, not official exam items.
-  const curriculum = defaultCurriculum(String(grade), server, safeText(request.params && request.params.countryName, 100));
+  const curriculum = defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
   const generated = [];
   Object.keys(curriculum).forEach((subject, subjectIndex) => {
     const topics = Array.isArray(curriculum[subject].topics) ? curriculum[subject].topics : [];
