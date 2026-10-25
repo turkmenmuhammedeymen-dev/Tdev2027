@@ -1573,7 +1573,7 @@ Parse.Cloud.define('deleteStudyRecord', async (request) => {
 
 // ---- RESMÎ MÜFREDAT KAYITLARI: yönetici içe aktarma ve kullanıcıya güvenli listeleme ----
 function trustedCurriculumSource(sourceUrl, countryCode) {
-  const host = String(sourceUrl || '').toLowerCase().replace(/^https:\/\//, '').split(/[\/:?#]/)[0];
+  const host = String(sourceUrl || '').toLowerCase().replace(/^https:\/\//i, '').split(/[\/:?#]/)[0];
   const trustedByCountry = {
     TR: ['meb.gov.tr'],
     GB: ['gov.uk'],
@@ -1626,7 +1626,7 @@ function curriculumProgramPayload(value) {
     countryCode: countryCode,
     countryName: countryName,
     grade: grade,
-    gradeLabel: safeText(value.gradeLabel, 40) || (grade === 0 ? 'K' : String(grade)),
+    gradeLabel: grade === 0 ? 'K' : (safeText(value.gradeLabel, 40) || String(grade)),
     subject: safeText(value.subject, 120),
     title: safeText(value.title, 180),
     programType: programType,
