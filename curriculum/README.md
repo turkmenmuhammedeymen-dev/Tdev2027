@@ -6,7 +6,7 @@ Bu klasör, uygulamanın müfredat kaynaklarını ve içe aktarma politikasını
 
 - `../index.html`: giriş sonrası “Yeni Müfredat Merkezi”, kaynak arama/filtreleme ve kurucu/yönetici içe aktarma formu.
 - `../curriculum-catalog.js`: resmî kaynak bağlantıları, arayüz filtreleri ve aktarılan kayıtların listesi.
-- `../back4app/main.js`: `CurriculumProgram` şeması ve `getCurriculumPrograms`, `saveCurriculumProgram`, `getCurriculumCoverage` Cloud Functions.
+- `../back4app/main.js`: `CurriculumProgram` şeması; `getCurriculumPrograms`, `saveCurriculumProgram`, `getCurriculumCoverage` ve içe aktarılan programları ders modülüne bağlayan `getCurriculum` Cloud Function.
 - `../study.js`: kişisel çalışma planı, not, bilgi kartı, deneme ve yanlış defteri kayıtları; bunlar müfredat kaynak kataloğundan ayrı tutulur.
 
 ## Back4App kurulum adımları
@@ -36,13 +36,15 @@ Sunucu yalnızca yetkili kurucu/yönetici hesabının kayıt eklemesine izin ver
 
 ## Kapsam ve doğruluk politikası
 
-Kaynak kartları resmî portallara yönlendirir; **bu, bütün derslerin/ünitelerin platforma aktarıldığı anlamına gelmez**. Şu anki katalog, Türkiye'nin genel programları, TYMM yıllık planları, meslekî-teknik programlar, imam hatip programları ve seçilmiş uluslararası kaynaklara bağlantılar içerir. Her ülkenin tüm sınıfları, her meslek alanı/dalı veya tüm imam hatip dersleri eksiksiz biçimde otomatik olarak içe aktarılmış değildir.
+Kaynak kartları resmî portallara yönlendirir; **bu, bütün derslerin/ünitelerin platforma aktarıldığı anlamına gelmez**. Kaynak kataloğu Türkiye'nin genel programları, TYMM yıllık planları, meslekî-teknik programlar, imam hatip programları ve çok sayıda ülkenin resmî eğitim portallarına yönlendirmeler içerir. UNESCO-IBE ve NCIC gibi uluslararası dizinler, katalogda henüz ayrı ülke kaydı bulunmayan sistemleri keşfetmek için başlangıç noktasıdır. Her ülkenin tüm sınıfları, her meslek alanı/dalı veya tüm imam hatip dersleri eksiksiz biçimde otomatik olarak içe aktarılmış değildir.
 
 - Bir kayıt resmî kaynak ve güncel program yılı üzerinden kontrol edilmedikçe “doğrulanmış resmî program” olarak işaretlenmemelidir.
 - ABD, Almanya ve Birleşik Krallık gibi yerlerde eğitim programlarının yetkisi eyalet/bölge/ülkeye göre değişebilir.
 - Genel öğrenme rehberi, ulusal müfredatın yerine geçmez.
 - Resmî program metinlerini uzun pasajlar halinde kopyalamak yerine kaynak bağlantısı, konu başlığı ve özgün kısa özet kullan.
 - Kaynak sürümleri değiştiğinde eski kaydı otomatik olarak güncel sayma; öğretim yılı ve doğrulama tarihini yenile.
+- `CurriculumProgram` kayıtları, `getCurriculum` tarafından ilgili ülke ve sınıf için `Curriculum` kaydı bulunmadığında ders ekranına aktarılır. Konu verisi yoksa kayıt resmî içerik gibi gösterilmez; genel öğrenme rehberi açıkça doğrulanmamış olarak kalır.
+- Katalog bağlantısı bulunması, o ülkenin tüm sınıf/ders/ünite verisinin içe aktarıldığı anlamına gelmez. Bazı ülkelerde eğitim yetkileri eyalet, kanton, bölge, okul türü veya kurul düzeyindedir.
 
 ## Resmî başlangıç kaynakları
 
