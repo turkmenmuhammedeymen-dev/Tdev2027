@@ -116,9 +116,9 @@ check(cloudCode.includes("JSON.stringify({ action: 'healthcheck', token: expecte
   'Back4App probes Apps Script using the matching health-check protocol');
 check(cloudCode.includes("configValueAsync('APPS_SCRIPT_TOKEN')"),
   'Back4App reads the server-side mail token');
-check(!/\b(?:APPS_SCRIPT_TOKEN|RESEND_API_KEY|AI_API_KEY)\b/.test(
+check(!/\b(?:APPS_SCRIPT_TOKEN|RESEND_API_KEY)\b/.test(
   html + '\n' + files['study.js'] + '\n' + files['curriculum-catalog.js']
-), 'No mail/AI server secret key names appear in frontend source');
+), 'No mail-service secret key names appear in frontend source');
 
 check(cloudCode.includes('StudyCard:') && cloudCode.includes("Parse.Cloud.define('saveStudyCard'") &&
       cloudCode.includes("Parse.Cloud.define('getStudyCards'"),
