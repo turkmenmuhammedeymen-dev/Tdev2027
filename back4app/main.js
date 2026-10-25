@@ -1655,8 +1655,8 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   let endpoint = useNvidia
     ? ((await configValueAsync('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')) || 'https://integrate.api.nvidia.com/v1')
     : ((await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions');
-  endpoint = endpoint.replace(/\\/+$/, '');
-  if (!/chat\\/completions$/i.test(endpoint)) endpoint += '/chat/completions';
+  endpoint = endpoint.replace(/\/+$/, '');
+  if (!/chat\/completions$/i.test(endpoint)) endpoint += '/chat/completions';
   if (!/^https:\/\//i.test(endpoint)) return resultError((useNvidia ? 'NVIDIA_BASE_URL' : 'AI_BASE_URL') + ' yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
 
   const systemPrompt = [
