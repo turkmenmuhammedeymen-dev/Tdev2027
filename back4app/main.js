@@ -256,8 +256,8 @@ Parse.Cloud.define('registerUser', async (request) => {
   const name = safeText(request.params && request.params.name, 100);
   const email = normalizeEmail(request.params && request.params.email);
   const password = String((request.params && request.params.password) || '');
-  if (!name || !validEmail(email) || password.length < 8 || password.length > 128) {
-    return resultError('Ad, geçerli e-posta ve en az 8 karakterli şifre gerekli.', 'INVALID_INPUT');
+  if (!name || !validEmail(email) || password.length < 8 || password.length > 128 || !request.params || request.params.acceptedTerms !== true) {
+    return resultError('Ad, geçerli e-posta, en az 8 karakterli şifre ve sözleşme onayı gerekli.', 'INVALID_INPUT');
   }
   // Config-defined staff credentials are reserved for the corresponding role.
   const reservedRole = await roleForEmail(email);
@@ -278,6 +278,7 @@ Parse.Cloud.define('registerUser', async (request) => {
   user.set('banned', false);
   user.set('emailVerified', false);
   await user.signUp(null, { useMasterKey: true });
+  await writeAuditLog(request, 'user.register', user.id, { email: email, verificationRequired: true });
 
   const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
   if (verificationRequired) {
@@ -316,6 +317,7 @@ Parse.Cloud.define('verifyEmailCode', async (request) => {
   const user = await query.first({ useMasterKey: true });
   if (!user) return resultError('Bu e-posta için hesap bulunamadı.', 'USER_NOT_FOUND');
   await setVerified(user);
+  await writeAuditLog(request, 'user.email_verified', user.id, { email: email });
   verification.set('used', true);
   await verification.save(null, { useMasterKey: true });
   return { success: true, message: 'E-posta doğrulandı.' };
@@ -355,6 +357,7 @@ Parse.Cloud.define('loginUser', async (request) => {
     }
     const authenticatedStaff = await Parse.User.logIn(email, configuredPassword);
     if (authenticatedStaff.get('banned') === true) return resultError('Bu hesap devre dışı bırakılmış.', 'ACCOUNT_BANNED');
+    await writeAuditLog(request, 'user.login', authenticatedStaff.id, { email: email, role: specialRole });
     return {
       success: true,
       role: specialRole,
@@ -375,6 +378,7 @@ Parse.Cloud.define('loginUser', async (request) => {
     }
     const configuredRole = await roleForEmail(email);
     const role = configuredRole !== 'member' ? configuredRole : 'member';
+    await writeAuditLog(request, 'user.login', user.id, { email: email, role: role });
     return { success: true, role: role, name: safeText(user.get('displayName') || user.get('name') || user.get('username'), 100), email: email, sessionToken: user.getSessionToken() };
   } catch (error) {
     console.warn('[TdevKuantum] Login rejected:', error && error.code);
@@ -597,6 +601,7 @@ Parse.Cloud.define('sendSupportMessage', async (request) => {
   row.set('status', 'new');
   row.set('userId', user.id);
   await row.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'support.message_created', row.id, { category: category });
   try {
     await sendSupportNotification(name, email, category, message);
   } catch (error) {
