@@ -1,5 +1,7 @@
 /* TdevKuantum schema setup. Set SCHEMA_SETUP_TOKEN in Back4App Config. Call setupDatabaseSchema with {token: SCHEMA_SETUP_TOKEN} once, then rotate/remove token. Creates missing classes/fields only; does not delete data. */
 const TK_SCHEMA = {
+  GuardianStudent: { guardianId:'string', studentId:'string', status:'string', createdAtISO:'string', removedAtISO:'string' },
+  ClassroomMessage: { classroomId:'string', authorId:'string', authorName:'string', authorRole:'string', message:'string', createdAtISO:'string' },
   UserProfile: { username:'string', email:'string', displayName:'string', role:'string', grade:'number', school:'string', isBanned:'boolean', emailVerified:'boolean', referralCode:'string', createdAtISO:'string', lastLoginAtISO:'string' },
   EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', deliveryFailed:'boolean', createdAtISO:'string' },
   PasswordReset: { emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean' },
