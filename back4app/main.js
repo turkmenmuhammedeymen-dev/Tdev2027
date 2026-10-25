@@ -367,11 +367,13 @@ Parse.Cloud.define('loginUser', async (request) => {
 });
 
 Parse.Cloud.define('getCurriculum', async (request) => {
-  const grade = safeText(request.params && request.params.grade, 10);
+  const gradeInput = safeText(request.params && request.params.grade, 10);
+  const gradeNumber = Number(gradeInput);
   const server = safeText(request.params && request.params.server, 5).toUpperCase();
-  if (!grade || !/^(TR|US|UK|DE|AZ|JP)$/.test(server)) return {};
+  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(gradeNumber) || gradeNumber < 1 || gradeNumber > 12 || !/^(TR|US|UK|DE|AZ|JP)$/.test(server)) return {};
+  const grade = String(gradeNumber);
   const q = new Parse.Query('Curriculum');
-  q.equalTo('grade', grade);
+  q.equalTo('grade', gradeNumber);
   q.equalTo('server', server);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
@@ -399,10 +401,13 @@ function defaultCurriculum(grade, server) {
 }
 
 Parse.Cloud.define('getQuestions', async (request) => {
-  const grade = safeText(request.params && request.params.grade, 10);
-  if (!grade) return [];
+  const gradeInput = safeText(request.params && request.params.grade, 10);
+  const grade = Number(gradeInput);
+  const server = safeText(request.params && request.params.server, 5).toUpperCase();
+  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12) return [];
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
+  if (/^(TR|US|UK|DE|AZ|JP)$/.test(server)) q.equalTo('server', server);
   q.equalTo('active', true);
   q.limit(100);
   q.ascending('createdAt');
@@ -412,7 +417,7 @@ Parse.Cloud.define('getQuestions', async (request) => {
     grade: String(row.get('grade') || ''),
     subject: safeText(row.get('subject'), 100),
     question: safeText(row.get('question'), 1200),
-    answer: safeText(row.get('answer'), 500),
+    answer: safeText(row.get('correctAnswer') || row.get('answer'), 500),
     explanation: safeText(row.get('explanation'), 1200),
     source: safeText(row.get('source'), 200)
   }));
@@ -460,9 +465,13 @@ Parse.Cloud.define('banUser', async (request) => setBanned(safeText(request.para
 Parse.Cloud.define('unbanUser', async (request) => setBanned(safeText(request.params && request.params.userId, 100), false, request));
 
 Parse.Cloud.define('getQuestionsForGrade', async (request) => {
-  const grade = safeText(request.params && request.params.grade, 10);
+  const gradeInput = safeText(request.params && request.params.grade, 10);
+  const grade = Number(gradeInput);
+  const server = safeText(request.params && request.params.server, 5).toUpperCase();
+  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12) return [];
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
+  if (/^(TR|US|UK|DE|AZ|JP)$/.test(server)) q.equalTo('server', server);
   q.equalTo('active', true);
   q.limit(100);
   const rows = await q.find({ useMasterKey: true });
@@ -470,7 +479,7 @@ Parse.Cloud.define('getQuestionsForGrade', async (request) => {
     id: row.id, grade: String(row.get('grade') || ''),
     subject: safeText(row.get('subject'), 100),
     question: safeText(row.get('question'), 1200),
-    answer: safeText(row.get('answer'), 500),
+    answer: safeText(row.get('correctAnswer') || row.get('answer'), 500),
     explanation: safeText(row.get('explanation'), 1200),
     source: safeText(row.get('source'), 200)
   }));
@@ -572,15 +581,16 @@ Parse.Cloud.define('sendSupportMessage', async (request) => {
 /* TdevKuantum schema setup. Set SCHEMA_SETUP_TOKEN in Back4App Config. Call setupDatabaseSchema with {token: SCHEMA_SETUP_TOKEN} once, then rotate/remove token. Creates missing classes/fields only; does not delete data. */
 const TK_SCHEMA = {
   UserProfile: { username:'string', email:'string', displayName:'string', role:'string', grade:'number', school:'string', isBanned:'boolean', emailVerified:'boolean', referralCode:'string', createdAtISO:'string', lastLoginAtISO:'string' },
-  EmailVerification: { email:'string', codeHash:'string', expiresAt:'date', attempts:'number', verified:'boolean', createdAtISO:'string' },
-  Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', order:'number', active:'boolean' },
+  EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', createdAtISO:'string' },
+  Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', subjects:'object', order:'number', active:'boolean' },
   Question: { grade:'number', server:'string', subject:'string', topic:'string', question:'string', options:'array', correctAnswer:'string', explanation:'string', difficulty:'string', active:'boolean', order:'number' },
-  SupportMessage: { email:'string', name:'string', subject:'string', message:'string', status:'string', createdAtISO:'string' },
+  SupportMessage: { email:'string', name:'string', subject:'string', category:'string', message:'string', status:'string', userId:'string', createdAtISO:'string' },
   AuditLog: { actorId:'string', actorEmail:'string', action:'string', targetId:'string', details:'object', ipHash:'string', createdAtISO:'string' },
   Referral: { code:'string', ownerId:'string', referredUserId:'string', status:'string', createdAtISO:'string' },
   StudyPlan: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyNote: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  StudyCard: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' }
 };
 const TK_FIELD_METHODS = { string:'addString', number:'addNumber', boolean:'addBoolean', date:'addDate', array:'addArray', object:'addObject' };
@@ -615,6 +625,14 @@ function studyPayload(value, kind) {
     item.total = Number(value.total); item.correct = Number(value.correct);
     item.reflection = safeText(value.reflection, 1000); item.date = safeText(value.date, 40) || new Date().toISOString();
     if (!item.subject || !Number.isInteger(item.total) || !Number.isInteger(item.correct) || item.total < 0 || item.correct < 0 || item.correct > item.total || item.total > 1000) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Çalışma oturumu alanları geçersiz.');
+  } else if (kind === 'card') {
+    item.front = safeText(value.front, 300);
+    item.back = safeText(value.back, 500);
+    item.known = value.known === true;
+    item.createdAt = safeText(value.createdAt, 40) || new Date().toISOString();
+    item.lastReviewedAt = safeText(value.lastReviewedAt, 40);
+    item.reviewCount = Number.isInteger(Number(value.reviewCount)) ? Math.max(0, Math.min(100000, Number(value.reviewCount))) : 0;
+    if (!item.front || !item.back) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Kartın soru ve cevap alanları zorunludur.');
   } else if (kind === 'mistake') {
     item.subject=safeText(value.subject,60); item.title=safeText(value.title,180);
     item.reason=safeText(value.reason,1200); item.fix=safeText(value.fix,2000);
@@ -658,10 +676,12 @@ Parse.Cloud.define('getStudyNotes', async (request) => getStudyRecords(request, 
 Parse.Cloud.define('saveStudyProgress', async (request) => saveStudyRecord(request, 'StudyProgress', 'progress'));
 Parse.Cloud.define('getStudyProgress', async (request) => getStudyRecords(request, 'StudyProgress'));
 Parse.Cloud.define('saveStudyMistake', async (request) => saveStudyRecord(request, 'StudyMistake', 'mistake'));
+Parse.Cloud.define('saveStudyCard', async (request) => saveStudyRecord(request, 'StudyCard', 'card'));
+Parse.Cloud.define('getStudyCards', async (request) => getStudyRecords(request, 'StudyCard'));
 Parse.Cloud.define('getStudyMistakes', async (request) => getStudyRecords(request, 'StudyMistake'));
 Parse.Cloud.define('deleteStudyRecord', async (request) => {
   const user = requireUser(request);
-  const allowed = ['StudyPlan', 'StudyNote', 'StudyProgress', 'StudyMistake'];
+  const allowed = ['StudyPlan', 'StudyNote', 'StudyProgress', 'StudyMistake', 'StudyCard'];
   const className = safeText(request.params && request.params.className, 40);
   const itemId = safeText(request.params && request.params.itemId, 100);
   if (!allowed.includes(className) || !itemId) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Silinecek kayıt geçersiz.');
