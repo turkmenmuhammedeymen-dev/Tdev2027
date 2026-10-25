@@ -1843,6 +1843,55 @@ Parse.Cloud.define('saveCurriculumProgram', async (request) => {
     : 'Müfredat kaydı kaydedildi ancak resmî/güncel olduğu doğrulanmadı.' };
 });
 
+
+Parse.Cloud.define('saveCurriculumProgramsBulk', async (request) => {
+  const staff = await requireStaff(request, ['founder', 'admin']);
+  const records = request.params && request.params.records;
+  if (!Array.isArray(records) || records.length < 1 || records.length > 20) {
+    return resultError('Toplu aktarım bir istekte 1–20 kayıt içermelidir.', 'INVALID_BATCH_SIZE');
+  }
+  let serializedLength = 0;
+  try { serializedLength = JSON.stringify(records).length; } catch (_) {}
+  if (!serializedLength || serializedLength > 500000) {
+    return resultError('Toplu aktarım verisi 500.000 karakteri aşamaz.', 'BATCH_TOO_LARGE');
+  }
+  let saved = 0;
+  const errors = [];
+  const countryCodes = new Set();
+  for (let index = 0; index < records.length; index++) {
+    try {
+      const record = curriculumProgramPayload(records[index]);
+      const query = new Parse.Query('CurriculumProgram');
+      query.equalTo('recordKey', record.recordKey);
+      let row = await query.first({ useMasterKey: true });
+      if (!row) {
+        const CurriculumProgram = Parse.Object.extend('CurriculumProgram');
+        row = new CurriculumProgram();
+        row.set('createdAtISO', new Date().toISOString());
+      }
+      Object.keys(record).forEach((key) => row.set(key, record[key]));
+      row.set('updatedAtISO', new Date().toISOString());
+      await row.save(null, { useMasterKey: true });
+      saved++;
+      countryCodes.add(record.countryCode);
+    } catch (error) {
+      errors.push({ index: index, error: safeText(error && error.message || 'Kayıt doğrulanamadı.', 240) });
+    }
+  }
+  await writeAuditLog(request, 'curriculum.programs_bulk_saved', 'batch', {
+    actorRole: staff.role, requested: records.length, saved: saved, failed: errors.length,
+    countryCodes: Array.from(countryCodes).slice(0, 20)
+  });
+  return {
+    success: saved > 0,
+    requested: records.length,
+    saved: saved,
+    failed: errors.length,
+    errors: errors.slice(0, 20),
+    message: saved + ' kayıt kaydedildi; ' + errors.length + ' kayıt doğrulama/kayıt hatası nedeniyle atlandı.'
+  };
+});
+
 Parse.Cloud.define('setupDatabaseSchema', async (request) => {
   const config = await Parse.Config.get({ useMasterKey: true });
   const expected = config.get('SCHEMA_SETUP_TOKEN');
