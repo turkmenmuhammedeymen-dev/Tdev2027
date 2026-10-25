@@ -1310,6 +1310,16 @@ input,select,textarea { color:#172b4d; }
                             <label class="study-checkbox-label"><input id="cp-is-official" type="checkbox"> Kaynağı ve program sürümünü resmî kaynaktan doğruladım</label>
                             <button class="study-action" type="submit">PROGRAM KAYDINI GÜVENLİ KAYDET</button>
                         </form>
+                        <div class="detail-box curriculum-coverage-note">
+                            <h3>TOPLU MÜFREDAT İÇE AKTARIMI</h3>
+                            <p>Kurucu/yönetici için: resmî kaynaklardan derlenmiş JSON kayıtlarını en fazla 20 kayıtlık gruplar hâlinde aktar. Her kayıt; ülke, sınıf, program türü, ders, öğretim yılı, HTTPS kaynak ve topics alanlarını içermelidir. Bir kaynak bağlantısı tek başına programın resmî ve güncel olduğunu kanıtlamaz.</p>
+                            <form id="curriculum-bulk-import-form" class="study-form" onsubmit="submitCurriculumBulkForm(event)">
+                                <label>Program kayıtları (JSON dizisi)
+                                    <textarea id="cp-bulk-json" rows="8" maxlength="500000" required placeholder='[{"countryCode":"TR","countryName":"Türkiye","grade":9,"gradeLabel":"9","programType":"general","subject":"Ders adı","title":"9. sınıf programı","curriculumYear":"2026-2027","sourceName":"MEB resmî program sayfası","sourceUrl":"https://mufredat.meb.gov.tr/Programlar.aspx","sourceCheckedAt":"2026-10-25T00:00:00.000Z","verifiedAt":"2026-10-25T00:00:00.000Z","isOfficial":false,"active":true,"topics":{"topics":[{"title":"Konu başlığı","explanation":"Özgün kısa açıklama"}]}}]'></textarea>
+                                </label>
+                                <button class="study-action" type="submit">TOPLU KAYITLARI DOĞRULA VE KAYDET</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
