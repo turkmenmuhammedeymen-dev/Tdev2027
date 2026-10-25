@@ -1688,9 +1688,11 @@ Parse.Cloud.define('getQuestions', async (request) => {
   const validGrade = isKindergarten || (Number.isInteger(grade) && grade >= 1 && grade <= 12) ||
     (grade === 13 && ['UK', 'GB', 'DE'].includes(server));
   if (!validGrade || !/^[A-Z]{2}$/.test(server)) return [];
+  const requestedSubject = safeText(request.params && request.params.subject, 100);
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
   q.equalTo('server', server === 'GB' ? 'UK' : server);
+  if (requestedSubject) q.equalTo('subject', requestedSubject);
   q.equalTo('active', true);
   q.limit(100);
   q.ascending('createdAt');
@@ -1710,6 +1712,7 @@ Parse.Cloud.define('getQuestions', async (request) => {
   const curriculum = defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
   const generated = [];
   Object.keys(curriculum).forEach((subject, subjectIndex) => {
+    if (requestedSubject && subject !== requestedSubject) return;
     const topics = Array.isArray(curriculum[subject].topics) ? curriculum[subject].topics : [];
     topics.forEach((topic, topicIndex) => {
       const title = safeText(topic.title, 180);
