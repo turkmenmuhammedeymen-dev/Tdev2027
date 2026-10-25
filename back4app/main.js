@@ -275,6 +275,37 @@ async function sendVerificationEmail(email, code, name) {
   const providerDetail = errors.length ? (' Ayrıntı: ' + errors.join(' | ').slice(0, 700)) : '';
   throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. ' + setupMessage + providerDetail);
 }
+/**
+ * Fail early if email verification cannot even be authenticated against the
+ * configured provider. This prevents creating accounts that cannot receive
+ * their first verification code because the provider token is missing/invalid.
+ * Actual delivery is still checked by sendVerificationEmail after account creation.
+ */
+async function assertVerificationProviderReady() {
+  const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
+  const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
+  const apiKey = await configValueAsync('RESEND_API_KEY');
+  const from = await configValueAsync('EMAIL_FROM');
+  const errors = [];
+
+  if (scriptUrl) {
+    try {
+      if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
+      await probeAppsScript(scriptUrl, scriptToken);
+      return { provider: 'google-apps-script' };
+    } catch (error) {
+      errors.push('Google Apps Script: ' + String(error && error.message || error).slice(0, 220));
+    }
+  }
+
+  if (apiKey && from) return { provider: 'resend' };
+
+  const setup = (!scriptUrl && !(apiKey && from))
+    ? 'GOOGLE_SCRIPT_URL + APPS_SCRIPT_TOKEN veya RESEND_API_KEY + EMAIL_FROM yapılandırılmalı.'
+    : 'Apps Script token doğrulanamadı ve geçerli Resend yedeği bulunamadı.';
+  throw new Error(setup + (errors.length ? ' ' + errors.join(' | ') : ''));
+}
+
 async function sendPasswordResetEmail(email, code) {
   const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
   const apiKey = await configValueAsync('RESEND_API_KEY');
@@ -783,6 +814,16 @@ Parse.Cloud.define('registerUser', async (request) => {
   const existing = await existingQuery.first({ useMasterKey: true });
   if (existing) return resultError('Bu e-posta ile bir hesap zaten var. Giriş yapmayı dene.', 'EMAIL_EXISTS');
 
+  const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
+  if (verificationRequired) {
+    try {
+      await assertVerificationProviderReady();
+    } catch (error) {
+      console.error('[TdevKuantum] Registration blocked: email provider is not ready:', String(error && error.message || error).slice(0, 300));
+      return resultError('E-posta servisi hazır değil; hesap oluşturulmadı. ' + String(error && error.message || error).slice(0, 400), 'EMAIL_PROVIDER_NOT_READY');
+    }
+  }
+
   const user = new Parse.User();
   user.set('username', email);
   user.set('email', email);
@@ -837,7 +878,6 @@ Parse.Cloud.define('registerUser', async (request) => {
   await user.signUp(null, { useMasterKey: true });
   await writeAuditLog(request, 'user.register', user.id, { email: email });
 
-  const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
   if (verificationRequired) {
     const code = String(crypto.randomInt(100000, 1000000));
     try {
