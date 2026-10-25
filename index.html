@@ -1662,14 +1662,36 @@ function showTopicDetail(index) {
             'https://www.youtube.com/results?search_query=' + encodeURIComponent(v.query || v.title || topic.title);
         return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">▶ ' + escapeHtml(v.title || 'Konu videosu') + '</a>';
     }).join('<br>');
-    const note = typeof window.getCurriculumTopicNote === 'function'
+    const savedNote = typeof window.getCurriculumTopicNote === 'function'
         ? window.getCurriculumTopicNote(curGrade, curServer, currentLessonSubject, topic.title) : '';
+    const explanation = String(topic.explanation || 'Bu konu için doğrulanmış ayrıntılı açıklama henüz eklenmedi. Resmî kaynak bağlantısını ve öğretmen notlarını kullan.');
+    const generatedLessonNote = [
+        'DERS NOTU: ' + String(topic.title || 'Konu anlatımı'),
+        'Ders: ' + currentLessonSubject + ' · Sınıf: ' + curGrade + ' · Ülke kodu: ' + curServer,
+        '',
+        '1. KONU ANLATIMI',
+        explanation,
+        '',
+        '2. ÖĞRENME HEDEFLERİ',
+        (Array.isArray(topic.objectives) && topic.objectives.length ? topic.objectives : ['Konuyu kendi cümlelerinle açıklayabilmek.', 'Bir örnek üzerinde uygulayabilmek.']).map((x, i) => (i + 1) + '. ' + x).join('\n'),
+        '',
+        '3. KISA ÖZET',
+        'Bu konuyu çalışırken ana kavramları belirle, önemli terimleri kendi cümlelerinle açıkla ve konuyla ilgili bir örnek çöz.',
+        '',
+        '4. KENDİNİ KONTROL ET',
+        '• Konunun ana fikrini açıklayabiliyor muyum?',
+        '• Bir örnek verebiliyor ve çözüm adımlarımı gerekçelendirebiliyor muyum?',
+        '• Anlamadığım noktayı belirleyip tekrar çalışabiliyor muyum?',
+        '',
+        'Not: Bu, platformdaki konu rehberinden oluşturulan çalışma notudur; doğrulanmış resmî müfredatın veya öğretmen notlarının yerine geçmez.'
+    ].join('\n');
     host.innerHTML = '<h3>📖 ' + escapeHtml(topic.title || 'Konu anlatımı') + '</h3><p class="topic-explanation">' +
-        escapeHtml(topic.explanation || 'Bu konu için ayrıntılı açıklama henüz eklenmedi. Resmî kaynak bağlantısını ve öğretmen notlarını kullan.') + '</p>' +
+        escapeHtml(explanation) + '</p>' +
         (objectives ? '<h4>Bu konunun sonunda</h4><ul>' + objectives + '</ul>' : '') +
+        '<div class="detail-box lesson-note-generated"><h4>📘 HAZIR DERS NOTU</h4><p class="detail-help">Seçtiğin konu için otomatik hazırlanmış anlatım, hedefler ve tekrar soruları. Notu düzenleyip hesabına kaydedebilirsin.</p><pre class="topic-explanation">' + escapeHtml(generatedLessonNote) + '</pre></div>' +
         (videos ? '<h4>🎬 Konu videoları</h4><p class="topic-links">' + videos + '</p>' : '') +
-        '<label class="topic-note-label" for="topic-note-body">Kendi konu notun</label><textarea id="topic-note-body" rows="5" maxlength="12000" placeholder="Önemli tanımlar, örnekler ve kendi cümlelerinle açıklama…">' +
-        escapeHtml(note) + '</textarea><button type="button" class="study-action" onclick="saveCurrentTopicNote()">NOTU KAYDET</button>';
+        '<label class="topic-note-label" for="topic-note-body">Ders notunu düzenle / kişisel not ekle</label><textarea id="topic-note-body" rows="10" maxlength="12000" placeholder="Konu anlatımı, önemli tanımlar, örnekler ve kendi cümlelerinle açıklama…">' +
+        escapeHtml(savedNote || generatedLessonNote) + '</textarea><button type="button" class="study-action" onclick="saveCurrentTopicNote()">DERS NOTUNU KAYDET</button>';
     document.querySelectorAll('[data-topic-index]').forEach(button => button.classList.toggle('active', Number(button.dataset.topicIndex) === index));
     if (typeof window.loadCurriculumTopicNote === 'function') {
         window.loadCurriculumTopicNote(curGrade, curServer, currentLessonSubject, topic.title).then(savedBody => {
@@ -1746,6 +1768,35 @@ function initQuiz() {
     changeQuizGrade();
 }
 
+function buildCurriculumQuizFallback(curriculum, grade) {
+    const items = [];
+    const subjects = Object.keys(curriculum || {});
+    subjects.forEach((subject, subjectIndex) => {
+        const subjectData = curriculum[subject] || {};
+        const topics = Array.isArray(subjectData.topics) ? subjectData.topics : [];
+        topics.forEach((raw, topicIndex) => {
+            const topic = normalizeTopic(raw, topicIndex);
+            const title = String(topic.title || ('Konu ' + (topicIndex + 1)));
+            const explanation = String(topic.explanation || '').trim();
+            if (!explanation) return;
+            items.push({
+                id: 'guide-' + curServer + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-true',
+                grade: String(grade), subject: subject,
+                question: '“' + title + '” konusu için aşağıdaki açıklama konu rehberiyle uyumludur: ' + explanation,
+                answer: true, explanation: explanation,
+                source: 'TdevKuantum konu rehberi · otomatik oluşturulan çalışma sorusu'
+            });
+            items.push({
+                id: 'guide-' + curServer + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-false',
+                grade: String(grade), subject: subject,
+                question: '“' + title + '” konusu, seçilen dersin konu rehberinde yer almaz.',
+                answer: false, explanation: title + ': ' + explanation,
+                source: 'TdevKuantum konu rehberi · otomatik oluşturulan çalışma sorusu'
+            });
+        });
+    });
+    return items;
+}
 async function changeQuizGrade() {
     const gradeSelect = document.getElementById('qg');
     const subjectSelect = document.getElementById('ql');
@@ -1755,23 +1806,30 @@ async function changeQuizGrade() {
     subjectSelect.innerHTML = '<option value="">Dersler yükleniyor…</option>';
     subjectSelect.disabled = true;
     const questionHost = document.getElementById('q-q');
-    if (questionHost) questionHost.textContent = 'Seçilen sınıfın soruları yükleniyor…';
-    try {
-        const questions = await Parse.Cloud.run('getQuestions', { grade: grade, server: curServer });
-        if (sequence !== quizLoadSequence) return;
-        qAll = Array.isArray(questions) ? questions.map(q => Object.assign({}, q, { grade: String(q.grade) })) : [];
-        fillQLesson();
-        nextQ();
-    } catch (error) {
-        if (sequence !== quizLoadSequence) return;
-        qAll = [];
+    if (questionHost) questionHost.textContent = 'Sınıfın dersleri ve soruları yükleniyor…';
+    const countryName = document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer;
+    const [questionResult, curriculumResult] = await Promise.all([
+        Parse.Cloud.run('getQuestions', { grade: grade, server: curServer }).catch(() => []),
+        Parse.Cloud.run('getCurriculum', { grade: grade, server: curServer, countryName: countryName }).catch(() => ({}))
+    ]);
+    if (sequence !== quizLoadSequence) return;
+    const storedQuestions = Array.isArray(questionResult) ? questionResult.map(q => Object.assign({}, q, { grade: String(q.grade) })) : [];
+    const curriculum = curriculumResult && typeof curriculumResult === 'object' ? curriculumResult : {};
+    const fallbackQuestions = buildCurriculumQuizFallback(curriculum, grade);
+    const storedSubjects = new Set(storedQuestions.map(q => String(q.subject || '').trim()).filter(Boolean));
+    qAll = storedQuestions.concat(fallbackQuestions.filter(q => !storedSubjects.has(q.subject)));
+    if (!qAll.length) {
         subjectSelect.innerHTML = '<option value="">Ders bulunamadı</option>';
-        if (questionHost) questionHost.textContent = 'Sorular yüklenemedi. Bağlantıyı kontrol edip yeniden deneyin.';
-        const source = document.getElementById('q-src'); if (source) source.textContent = 'Sunucuya ulaşılamadı';
+        subjectSelect.disabled = true;
+        if (questionHost) questionHost.textContent = 'Bu ülke ve sınıf için konu rehberi bulunamadı. Bağlantıyı kontrol et veya müfredat kaydı ekle.';
+        const source = document.getElementById('q-src'); if (source) source.textContent = 'Müfredat verisi yok';
         const result = document.getElementById('q-res'); if (result) result.style.display = 'none';
         curQ = null;
-        subjectSelect.disabled = true;
+        document.querySelectorAll('.quiz-btn').forEach(button => { button.style.opacity = '.4'; button.style.pointerEvents = 'none'; });
+        return;
     }
+    fillQLesson();
+    nextQ();
 }
 
 function fillQLesson() {
