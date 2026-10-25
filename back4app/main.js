@@ -130,6 +130,21 @@ async function requireStaff(request, allowedRoles) {
   if (!allowedRoles.includes(role)) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu işlem için yetkin yok.');
   return { user, email, role };
 }
+async function writeAuditLog(request, action, targetId, details) {
+  try {
+    const actor = request && request.user;
+    const row = new Parse.Object('AuditLog');
+    row.set('actorId', actor ? actor.id : 'system');
+    row.set('actorEmail', normalizeEmail(actor && (actor.get('email') || actor.get('username'))));
+    row.set('action', safeText(action, 100));
+    row.set('targetId', safeText(targetId, 100));
+    row.set('details', details && typeof details === 'object' && !Array.isArray(details) ? details : {});
+    row.set('createdAtISO', new Date().toISOString());
+    await row.save(null, { useMasterKey: true });
+  } catch (error) {
+    console.error('[TdevKuantum] Audit log write failed:', String(error && error.message || error).slice(0, 200));
+  }
+}
 async function publicUser(user) {
   return {
     id: user.id,
@@ -447,12 +462,27 @@ Parse.Cloud.define('getStats', async (request) => {
   const q = new Parse.Query(Parse.User);
   q.limit(1000);
   const users = await q.find({ useMasterKey: true });
+  const countClass = async (name) => { try { const query = new Parse.Query(name); return await query.count({ useMasterKey: true }); } catch (_) { return 0; } };
+  const [studyPlans, studyNotes, studySessions, studyCards, studyMistakes, auditEvents] = await Promise.all([
+    countClass('StudyPlan'), countClass('StudyNote'), countClass('StudyProgress'), countClass('StudyCard'), countClass('StudyMistake'), countClass('AuditLog')
+  ]);
   return {
     total: users.length,
     active: users.filter(u => u.get('banned') !== true).length,
-    banned: users.filter(u => u.get('banned') === true).length
+    banned: users.filter(u => u.get('banned') === true).length,
+    studyPlans, studyNotes, studySessions, studyCards, studyMistakes, auditEvents
   };
 });
+Parse.Cloud.define('getAuditLog', async (request) => {
+  await requireStaff(request, ['founder', 'admin']);
+  const limit = Math.max(1, Math.min(100, Number(request.params && request.params.limit) || 50));
+  const q = new Parse.Query('AuditLog');
+  q.descending('createdAt');
+  q.limit(limit);
+  const rows = await q.find({ useMasterKey: true });
+  return rows.map(row => ({ id: row.id, actorId: safeText(row.get('actorId'), 100), actorEmail: normalizeEmail(row.get('actorEmail')), action: safeText(row.get('action'), 100), targetId: safeText(row.get('targetId'), 100), details: row.get('details') || {}, createdAtISO: safeText(row.get('createdAtISO'), 40) }));
+});
+
 async function setBanned(userId, banned, request) {
   await requireStaff(request, ['founder', 'admin']);
   if (!userId || typeof userId !== 'string') throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Geçersiz kullanıcı.');
@@ -461,6 +491,7 @@ async function setBanned(userId, banned, request) {
   if (await roleForEmail(email) === 'founder') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Kurucu hesabı bu panelden kapatılamaz.');
   user.set('banned', banned);
   await user.save(null, { useMasterKey: true });
+  await writeAuditLog(request, banned ? 'user.ban' : 'user.unban', user.id, { targetEmail: email, banned: banned });
   return { success: true, userId: user.id, banned: banned };
 }
 Parse.Cloud.define('banUser', async (request) => setBanned(safeText(request.params && request.params.userId, 100), true, request));
