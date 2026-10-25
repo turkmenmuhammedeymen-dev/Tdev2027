@@ -16,9 +16,12 @@
  *   RESEND_API_KEY       optional fallback provider API key
  *   EMAIL_FROM           verified sender, e.g. TdevKuantum <noreply@your-domain>
  *   PASSWORD_RESET_PEPPER optional separate secret for password-reset code hashing
- *   AI_API_KEY           optional server-only key for the TDEV-AI tutor
- *   AI_MODEL             optional model name (default gpt-4o-mini)
- *   AI_BASE_URL          optional HTTPS OpenAI-compatible chat-completions URL
+ *   NVIDIA_API_KEY      optional NVIDIA NIM API key (preferred when configured)
+ *   NVIDIA_MODEL         optional NVIDIA model ID (default meta/llama-3.3-70b-instruct)
+ *   NVIDIA_BASE_URL      optional NVIDIA NIM base URL (default https://integrate.api.nvidia.com/v1)
+ *   AI_API_KEY           optional server-only OpenAI-compatible API key fallback
+ *   AI_MODEL             optional fallback model name (default gpt-4o-mini)
+ *   AI_BASE_URL          optional fallback HTTPS chat-completions URL
  *
  * Optional:
  *   ALLOWED_ORIGINS      comma-separated site origins
@@ -1638,13 +1641,23 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   if (!/^\d{1,2}$/.test(grade) || Number(grade) < 1 || Number(grade) > 12) return resultError('Sınıf bilgisi geçersiz.', 'INVALID_GRADE');
   if (!/^[A-Z]{2}$/.test(country)) return resultError('Ülke seçimi geçersiz.', 'INVALID_COUNTRY');
 
-  const apiKey = await configValueAsync('AI_API_KEY');
+  // NVIDIA NIM config is preferred when NVIDIA_API_KEY is present.
+  // NVIDIA_BASE_URL may be either the API base (.../v1) or full chat-completions URL.
+  const nvidiaApiKey = await configValueAsync('NVIDIA_API_KEY');
+  const useNvidia = !!nvidiaApiKey;
+  const apiKey = nvidiaApiKey || await configValueAsync('AI_API_KEY');
   if (!apiKey) {
-    return resultError('TDEV-AI için sunucu tarafında AI_API_KEY yapılandırılmamış. Back4App Config’e anahtar eklenirse gerçek yapay zekâ yanıtları etkinleşir; anahtarı HTML dosyasına koyma.', 'AI_PROVIDER_NOT_CONFIGURED');
+    return resultError('TDEV-AI için NVIDIA_API_KEY veya AI_API_KEY Back4App Config içinde yapılandırılmamış. API anahtarını HTML dosyasına koyma.', 'AI_PROVIDER_NOT_CONFIGURED');
   }
-  const model = (await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini';
-  const endpoint = (await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions';
-  if (!/^https:\/\//i.test(endpoint)) return resultError('AI_BASE_URL yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
+  const model = useNvidia
+    ? ((await configValueAsync('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')) || 'meta/llama-3.3-70b-instruct')
+    : ((await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini');
+  let endpoint = useNvidia
+    ? ((await configValueAsync('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')) || 'https://integrate.api.nvidia.com/v1')
+    : ((await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions');
+  endpoint = endpoint.replace(/\\/+$/, '');
+  if (!/chat\\/completions$/i.test(endpoint)) endpoint += '/chat/completions';
+  if (!/^https:\/\//i.test(endpoint)) return resultError((useNvidia ? 'NVIDIA_BASE_URL' : 'AI_BASE_URL') + ' yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
 
   const systemPrompt = [
     'Sen TdevKuantum eğitim platformunun Türkçe konuşan, güvenli ve sabırlı özel ders yardımcısısın.',
@@ -1669,7 +1682,7 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
     try { data = JSON.parse(raw); } catch (_) { data = null; }
     if (!response.ok) {
       console.error('[TdevKuantum] AI provider rejected request:', response.status);
-      return resultError('Yapay zekâ sağlayıcısı isteği kabul etmedi (HTTP ' + response.status + '). AI_API_KEY, AI_MODEL ve sağlayıcı limitlerini kontrol et.', 'AI_PROVIDER_ERROR');
+      return resultError('Yapay zekâ sağlayıcısı isteği kabul etmedi (HTTP ' + response.status + '). NVIDIA_API_KEY/NVIDIA_MODEL veya AI_API_KEY/AI_MODEL ve sağlayıcı limitlerini kontrol et.', 'AI_PROVIDER_ERROR');
     }
     const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
     if (typeof answer !== 'string' || !answer.trim()) return resultError('Yapay zekâ boş yanıt verdi. Biraz sonra tekrar dene.', 'AI_EMPTY_RESPONSE');
@@ -1677,7 +1690,7 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
     return { success: true, answer: answer.trim(), model: model };
   } catch (error) {
     console.error('[TdevKuantum] AI provider connection failed:', String(error && error.message || error).slice(0, 200));
-    return resultError('Yapay zekâ servisine ulaşılamadı. AI_BASE_URL ve sağlayıcı erişimini kontrol et.', 'AI_CONNECTION_FAILED');
+    return resultError('Yapay zekâ servisine ulaşılamadı. NVIDIA_BASE_URL/AI_BASE_URL ve sağlayıcı erişimini kontrol et.', 'AI_CONNECTION_FAILED');
   }
 });
 
