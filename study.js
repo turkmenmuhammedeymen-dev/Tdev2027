@@ -195,7 +195,7 @@
     const item = { id: id(), front: document.getElementById('card-front').value.trim(), back: document.getElementById('card-back').value.trim(), known: false, createdAt: new Date().toISOString() };
     if (!item.front || !item.back) return;
     item.updatedAt = item.createdAt;
-    const list = read('cards'); list.unshift(item); write('cards', list); event.target.reset(); renderStudyCards();
+    const list = read('cards'); list.unshift(item); write('cards', list); event.target.reset(); renderStudyCards(); window.renderLearningProgress();
     const result = await cloud('saveStudyCard', { item: item });
     notify(result && result.success === true ? 'Bilgi kartı oluşturuldu ve buluta eşitlendi.' : 'Kart bu cihazda oluşturuldu. Bulut eşitlemesi doğrulanamadı.');
   };
