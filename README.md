@@ -11,10 +11,15 @@ TdevKuantum is an educational web app with grade-based lesson browsing, topic ex
 
 ## Back4App Cloud Code deployment
 
-1. Open the Back4App app's Cloud Code area.
-2. Upload the latest `back4app/main.js` from this repository and deploy it.
-3. Confirm the existing mail configuration remains in place. The Apps Script token is a secret and must not be added to HTML or public documentation.
-4. Sign in to the site and test one topic note, one flashcard, one quiz question and a long chat message. The UI distinguishes local saves from confirmed cloud sync.
+1. Open the Back4App app's Cloud Code area, upload the latest `back4app/main.js` from this repository, and deploy it. A GitHub commit does **not** deploy Cloud Code automatically.
+2. In Back4App Config, set `GOOGLE_SCRIPT_URL` to the deployed Google Apps Script Web App URL and `APPS_SCRIPT_TOKEN` to the secret token you generated. The optional Resend fallback uses `RESEND_API_KEY` and `EMAIL_FROM`.
+3. In the matching Google Apps Script project, open **Project Settings → Script Properties** and add `APPS_SCRIPT_TOKEN`. Its value must match the Back4App Config value exactly. Never put the token in `index.html`, `study.js`, a public README, or any other public file.
+4. Open the deployed Apps Script Web App URL with a browser. Its JSON health response should contain `"configured": true`. If it says false, confirm the property name and that you edited the same Apps Script project referenced by `GOOGLE_SCRIPT_URL`.
+5. Run the Back4App `healthCheck` Cloud Function and inspect `emailDiagnostics`. It reports whether the URL, Back4App token and Apps Script Script Property are configured; it never returns the token itself.
+6. Test registration with an address you control. If delivery fails after the account has been created, use **Doğrulama kodunu tekrar gönder** on the verification screen after correcting the configuration. The resend endpoint applies a short rate limit.
+7. Sign in and test one topic note, one flashcard, one quiz question and a long chat message. The UI distinguishes local saves from confirmed cloud sync.
+
+The verification code is time-limited. Do not send real credentials, tokens, or private student data in public issues or screenshots.
 
 ### Optional TDEV-AI provider
 
