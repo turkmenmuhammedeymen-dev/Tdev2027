@@ -46,9 +46,11 @@ window.loadSchoolDashboard=async function(){
   const result=await cloud('getMyProfile',{});profile=result.profile||{};const p=profile;
   const type=p.profileType||p.role||'student';
   const staff=['teacher','principal'].includes(type);
+  if($('classroom-school-name')&&p.schoolName&&!$('classroom-school-name').value)$('classroom-school-name').value=p.schoolName;
+  if($('classroom-school-address')&&p.schoolAddress&&!$('classroom-school-address').value)$('classroom-school-address').value=p.schoolAddress;
   if($('school-staff-tools'))$('school-staff-tools').hidden=!['teacher','principal'].includes(type);
   if($('school-principal-tools'))$('school-principal-tools').hidden=type!=='principal';
-  if($('school-student-tools'))$('school-student-tools').hidden=!['student','teacher'].includes(type);
+  if($('school-student-tools'))$('school-student-tools').hidden=type!=='student';
   if($('school-class-list-title'))$('school-class-list-title').textContent=type==='guardian'?'Öğrencilerim':type==='principal'?'Okulumdaki sınıflar':'Sınıflarım';
   const nav=$('nav-school');if(nav)nav.style.display='';
   updateSidebarRole(type,p);
