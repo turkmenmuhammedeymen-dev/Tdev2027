@@ -651,6 +651,71 @@ Parse.Cloud.define('getCurriculum', async (request) => {
     });
     return decorated;
   }
+  // Prefer imported country/grade-specific programs when no legacy Curriculum row exists.
+  // The generated fallback below remains explicitly unverified and is not presented as an official syllabus.
+  try {
+    const programQuery = new Parse.Query('CurriculumProgram');
+    programQuery.equalTo('countryCode', server === 'GB' ? 'UK' : server);
+    programQuery.equalTo('grade', gradeNumber);
+    programQuery.equalTo('active', true);
+    programQuery.descending('updatedAtISO');
+    programQuery.limit(100);
+    const programRows = await programQuery.find({ useMasterKey: true });
+    const imported = {};
+    programRows.forEach((programRow) => {
+      const subjectName = safeText(programRow.get('subject'), 120);
+      if (!subjectName) return;
+      const programType = safeText(programRow.get('programType'), 24);
+      const schoolType = safeText(programRow.get('schoolType'), 120);
+      const field = safeText(programRow.get('field'), 120);
+      const branch = safeText(programRow.get('branch'), 120);
+      const qualifier = [field, branch].filter(Boolean).join(' / ');
+      const displaySubject = qualifier ? subjectName + ' · ' + qualifier : subjectName;
+      const rawTopics = programRow.get('topics') || {};
+      const topicRows = Array.isArray(rawTopics) ? rawTopics : (Array.isArray(rawTopics.topics) ? rawTopics.topics : (Array.isArray(rawTopics.units) ? rawTopics.units : []));
+      const sourceUrl = safeText(programRow.get('sourceUrl'), 500);
+      const sourceName = safeText(programRow.get('sourceName'), 180);
+      const checkedAt = programRow.get('sourceCheckedAt');
+      const verifiedAt = programRow.get('verifiedAt');
+      const verified = programRow.get('isOfficial') === true && programRow.get('programStatus') === 'verified' && !!sourceName && /^https:\/\//i.test(sourceUrl) && !!checkedAt && !!verifiedAt;
+      const meta = {
+        status: verified ? 'verified' : 'not-verified',
+        statusLabel: verified ? 'Kaynak alan adı ve sürüm bilgisi kaydedilmiş; güncellik ve uygulama kapsamını ayrıca kontrol et' : 'Aktarılmış kayıt; resmîlik ve güncellik doğrulanmadı',
+        countryCode: server === 'GB' ? 'UK' : server,
+        countryName: safeText(programRow.get('countryName'), 100) || safeText(request.params && request.params.countryName, 100) || server,
+        grade: gradeInput, programType: programType, schoolType: schoolType, field: field, branch: branch,
+        sourceUrl: /^https:\/\//i.test(sourceUrl) ? sourceUrl : '', sourceName: sourceName,
+        curriculumYear: safeText(programRow.get('curriculumYear'), 20),
+        verifiedAt: verifiedAt ? new Date(verifiedAt).toISOString() : ''
+      };
+      if (!imported[displaySubject]) {
+        imported[displaySubject] = {
+          icon: /matematik|mathemat|math/i.test(subjectName) ? '📐' : (/fen|science|fizik|kimya|biyoloji/i.test(subjectName) ? '🔬' : '📚'),
+          desc: [gradeInput === 'K' ? 'Anaokulu' : gradeInput + '. sınıf', meta.countryName, programType, schoolType].filter(Boolean).join(' · '),
+          tag: server === 'TR' && gradeNumber === 8 ? 'lgs' : (gradeNumber >= 9 && gradeNumber <= 12 ? 'lise' : 'temel'),
+          topics: [], videos: [], curriculumMeta: meta, meb1: meta.statusLabel,
+          meb2: 'Bu kayıt yalnızca belirtilen öğretim yılı ve kaynak bilgisi kapsamında değerlendirilmelidir.',
+          mebLink: meta.sourceUrl
+        };
+      }
+      topicRows.slice(0, 100).forEach((topic, index) => {
+        const title = typeof topic === 'string' ? safeText(topic, 180) : safeText(topic && (topic.title || topic.name || topic.unit), 180);
+        if (!title) return;
+        const explanation = typeof topic === 'object' && topic ? safeText(topic.explanation || topic.description || topic.summary, 2000) : '';
+        imported[displaySubject].topics.push({
+          id: safeText(topic && topic.id, 100) || programRow.id + '-' + index,
+          title: title,
+          explanation: explanation || 'Bu program kaydında konu açıklaması ayrıca sağlanmamış. Kaynak belgesini açarak ilgili kazanım ve kapsamı kontrol et.',
+          objectives: topic && Array.isArray(topic.objectives) ? topic.objectives.slice(0, 20) : [],
+          videos: []
+        });
+      });
+    });
+    const importedKeys = Object.keys(imported);
+    if (importedKeys.length && importedKeys.some((key) => imported[key].topics.length)) return imported;
+  } catch (error) {
+    console.warn('[TdevKuantum] Imported curriculum fallback unavailable:', String(error && error.message || error).slice(0, 180));
+  }
   return defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
 });
 
@@ -1082,29 +1147,65 @@ function tkLearningObjectives(server) {
 }
 function tkCurriculumSource(server) {
   const sources = {
-    TR: { name: 'Türkiye Cumhuriyeti Millî Eğitim Bakanlığı — Müfredat portalı', url: 'https://mufredat.meb.gov.tr/' },
-    US: { name: 'U.S. Department of Education — education information', url: 'https://www.ed.gov/' },
-    UK: { name: 'UK Department for Education — government education guidance', url: 'https://www.gov.uk/government/organisations/department-for-education' },
-    DE: { name: 'Kultusministerkonferenz (KMK) — German education system', url: 'https://www.kmk.org/' },
-    AZ: { name: 'Azerbaijan Ministry of Science and Education', url: 'https://edu.gov.az/' },
-    JP: { name: 'Japan Ministry of Education, Culture, Sports, Science and Technology (MEXT)', url: 'https://www.mext.go.jp/en/' }
+    TR:{name:'Türkiye — MEB Öğretim Programları',url:'https://mufredat.meb.gov.tr/Programlar.aspx'},
+    US:{name:'United States — federal education portal; standards vary by state',url:'https://www.ed.gov/'},
+    UK:{name:'England — National Curriculum; other UK nations have separate systems',url:'https://www.gov.uk/national-curriculum'},
+    DE:{name:'Germany — KMK; curricula are state-specific',url:'https://www.kmk.org/'},
+    AZ:{name:'Azerbaijan Ministry of Science and Education',url:'https://edu.gov.az/en'},
+    JP:{name:'Japan MEXT',url:'https://www.mext.go.jp/en/'},
+    AU:{name:'Australian Curriculum — Australian Government',url:'https://www.education.gov.au/australian-curriculum'},
+    NZ:{name:'New Zealand Curriculum — Tāhūrangi',url:'https://newzealandcurriculum.tahurangi.education.govt.nz/'},
+    PK:{name:'Pakistan — National Curriculum Council',url:'https://www.ncc.gov.pk/'},
+    SA:{name:'Saudi Arabia — Ministry of Education curriculum service',url:'https://my.gov.sa/en/services/18629'},
+    AE:{name:'United Arab Emirates — official curricula information',url:'https://u.ae/en/information-and-services/education/school-education-k-12/curricula-and-language-of-instruction-'},
+    KR:{name:'Republic of Korea — National Curriculum Information Center',url:'https://www.ncic.re.kr/'},
+    IN:{name:'India — NCERT curriculum frameworks and syllabi',url:'https://ncert.nic.in/'},
+    FR:{name:'France — Éduscol education and curriculum portal',url:'https://eduscol.education.fr/'},
+    FI:{name:'Finland — Finnish National Agency for Education',url:'https://www.oph.fi/en/education-and-qualifications'},
+    SG:{name:'Singapore Ministry of Education — syllabuses',url:'https://www.moe.gov.sg/education/syllabuses'},
+    CN:{name:'China — Ministry of Education',url:'https://www.moe.gov.cn/'},
+    CA:{name:'Canada — CMEC; curricula are provincial/territorial',url:'https://www.cmec.ca/'},
+    NL:{name:'Netherlands — SLO curriculum development',url:'https://www.slo.nl/'},
+    SE:{name:'Sweden — Skolverket',url:'https://www.skolverket.se/'},
+    NO:{name:'Norway — Udir national curricula',url:'https://www.udir.no/lk20/'},
+    IE:{name:'Ireland — Curriculum Online',url:'https://www.curriculumonline.ie/'},
+    BR:{name:'Brazil — Base Nacional Comum Curricular',url:'https://basenacionalcomum.mec.gov.br/'},
+    CL:{name:'Chile — Currículum Nacional',url:'https://www.curriculumnacional.cl/'},
+    ZA:{name:'South Africa — Department of Basic Education',url:'https://www.education.gov.za/'},
+    ID:{name:'Indonesia — national curriculum portal',url:'https://kurikulum.kemdikbud.go.id/'},
+    MY:{name:'Malaysia — Ministry of Education',url:'https://www.moe.gov.my/'},
+    TH:{name:'Thailand — Office of the Basic Education Commission',url:'https://www.obec.go.th/'},
+    VN:{name:'Vietnam — Ministry of Education and Training',url:'https://moet.gov.vn/'},
+    BD:{name:'Bangladesh — National Curriculum and Textbook Board',url:'https://nctb.gov.bd/'},
+    PH:{name:'Philippines — Department of Education',url:'https://www.deped.gov.ph/'},
+    MX:{name:'Mexico — Secretaría de Educación Pública',url:'https://www.gob.mx/sep'},
+    ES:{name:'Spain — official education curriculum portal',url:'https://educagob.educacionfpydeportes.gob.es/'},
+    IT:{name:'Italy — Ministry of Education and Merit',url:'https://www.istruzione.it/'},
+    PT:{name:'Portugal — Direção-Geral da Educação',url:'https://www.dge.mec.pt/'},
+    PL:{name:'Poland — Ministry of National Education',url:'https://www.gov.pl/web/edukacja'},
+    EE:{name:'Estonia — Ministry of Education and Research',url:'https://www.hm.ee/en'},
+    DK:{name:'Denmark — Ministry of Children and Education',url:'https://www.uvm.dk/'},
+    CH:{name:'Switzerland — EDK; curricula are cantonal',url:'https://www.edk.ch/'},
+    RU:{name:'Russia — Ministry of Education',url:'https://edu.gov.ru/'},
+    UA:{name:'Ukraine — Ministry of Education and Science',url:'https://mon.gov.ua/'},
+    KZ:{name:'Kazakhstan — Ministry of Education',url:'https://www.gov.kz/memleket/entities/edu?lang=en'},
+    AR:{name:'Argentina — national education portal; provincial systems also apply',url:'https://www.argentina.gob.ar/educacion'},
+    CO:{name:'Colombia — Ministry of National Education',url:'https://www.mineducacion.gov.co/'},
+    EG:{name:'Egypt — Ministry of Education',url:'https://moe.gov.eg/'},
+    KE:{name:'Kenya — Ministry of Education',url:'https://www.education.go.ke/'},
+    GH:{name:'Ghana — Ministry of Education',url:'https://moe.gov.gh/'},
+    IL:{name:'Israel — Ministry of Education',url:'https://edu.gov.il/'}
   };
   if (server === 'GB') server = 'UK';
   if (sources[server]) return Object.assign({ status: 'portal-not-verified', isOfficialCurriculum: false }, sources[server]);
-  return {
-    status: 'not-verified',
-    isOfficialCurriculum: false,
-    name: 'UNESCO-IBE global curriculum reference',
-    url: 'https://www.ibe.unesco.org/en/node/63'
-  };
+  return { status: 'not-verified', isOfficialCurriculum: false, name: 'UNESCO-IBE World Data on Education — international reference directory', url: 'https://www.ibe.unesco.org/en/node/63' };
 }
-
 function defaultCurriculum(gradeText, server, requestedCountryName) {
   const grade = String(gradeText).toUpperCase() === 'K' ? 0 : Number(gradeText);
   const gradeLabel = String(gradeText).toUpperCase() === 'K' ? 'Kindergarten' : String(grade);
   const gradeQuery = gradeLabel === 'Kindergarten' ? 'Kindergarten' : gradeLabel + '. sınıf';
   const subjects = tkStageSubjects(grade, server);
-  const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',GB:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
+  const countryNames = {TR:'Türkiye',US:'Amerika Birleşik Devletleri',UK:'Birleşik Krallık',GB:'Birleşik Krallık',DE:'Almanya',AZ:'Azerbaycan',JP:'Japonya',AU:'Avustralya',NZ:'Yeni Zelanda',PK:'Pakistan',SA:'Suudi Arabistan',AE:'Birleşik Arap Emirlikleri',KR:'Güney Kore',IN:'Hindistan',FR:'Fransa',FI:'Finlandiya',SG:'Singapur',CN:'Çin',CA:'Kanada',NL:'Hollanda',SE:'İsveç',NO:'Norveç',IE:'İrlanda',BR:'Brezilya',CL:'Şili',ZA:'Güney Afrika',ID:'Endonezya',MY:'Malezya',TH:'Tayland',VN:'Vietnam',BD:'Bangladeş',PH:'Filipinler',MX:'Meksika',ES:'İspanya',IT:'İtalya',PT:'Portekiz',PL:'Polonya',EE:'Estonya',DK:'Danimarka',CH:'İsviçre',RU:'Rusya',UA:'Ukrayna',KZ:'Kazakistan',AR:'Arjantin',CO:'Kolombiya',EG:'Mısır',KE:'Kenya',GH:'Gana',IL:'İsrail'};
   const countryName = safeText(requestedCountryName, 100) || countryNames[server] || server;
   const source = tkCurriculumSource(server);
   const curriculumMeta = { status: 'not-verified', statusLabel: 'Genel öğrenme rehberi — bu ülkenin güncel resmî müfredatı doğrulanmadı', countryCode: server, countryName: countryName, grade: gradeLabel, sourceUrl: source.url, sourceName: source.name, curriculumYear: '', verifiedAt: '' };
@@ -1575,16 +1676,22 @@ Parse.Cloud.define('deleteStudyRecord', async (request) => {
 function trustedCurriculumSource(sourceUrl, countryCode) {
   const host = String(sourceUrl || '').toLowerCase().replace(/^https:\/\//i, '').split(/[\/:?#]/)[0];
   const trustedByCountry = {
-    TR: ['meb.gov.tr'],
-    GB: ['gov.uk'],
-    DE: ['kmk.org'],
-    US: ['ed.gov'],
-    AZ: ['edu.gov.az'],
-    JP: ['mext.go.jp']
+    TR:['meb.gov.tr'], GB:['gov.uk'], UK:['gov.uk'], DE:['kmk.org'], US:['ed.gov','corestandards.org'],
+    AZ:['edu.gov.az'], JP:['mext.go.jp'], AU:['education.gov.au','australiancurriculum.edu.au'],
+    NZ:['education.govt.nz','tahurangi.education.govt.nz'], PK:['ncc.gov.pk','mofept.gov.pk'],
+    SA:['my.gov.sa','moe.gov.sa'], AE:['u.ae','moe.gov.ae'], KR:['ncic.re.kr'], IN:['ncert.nic.in','education.gov.in'],
+    FR:['eduscol.education.fr','education.gouv.fr'], FI:['oph.fi'], SG:['moe.gov.sg'], CN:['moe.gov.cn'],
+    CA:['cmec.ca'], NL:['slo.nl'], SE:['skolverket.se'], NO:['udir.no'], IE:['curriculumonline.ie','ncca.ie'],
+    BR:['basenacionalcomum.mec.gov.br','gov.br'], CL:['curriculumnacional.cl','mineduc.cl'], ZA:['education.gov.za'],
+    ID:['kurikulum.kemdikbud.go.id','kemdikbud.go.id'], MY:['moe.gov.my'], TH:['obec.go.th','moe.go.th'],
+    VN:['moet.gov.vn'], BD:['nctb.gov.bd','nctb.portal.gov.bd'], PH:['deped.gov.ph'], MX:['gob.mx'],
+    ES:['educagob.educacionfpydeportes.gob.es','educacionfpydeportes.gob.es'], IT:['istruzione.it'], PT:['dge.mec.pt'],
+    PL:['gov.pl'], EE:['hm.ee'], DK:['uvm.dk'], CH:['edk.ch'], RU:['edu.gov.ru'], UA:['mon.gov.ua'],
+    KZ:['gov.kz'], AR:['argentina.gob.ar'], CO:['mineducacion.gov.co'], EG:['moe.gov.eg'],
+    KE:['education.go.ke'], GH:['moe.gov.gh'], IL:['edu.gov.il']
   };
-  return (trustedByCountry[String(countryCode || '').toUpperCase()] || []).some((domain) =>
-    host === domain || host.endsWith('.' + domain)
-  );
+  const code = String(countryCode || '').toUpperCase();
+  return (trustedByCountry[code] || []).some((domain) => host === domain || host.endsWith('.' + domain));
 }
 function curriculumProgramKey(record) {
   return sha256([
