@@ -37,7 +37,6 @@ function syntaxCheck(source, filename) {
 const requiredFiles = [
   'index.html',
   'school.js',
-  'school.js',
   'study.js',
   'curriculum-catalog.js',
   'back4app/main.js',
@@ -91,9 +90,10 @@ const definedFunctions = new Set(
   [...cloudCode.matchAll(/Parse\.Cloud\.define\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
 );
 const appCode = html + '\n' + files['study.js'] + '\n' + files['school.js'];
-const calledFunctions = new Set(
-  [...appCode.matchAll(/Parse\.Cloud\.run\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
-);
+const calledFunctions = new Set([
+  ...[...appCode.matchAll(/Parse\.Cloud\.run\(\s*['"]([^'"]+)['"]/g)].map(match => match[1]),
+  ...[...appCode.matchAll(/runPublicAuthCloud\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
+]);
 for (const functionName of calledFunctions) {
   check(definedFunctions.has(functionName),
     'Cloud function is defined for frontend call: ' + functionName);
@@ -120,8 +120,20 @@ check(cloudCode.includes("JSON.stringify({ action: 'healthcheck', token: expecte
 check(cloudCode.includes("configValueAsync('APPS_SCRIPT_TOKEN')"),
   'Back4App reads the server-side mail token');
 check(!/\b(?:APPS_SCRIPT_TOKEN|RESEND_API_KEY)\b/.test(
-  html + '\n' + files['study.js'] + '\n' + files['curriculum-catalog.js']
+  html + '\n' + files['study.js'] + '\n' + files['school.js'] + '\n' + files['curriculum-catalog.js']
 ), 'No mail-service secret key names appear in frontend source');
+check(html.includes('async function runPublicAuthCloud(') &&
+      html.includes("'X-Parse-Application-Id': TDEV_PARSE_APP_ID") &&
+      html.includes("'X-Parse-JavaScript-Key': TDEV_PARSE_JS_KEY") &&
+      html.includes('Intentionally omit X-Parse-Session-Token'),
+  'Public auth requests do not inherit a stale browser session token');
+for (const functionName of [
+  'registerUser', 'verifyEmailCode', 'resendVerificationCode', 'loginUser',
+  'requestTdevPasswordReset', 'completeTdevPasswordReset'
+]) {
+  check(new RegExp('runPublicAuthCloud\\(\\s*[\\'\\"]' + functionName + '[\\'\\"]').test(html),
+    'Public auth endpoint uses sessionless request: ' + functionName);
+}
 
 check(cloudCode.includes('StudyCard:') && cloudCode.includes("Parse.Cloud.define('saveStudyCard'") &&
       cloudCode.includes("Parse.Cloud.define('getStudyCards'"),
