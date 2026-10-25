@@ -106,6 +106,11 @@
     const item = read('notes').find(function (note) { return note && note.id === noteId; });
     return item ? item.body || '' : '';
   };
+  window.loadCurriculumTopicNote = async function (grade, server, subject, topic) {
+    const result = await cloud('getStudyNotes', {});
+    if (result && result.success === true && Array.isArray(result.items)) mergeCloud('notes', result.items);
+    return window.getCurriculumTopicNote(grade, server, subject, topic);
+  };
   window.saveCurriculumTopicNote = async function (grade, server, subject, topic, body) {
     const cleanBody = String(body || '').trim();
     if (!cleanBody) { notify('Not alanı boş. Önce kendi notunu yaz.'); return false; }
