@@ -109,6 +109,9 @@
     international: 'Uluslararası kaynaklar'
   };
   let serverCoverageRequested = false;
+  let importedProgramsRequested = false;
+  let importedPrograms = [];
+  let importedProgramsStorageReady = false;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
@@ -156,21 +159,169 @@
       if (!result || result.success !== true) throw new Error('Kapsam yanıtı doğrulanamadı.');
       const db = result.database || {};
       if (db.countAvailable === true) {
-        host.textContent = 'Sunucu veritabanı: ' + Number(db.totalRecords || 0) +
-          ' müfredat kaydı; ' + Number(db.recordsMarkedOfficial || 0) +
+        host.textContent = 'Genel müfredat veritabanı: ' + Number(db.totalRecords || 0) +
+          ' kayıt; ' + Number(db.recordsMarkedOfficial || 0) +
           ' kayıt “resmî” olarak işaretlenmiş. Bu işaret, kayıtların güncelliğinin otomatik olarak kanıtlandığı anlamına gelmez.';
+        const imported = db.importedPrograms || {};
+        if (imported.countAvailable === true) {
+          host.textContent += ' Aktarılan ayrıntılı program kayıtları: ' + Number(imported.totalRecords || 0) +
+            '; resmî olarak işaretli: ' + Number(imported.recordsMarkedOfficial || 0) + '.';
+        } else {
+          host.textContent += ' Ayrıntılı program kayıtları için CurriculumProgram veritabanı sınıfının kurulumu gerekebilir.';
+        }
       } else {
         host.textContent = 'Kaynak kataloğu hazır; sunucu veritabanı kayıt sayımı alınamadı.';
       }
     } catch (_) {
+      serverCoverageRequested = false;
       host.textContent = 'Sunucu kapsam sayımı alınamadı. Bu durum kaynak bağlantılarını etkilemez; Back4App Cloud Code dağıtımını kontrol et.';
     }
   }
 
-  window.filterCurriculumCenter = renderCards;
-  window.renderCurriculumCenter = function () {
+  function renderImportedPrograms() {
+    const host = document.getElementById('curriculum-program-list');
+    const count = document.getElementById('curriculum-program-count');
+    if (!host) return;
+    const query = String((document.getElementById('curriculum-search') || {}).value || '').trim().toLocaleLowerCase('tr');
+    const category = String((document.getElementById('curriculum-category') || {}).value || 'all');
+    const filtered = importedPrograms.filter(function (item) {
+      const matchesCategory = category === 'all' || item.programType === category;
+      const searchable = [
+        item.countryName, item.countryCode, item.gradeLabel, item.subject, item.title,
+        item.programType, item.schoolType, item.field, item.branch, item.curriculumYear
+      ].join(' ').toLocaleLowerCase('tr');
+      return matchesCategory && (!query || searchable.includes(query));
+    });
+    if (count) count.textContent = importedProgramsStorageReady
+      ? filtered.length + ' kayıt gösteriliyor · en fazla 100 kayıt listelenir'
+      : 'Program kayıt deposu henüz hazır değil veya erişilemiyor.';
+    if (!importedProgramsStorageReady) {
+      host.innerHTML = '<div class="detail-box"><p>Back4App üzerinde CurriculumProgram sınıfı hazır değil. Önce güncel main.js dosyasını dağıtıp yetkili kurulum işlemini bir kez çalıştır.</p></div>';
+      return;
+    }
+    if (!filtered.length) {
+      host.innerHTML = '<div class="detail-box"><p>Bu filtrede aktarılmış program kaydı bulunamadı. Resmî kaynak bağlantıları yukarıda kullanılabilir; henüz içe aktarılmamış içerik varmış gibi gösterilmez.</p></div>';
+      return;
+    }
+    host.innerHTML = filtered.map(function (item) {
+      const topicContainer = item.topics && typeof item.topics === 'object' ? item.topics : {};
+      const rawTopics = Array.isArray(topicContainer.topics) ? topicContainer.topics :
+        (Array.isArray(topicContainer.units) ? topicContainer.units : []);
+      const topicNames = rawTopics.slice(0, 5).map(function (topic) {
+        return typeof topic === 'string' ? topic : (topic && (topic.title || topic.name || topic.unit) || '');
+      }).filter(Boolean);
+      const status = item.isOfficial === true ? 'RESMÎ KAYIT · TARİHLİ' : 'DOĞRULAMA GEREKLİ';
+      const details = [item.countryName, item.gradeLabel ? item.gradeLabel + '. sınıf' : '', item.schoolType, item.field, item.branch, item.subject, item.curriculumYear].filter(Boolean).join(' · ');
+      return '<article class="bot-card curriculum-source-card">' +
+        '<div class="bot-header"><div class="bot-name">' + escapeHtml(item.title || item.subject || 'Müfredat kaydı') + '</div><span class="bot-status">' + status + '</span></div>' +
+        '<div class="curriculum-card-meta">' + escapeHtml(details) + '</div>' +
+        (topicNames.length ? '<p class="bot-desc"><strong>İlk konu başlıkları:</strong> ' + escapeHtml(topicNames.join(' · ')) + '</p>' : '<p class="bot-desc">Konu başlıkları bu kayıtta ayrıca yapılandırılmamış.</p>') +
+        '<p class="bot-desc">' + escapeHtml(item.sourceName || 'Kaynak adı yok') + '</p>' +
+        (item.sourceUrl && /^https:\/\//i.test(item.sourceUrl) ? '<p><a href="' + escapeHtml(item.sourceUrl) + '" target="_blank" rel="noopener noreferrer">Kaynak belgesini aç ↗</a></p>' : '') +
+        '</article>';
+    }).join('');
+  }
+
+  async function loadImportedPrograms(force) {
+    if (importedProgramsRequested && !force) { renderImportedPrograms(); return; }
+    const host = document.getElementById('curriculum-program-list');
+    if (!host) return;
+    importedProgramsRequested = true;
+    if (!window.Parse || !Parse.Cloud || typeof Parse.Cloud.run !== 'function') {
+      importedProgramsRequested = false;
+      importedProgramsStorageReady = false;
+      renderImportedPrograms();
+      return;
+    }
+    host.innerHTML = '<div class="detail-box"><p>Aktarılan program kayıtları yükleniyor…</p></div>';
+    try {
+      const result = await Parse.Cloud.run('getCurriculumPrograms', {});
+      if (!result || result.success !== true) throw new Error('Program kayıtları yüklenemedi.');
+      importedProgramsStorageReady = result.storageReady === true;
+      importedPrograms = Array.isArray(result.items) ? result.items : [];
+      renderImportedPrograms();
+    } catch (_) {
+      importedProgramsRequested = false;
+      importedProgramsStorageReady = false;
+      host.innerHTML = '<div class="detail-box"><p>Program kayıtları şu anda alınamadı. Cloud Code dağıtımını ve oturumunu kontrol et.</p></div>';
+    }
+  }
+
+  window.submitCurriculumProgramForm = async function (event) {
+    if (event) event.preventDefault();
+    const role = String(window.currentCurriculumRole || '').toLowerCase();
+    const panel = document.getElementById('curriculum-admin-import');
+    if (!panel || panel.style.display === 'none' || !['founder', 'admin'].includes(role)) {
+      if (typeof window.showNotif === 'function') window.showNotif('Bu işlem için kurucu/yönetici yetkisi gerekir.');
+      return;
+    }
+    if (!window.Parse || !Parse.Cloud || typeof Parse.Cloud.run !== 'function') {
+      if (typeof window.showNotif === 'function') window.showNotif('Sunucu bağlantısı hazır değil.');
+      return;
+    }
+    let topics;
+    try {
+      topics = JSON.parse(document.getElementById('cp-topics-json').value);
+    } catch (_) {
+      if (typeof window.showNotif === 'function') window.showNotif('Konu verisi geçerli JSON olmalı.');
+      return;
+    }
+    const dateIso = function (id) {
+      const value = document.getElementById(id).value;
+      return value ? new Date(value + 'T12:00:00.000Z').toISOString() : '';
+    };
+    const record = {
+      countryCode: document.getElementById('cp-country-code').value.trim().toUpperCase(),
+      countryName: document.getElementById('cp-country-name').value.trim(),
+      grade: Number(document.getElementById('cp-grade').value),
+      gradeLabel: String(document.getElementById('cp-grade').value),
+      programType: document.getElementById('cp-program-type').value,
+      schoolType: document.getElementById('cp-school-type').value.trim(),
+      field: document.getElementById('cp-field').value.trim(),
+      branch: document.getElementById('cp-branch').value.trim(),
+      subject: document.getElementById('cp-subject').value.trim(),
+      title: document.getElementById('cp-title').value.trim(),
+      curriculumYear: document.getElementById('cp-year').value.trim(),
+      sourceName: document.getElementById('cp-source-name').value.trim(),
+      sourceUrl: document.getElementById('cp-source-url').value.trim(),
+      sourceCheckedAt: dateIso('cp-source-checked'),
+      verifiedAt: dateIso('cp-verified-at'),
+      isOfficial: document.getElementById('cp-is-official').checked,
+      active: true,
+      topics: topics
+    };
+    try {
+      const result = await Parse.Cloud.run('saveCurriculumProgram', { record: record });
+      if (!result || result.success !== true) throw new Error((result && result.error) || 'Kayıt sonucu doğrulanamadı.');
+      if (typeof window.showNotif === 'function') window.showNotif(result.message || 'Müfredat kaydı kaydedildi.');
+      const form = document.getElementById('curriculum-admin-import');
+      const inputs = form ? form.querySelector('form') : null;
+      if (inputs) inputs.reset();
+      importedProgramsRequested = false;
+      serverCoverageRequested = false;
+      await loadImportedPrograms(true);
+      await loadServerCoverage();
+    } catch (error) {
+      if (typeof window.showNotif === 'function') window.showNotif('Müfredat kaydı kaydedilemedi: ' + (error && error.message || 'Sunucu hatası'));
+    }
+  };
+
+  window.filterCurriculumCenter = function () {
+    renderCards();
+    renderImportedPrograms();
+  };
+  window.renderCurriculumCenter = function (role) {
+    window.currentCurriculumRole = String(role || '').toLowerCase();
+    const adminPanel = document.getElementById('curriculum-admin-import');
+    if (adminPanel) adminPanel.style.display = ['founder', 'admin'].includes(window.currentCurriculumRole) ? 'block' : 'none';
+    const sourceChecked = document.getElementById('cp-source-checked');
+    const verifiedAt = document.getElementById('cp-verified-at');
+    const today = new Date().toISOString().slice(0, 10);
+    if (sourceChecked && !sourceChecked.value) sourceChecked.value = today;
+    if (verifiedAt && !verifiedAt.value) verifiedAt.value = today;
     renderCards();
     loadServerCoverage();
+    loadImportedPrograms();
   };
 
   window.addEventListener('DOMContentLoaded', function () {
