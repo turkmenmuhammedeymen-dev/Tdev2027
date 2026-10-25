@@ -1109,10 +1109,22 @@ Parse.Cloud.define('getQuestions', async (request) => {
         answer: 'true', explanation: explanation,
         source: 'TdevKuantum genel konu rehberi; resmî sınav sorusu değildir'
       });
+      const falsePrefix = ({
+        TR: 'Bu açıklama doğru değildir: ', DE: 'Diese Erklärung ist falsch: ',
+        ES: 'Esta explicación es incorrecta: ', FR: 'Cette explication est incorrecte : ',
+        PT: 'Esta explicação está incorreta: ', AZ: 'Bu izah yanlışdır: ',
+        JP: 'この説明は正しくありません：', CN: '以下解释不正确：', TW: '以下解釋不正確：',
+        KR: '이 설명은 올바르지 않습니다: ', SA: 'هذا الشرح غير صحيح: ',
+        AE: 'هذا الشرح غير صحيح: ', EG: 'هذا الشرح غير صحيح: ', IQ: 'هذا الشرح غير صحيح: ',
+        RU: 'Это объяснение неверно: ', ID: 'Penjelasan ini tidak benar: ',
+        VN: 'Giải thích này không đúng: ', TH: 'คำอธิบายนี้ไม่ถูกต้อง: ',
+        BD: 'এই ব্যাখ্যাটি সঠিক নয়: ', IN: 'यह व्याख्या सही नहीं है: ',
+        NL: 'Deze uitleg is niet juist: ', IT: 'Questa spiegazione non è corretta: '
+      })[server] || 'This explanation is not correct: ';
       generated.push({
         id: 'guide-' + server + '-' + gradeInput + '-' + subjectIndex + '-' + topicIndex + '-false',
         grade: gradeInput, subject: subject,
-        question: title + ': ' + (server === 'TR' ? 'Bu açıklama doğru değildir: ' : 'This explanation is not correct: ') + explanation,
+        question: title + ': ' + falsePrefix + explanation,
         answer: 'false', explanation: explanation,
         source: 'TdevKuantum genel konu rehberi; resmî sınav sorusu değildir'
       });
