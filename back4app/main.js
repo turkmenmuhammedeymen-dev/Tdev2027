@@ -833,10 +833,10 @@ function tkTopicFor(subject, grade) {
 }
 function tkLocalizedTopicFor(subject, grade, server) {
   const languageArts = /language arts|english|deutsch|fran[cç]ais|espa[nñ]ol|portugu[eê]s|italiano|azərbaycan dili|国語|语文|國語|국어|اللغة العربية|русский язык|bahasa indonesia|ngữ văn|lengua|ภาษาไทย|हिंदी|اردو|বাংলা|nederlands|svenska|norsk|suomi|polski/i.test(subject);
-  const mathematics = /mathemat|matematik|mathématique|数学|수학|الرياضيات|riyaziyyat|matematika|toán|математ|rekenen|matematiikka/i.test(subject);
-  const science = /science|fen|fizik|kimya|biyoloji|naturwissenschaft|ciencias|sciences|ciências|理科|科学|과학|العلوم|тәбиғи|ilmu pengetahuan alam|khoa học|биологи|naturfag/i.test(subject);
+  const mathematics = /mathemat|matematik|mathématique|数学|수학|الرياضيات|riyaziyyat|matematika|toán|математ|rekenen|matematiikka|คณิตศาสตร์|गणित|গণিত/i.test(subject);
+  const science = /science|fen|fizik|kimya|biyoloji|naturwissenschaft|ciencias|sciences|ciências|理科|科学|과학|العلوم|тәбиғи|ilmu pengetahuan alam|khoa học|биологи|naturfag|วิทยาศาสตร์|विज्ञान|বিজ্ঞান|natuur en techniek/i.test(subject);
   const digital = /computer|computing|informatik|digital|teknoloji|technology|信息|信息科技|정보|الحاسوب|informatika|tin học|computación/i.test(subject);
-  const social = /social|history|histor|geograph|geografie|coğraf|tarih|sosyal|사회|社会|社会科|الدراسات|história|historia|sejarah|lịch sử|geografía|geografia/i.test(subject);
+  const social = /social|history|histor|geograph|geografie|coğraf|tarih|sosyal|사회|社会|社会科|الدراسات|história|historia|sejarah|lịch sử|geografía|geografia|สังคมศึกษา|इतिहास|भूगोल|সামাজিক|বাংলাদেশ ও বিশ্বপরিচয়/i.test(subject);
   const category = mathematics ? 'math' : science ? 'science' : digital ? 'digital' : social ? 'social' : languageArts ? 'language' : 'general';
   const en = {
     language:[['Reading and meaning','Identify the main idea, supporting details, and the meaning of words in context.'],['Writing clearly','Organize ideas into a beginning, middle, and conclusion.'],['Grammar and sentences','Use sentence structure and punctuation to communicate meaning.'],['Speaking and listening','Summarize what you hear and respond with relevant details.'],['Vocabulary','Learn new words through context and use them in original sentences.'],['Text analysis','Compare information and distinguish fact from opinion.']],
@@ -939,7 +939,11 @@ function tkLocalizedTopicFor(subject, grade, server) {
     PT:'PT',BR:'PT',AZ:'AZ',JP:'JA',CN:'CN',TW:'CN',KR:'KO',SA:'AR',AE:'AR',EG:'AR',IQ:'AR',
     RU:'RU',UA:'RU',KZ:'RU',ID:'ID',MY:'ID',VN:'VI',TH:'TH',BD:'BN',IN:'HI',NL:'NL',IT:'IT'
   };
-  const locale = localeByCountry[server] || 'EN';
+  let locale = localeByCountry[server] || 'EN';
+  if (server === 'IN' && /हिंदी/.test(subject)) locale = 'HI';
+  if (server === 'IN' && /English/i.test(subject)) locale = 'EN';
+  if (server === 'CH' && /Français/i.test(subject)) locale = 'FR';
+  if (server === 'CH' && /Italiano/i.test(subject)) locale = 'IT';
   const bank = banks[locale] || {};
   const fallback = en[category] || en.general;
   const localized = bank[category] || fallback;
