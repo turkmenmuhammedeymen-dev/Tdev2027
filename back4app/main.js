@@ -226,6 +226,77 @@ async function sendVerificationEmail(email, code, name) {
   const providerDetail = errors.length ? (' Ayrıntı: ' + errors.join(' | ').slice(0, 700)) : '';
   throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Doğrulama e-postası gönderilemedi. ' + setupMessage + providerDetail);
 }
+async function sendPasswordResetEmail(email, code) {
+  const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
+  const apiKey = await configValueAsync('RESEND_API_KEY');
+  const from = await configValueAsync('EMAIL_FROM');
+  const subject = 'TdevKuantum şifre yenileme kodu';
+  const html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b4d">' +
+    '<h1 style="color:#2457c5">TdevKuantum</h1><p>Şifreni yenilemek için aşağıdaki kodu kullan:</p>' +
+    '<div style="font-size:30px;font-weight:700;letter-spacing:8px;padding:18px;background:#f3f6fb;border-radius:12px;text-align:center">' + code + '</div>' +
+    '<p>Bu kod 10 dakika geçerlidir ve tek kullanımlıktır. Bu isteği sen yapmadıysan bu e-postayı yok say; şifren değişmez.</p></div>';
+  const errors = [];
+  if (scriptUrl) {
+    try {
+      const response = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email, email: email, subject: subject, html: html,
+          text: 'TdevKuantum şifre yenileme kodun: ' + code + ' (10 dakika geçerlidir)',
+          app: 'TdevKuantum', token: await configValueAsync('APPS_SCRIPT_TOKEN')
+        })
+      });
+      const body = await response.text();
+      if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
+      let data;
+      try { data = JSON.parse(body); } catch (_) { throw new Error('Apps Script geçerli JSON döndürmedi.'); }
+      if (!(data && (data.success === true || data.ok === true))) throw new Error(String((data && (data.error || data.message)) || 'Apps Script e-posta gönderimini doğrulamadı.'));
+      return { provider: 'google-apps-script' };
+    } catch (error) {
+      console.error('[TdevKuantum] Password reset Apps Script error:', error && error.message);
+      errors.push('Google Apps Script: ' + String(error && error.message || error));
+    }
+  }
+  if (apiKey && from) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: from, to: [email], subject: subject, html: html })
+      });
+      if (!response.ok) {
+        let detail = '';
+        try { detail = (await response.text()).slice(0, 250); } catch (_) {}
+        throw new Error('Resend HTTP ' + response.status + (detail ? ': ' + detail : ''));
+      }
+      return { provider: 'resend' };
+    } catch (error) {
+      console.error('[TdevKuantum] Password reset Resend error:', error && error.message);
+      errors.push('Resend: ' + String(error && error.message || error));
+    }
+  }
+  throw new Parse.Error(Parse.Error.SCRIPT_FAILED, 'Şifre yenileme e-postası gönderilemedi. E-posta servisi ayarlarını kontrol et. ' + errors.join(' | ').slice(0, 500));
+}
+async function savePasswordReset(email, code) {
+  const row = new Parse.Object('PasswordReset');
+  row.set('emailHash', sha256(normalizeEmail(email)));
+  row.set('codeHash', sha256(code));
+  row.set('expiresAt', new Date(Date.now() + 10 * 60 * 1000));
+  row.set('attempts', 0);
+  row.set('used', false);
+  await row.save(null, { useMasterKey: true });
+}
+async function findPasswordReset(email) {
+  const query = new Parse.Query('PasswordReset');
+  query.equalTo('emailHash', sha256(normalizeEmail(email)));
+  query.equalTo('used', false);
+  query.greaterThan('expiresAt', new Date());
+  query.descending('createdAt');
+  query.limit(1);
+  return query.first({ useMasterKey: true });
+}
+
 async function saveVerification(email, code) {
   const row = new Parse.Object('EmailVerification');
   row.set('emailHash', sha256(normalizeEmail(email)));
@@ -248,6 +319,62 @@ async function setVerified(user) {
   user.set('emailVerified', true);
   await user.save(null, { useMasterKey: true });
 }
+
+// Password reset uses a short-lived, single-use code. Never reveal whether an account exists.
+Parse.Cloud.define('requestTdevPasswordReset', async (request) => {
+  const email = normalizeEmail(request.params && request.params.email);
+  const genericMessage = 'Bu e-posta için bir hesap varsa sıfırlama kodu gönderildi. Gelen kutunu ve spam klasörünü kontrol et.';
+  if (!validEmail(email)) return resultError('Geçerli bir e-posta adresi gir.', 'INVALID_EMAIL');
+  const query = new Parse.Query(Parse.User);
+  query.equalTo('username', email);
+  const user = await query.first({ useMasterKey: true });
+  if (!user || await roleForEmail(email) !== 'member') return { success: true, message: genericMessage };
+  const emailHash = sha256(email);
+  const recentQuery = new Parse.Query('PasswordReset');
+  recentQuery.equalTo('emailHash', emailHash);
+  recentQuery.greaterThan('createdAt', new Date(Date.now() - 60 * 1000));
+  recentQuery.descending('createdAt');
+  recentQuery.limit(1);
+  const recent = await recentQuery.first({ useMasterKey: true });
+  if (recent) return { success: true, message: genericMessage };
+  const code = String(crypto.randomInt(100000, 1000000));
+  await sendPasswordResetEmail(email, code);
+  await savePasswordReset(email, code);
+  await writeAuditLog(request, 'user.password_reset_requested', user.id, { emailHash: emailHash });
+  return { success: true, message: genericMessage };
+});
+
+Parse.Cloud.define('completeTdevPasswordReset', async (request) => {
+  const email = normalizeEmail(request.params && request.params.email);
+  const code = safeText(request.params && request.params.code, 10);
+  const newPassword = String((request.params && request.params.newPassword) || '');
+  if (!validEmail(email) || !/^\d{6}$/.test(code) || newPassword.length < 8 || newPassword.length > 128) {
+    return resultError('E-posta, 6 haneli kod veya yeni şifre geçersiz.', 'INVALID_INPUT');
+  }
+  const reset = await findPasswordReset(email);
+  if (!reset) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
+  const attempts = Number(reset.get('attempts') || 0);
+  if (attempts >= 5) return resultError('Çok fazla yanlış deneme. Yeni kod iste.', 'RESET_TOO_MANY_ATTEMPTS');
+  if (!secureEqual(reset.get('codeHash'), sha256(code))) {
+    reset.set('attempts', attempts + 1);
+    await reset.save(null, { useMasterKey: true });
+    return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_INVALID');
+  }
+  const query = new Parse.Query(Parse.User);
+  query.equalTo('username', email);
+  const user = await query.first({ useMasterKey: true });
+  if (!user || await roleForEmail(email) !== 'member') {
+    reset.set('used', true);
+    await reset.save(null, { useMasterKey: true });
+    return resultError('Bu hesap için şifre bu ekrandan değiştirilemiyor. Destek ekibiyle iletişime geç.', 'RESET_NOT_ALLOWED');
+  }
+  user.set('password', newPassword);
+  await user.save(null, { useMasterKey: true });
+  reset.set('used', true);
+  await reset.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'user.password_reset_completed', user.id, { emailHash: sha256(email) });
+  return { success: true, message: 'Şifren başarıyla güncellendi.' };
+});
 
 Parse.Cloud.define('registerUser', async (request) => {
   const enabled = (await configValueAsync('REGISTRATION_ENABLED', CONFIG_DEFAULTS.REGISTRATION_ENABLED)).toLowerCase() !== 'false';
@@ -619,6 +746,7 @@ Parse.Cloud.define('sendSupportMessage', async (request) => {
 const TK_SCHEMA = {
   UserProfile: { username:'string', email:'string', displayName:'string', role:'string', grade:'number', school:'string', isBanned:'boolean', emailVerified:'boolean', referralCode:'string', createdAtISO:'string', lastLoginAtISO:'string' },
   EmailVerification: { email:'string', emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean', verified:'boolean', createdAtISO:'string' },
+  PasswordReset: { emailHash:'string', codeHash:'string', expiresAt:'date', attempts:'number', used:'boolean' },
   Curriculum: { grade:'number', server:'string', subject:'string', title:'string', description:'string', subjects:'object', order:'number', active:'boolean' },
   Question: { grade:'number', server:'string', subject:'string', topic:'string', question:'string', options:'array', correctAnswer:'string', explanation:'string', difficulty:'string', active:'boolean', order:'number' },
   SupportMessage: { email:'string', name:'string', subject:'string', category:'string', message:'string', status:'string', userId:'string', createdAtISO:'string' },
