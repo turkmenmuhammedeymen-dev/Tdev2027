@@ -696,6 +696,31 @@ input,select,textarea { color:#172b4d; }
 @media(prefers-reduced-motion:reduce) { .showcase-card,.showcase-cta { transition:none; } .showcase-card:hover,.showcase-cta:hover { transform:none; } }
 
 </style>
+<style>
+.academy-overview{margin:0 0 22px;padding:clamp(18px,3vw,30px);border:1px solid #d7e2f0;border-radius:18px;background:linear-gradient(135deg,#f7faff 0%,#fff 70%);box-shadow:0 10px 30px rgba(23,43,77,.06)}
+.overview-kicker{font-size:.7rem;font-weight:900;letter-spacing:.15em;color:#2457c5}
+.academy-overview h2{margin:10px 0;font-size:clamp(1.35rem,3vw,2rem);line-height:1.2;color:#172b4d}
+.academy-overview p{max-width:920px;color:#52647c;line-height:1.65}
+.overview-feature-list{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.overview-feature-list span{padding:7px 10px;border:1px solid #dbe5f2;border-radius:999px;background:#fff;color:#334760;font-size:.75rem;font-weight:700}
+.overview-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.overview-actions .study-action{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:40px}
+.study-action.secondary{background:#fff;color:#2457c5;border:1px solid #cbd9ed}
+.overview-disclaimer{font-size:.75rem;margin-bottom:0}
+.curriculum-year-banner{padding:18px;border-radius:14px;border:1px solid #d7e2f0;background:#f7faff;margin:16px 0 20px}
+.curriculum-year-banner>strong{color:#2457c5;letter-spacing:.04em}
+.curriculum-year-banner p{color:#52647c;line-height:1.65}
+.curriculum-filter-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.curriculum-filter-row label{display:flex;flex-direction:column;gap:7px;font-size:.8rem;font-weight:800;color:#334760}
+.curriculum-filter-row input,.curriculum-filter-row select{width:100%;min-height:42px;padding:10px 12px;border:1px solid #cbd7e6;border-radius:9px;background:#fff;color:#172b4d;font:inherit}
+.curriculum-result-count{font-size:.78rem;color:#68778d;font-weight:700}
+.curriculum-source-card{min-width:0}
+.curriculum-card-meta{font-size:.72rem;color:#68778d;margin:10px 0}
+.curriculum-coverage-note{margin-top:18px}
+.curriculum-coverage-note h3{color:#2457c5}
+.curriculum-coverage-note li{margin:8px 0;color:#52647c;line-height:1.6}
+@media(max-width:640px){.curriculum-filter-row{grid-template-columns:1fr}.overview-actions{flex-direction:column}.overview-actions .study-action{width:100%}}
+</style>
 </head>
 <body>
 
@@ -948,18 +973,18 @@ input,select,textarea { color:#172b4d; }
         </div>
         <div class="nav-section">MODÜLLER</div>
         <div class="nav-btn active" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Dersler</div>
-        <div class="nav-btn" onclick="showTab('curriculum',this)"><span class="nav-icon">🌐</span>Müfredat Kaynakları</div>
-        <div class="nav-btn" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
-        <div class="nav-btn" onclick="showTab('ai',this)"><span class="nav-icon">🤖</span>TDEV-AI</div>
+        <div class="nav-btn" id="nav-curriculum" onclick="showTab('curriculum',this)"><span class="nav-icon">🌐</span>Yeni Müfredat Merkezi</div>
+        <div class="nav-btn" id="nav-quiz" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
+        <div class="nav-btn" id="nav-ai" onclick="showTab('ai',this)"><span class="nav-icon">🤖</span>TDEV-AI</div>
         <div class="nav-btn" onclick="showTab('m5',this)"><span class="nav-icon">⚡</span>M5 Bilişim</div>
         <div class="nav-section">ÇALIŞMA ARAÇLARI</div>
-        <div class="nav-btn" onclick="showTab('planner',this);loadStudyPlanner()"><span class="nav-icon">🗓️</span>Çalışma Planı</div>
+        <div class="nav-btn" id="nav-planner" onclick="showTab('planner',this);loadStudyPlanner()"><span class="nav-icon">🗓️</span>Çalışma Planı</div>
         <div class="nav-btn" onclick="showTab('notes',this);loadStudyNotes()"><span class="nav-icon">📝</span>Not Defterim</div>
-        <div class="nav-btn" onclick="showTab('cards',this);loadStudyCards()"><span class="nav-icon">🧠</span>Bilgi Kartları</div>
-        <div class="nav-btn" onclick="showTab('practice',this);loadPracticeLog()"><span class="nav-icon">🎯</span>Tekrar ve Deneme</div>
-        <div class="nav-btn" onclick="showTab('mistakes',this);loadStudyMistakes()"><span class="nav-icon">🔎</span>Yanlış Defterim</div>
-        <div class="nav-btn" onclick="showTab('focus',this)"><span class="nav-icon">⏱️</span>Odak Sayacı</div>
-        <div class="nav-btn" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">📈</span>Gelişimim</div>
+        <div class="nav-btn" id="nav-cards" onclick="showTab('cards',this);loadStudyCards()"><span class="nav-icon">🧠</span>Bilgi Kartları</div>
+        <div class="nav-btn" id="nav-practice" onclick="showTab('practice',this);loadPracticeLog()"><span class="nav-icon">🎯</span>Tekrar ve Deneme</div>
+        <div class="nav-btn" id="nav-mistakes" onclick="showTab('mistakes',this);loadStudyMistakes()"><span class="nav-icon">🔎</span>Yanlış Defterim</div>
+        <div class="nav-btn" id="nav-focus" onclick="showTab('focus',this)"><span class="nav-icon">⏱️</span>Odak Sayacı</div>
+        <div class="nav-btn" id="nav-progress" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">📈</span>Gelişimim</div>
         <div class="nav-section">SİSTEM</div>
         <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
         <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
@@ -986,6 +1011,20 @@ input,select,textarea { color:#172b4d; }
         <div class="content-area">
             <!-- DERSLER -->
             <div id="tab-lessons" class="tab active">
+                <section class="academy-overview" aria-labelledby="academy-overview-title">
+                    <div class="overview-kicker">TDEVKUANTUM · AKADEMİ</div>
+                    <h2 id="academy-overview-title">Derslerini öğren. Çalışmanı yönet. Gelişimini takip et.</h2>
+                    <p>Resmî kaynak bağlantıları, sınıf ve ders konu rehberleri, doğru/yanlış alıştırmaları, TDEV-AI, kişisel notlar, bilgi kartları, çalışma planı, yanlış defteri, odak sayacı ve gelişim özetin tek çalışma alanında.</p>
+                    <div class="overview-feature-list" aria-label="Eğitim özellikleri">
+                        <span>📚 Ders ve konu rehberi</span><span>🌐 Müfredat kaynakları</span><span>🤖 TDEV-AI</span><span>✅ Doğru/Yanlış</span><span>🗓️ Çalışma planı</span><span>📝 Kişisel notlar</span><span>🧠 Bilgi kartları</span><span>🔎 Yanlış defteri</span><span>⏱️ Odak sayacı</span><span>📈 Gelişim takibi</span>
+                    </div>
+                    <div class="overview-actions">
+                        <button type="button" class="study-action" onclick="showTab('curriculum',document.getElementById('nav-curriculum'))">🌐 MÜFREDAT MERKEZİ</button>
+                        <button type="button" class="study-action secondary" onclick="showTab('planner',document.getElementById('nav-planner'));loadStudyPlanner()">＋ ÇALIŞMA PLANI</button>
+                        <button type="button" class="study-action secondary" onclick="showTab('progress',document.getElementById('nav-progress'));loadLearningDashboard()">↗ GELİŞİMİM</button>
+                    </div>
+                    <p class="overview-disclaimer">Resmî müfredat durumu her kaynak ve program yılı için ayrı gösterilir. Genel konu rehberleri, resmî programın eksiksiz içe aktarıldığı anlamına gelmez.</p>
+                </section>
                 <div id="lesson-list">
                     <div class="sec-title"><span id="sc-grade">—</span>. SINIF MÜFREDATı</div>
                     <div class="lesson-grid" id="lesson-grid"></div>
@@ -1181,35 +1220,44 @@ input,select,textarea { color:#172b4d; }
                 </div>
             </div>
 
-            <!-- RESMÎ MÜFREDAT KAYNAKLARI -->
+            <!-- YENİ MÜFREDAT MERKEZİ -->
             <div id="tab-curriculum" class="tab">
-                <div class="sec-title">MÜFREDAT <span>KAYNAKLARI</span></div>
+                <div class="sec-title">YENİ MÜFREDAT <span>MERKEZİ</span></div>
                 <div class="study-panel">
-                    <p class="study-intro">Ülke, sınıf ve ders programları zaman içinde değişebilir. Aşağıdaki resmî kaynaklar, özellikle ünite ve konu adlarını doğrulamak için kullanılır. Bu bağlantılar tüm içeriklerin platforma aktarılmış olduğu anlamına gelmez.</p>
-                    <div class="bots-grid">
-                        <article class="bot-card">
-                            <div class="bot-header"><div class="bot-name">TÜRKİYE · ÖĞRETİM PROGRAMLARI</div><span class="bot-status">MEB RESMÎ</span></div>
-                            <div class="bot-desc">Ders, kademe, sınıf ve ünite düzeyinde öğretim programlarını incele. Ortaokul, lise ve uygun ders programlarını resmî kaynaktan doğrula.</div>
-                            <p><a href="https://mufredat.meb.gov.tr/Programlar.aspx" target="_blank" rel="noopener noreferrer">MEB Öğretim Programları ↗</a></p>
-                        </article>
-                        <article class="bot-card">
-                            <div class="bot-header"><div class="bot-name">TÜRKİYE YÜZYILI MAARİF MODELİ</div><span class="bot-status">MEB RESMÎ</span></div>
-                            <div class="bot-desc">Güncel programlarda ders, sınıf ve ünite ayrıntılarını kontrol et. Programın hangi sınıflarda uygulandığını ilgili yılın resmî açıklamasından doğrula.</div>
-                            <p><a href="https://tymm.meb.gov.tr/ogretim-programlari" target="_blank" rel="noopener noreferrer">TYMM Öğretim Programları ↗</a></p>
-                        </article>
-                        <article class="bot-card">
-                            <div class="bot-header"><div class="bot-name">2026–2027 ÇERÇEVE PLANLARI</div><span class="bot-status">MEB RESMÎ</span></div>
-                            <div class="bot-desc">Ortaöğretim için yayımlanan taslak çerçeve yıllık planlarını ve hangi sınıflarda modelin uygulandığına dair açıklamayı incele.</div>
-                            <p><a href="https://tymm.meb.gov.tr/taslak-cerceve-planlari/ortaogretim" target="_blank" rel="noopener noreferrer">Ortaöğretim Çerçeve Planları ↗</a></p>
-                        </article>
+                    <p class="study-intro">Resmî program portallarını, öğretim yılı bilgilerini ve meslekî/özel program kaynaklarını tek yerde bul. Kaynak bağlantısının bulunması, o kaynaktaki tüm ders ve ünitelerin TdevKuantum veritabanına aktarıldığı anlamına gelmez.</p>
+                    <div class="curriculum-year-banner">
+                        <strong>2026–2027 · TÜRKİYE İÇİN UYGULAMA NOTU</strong>
+                        <p>TYMM uygulaması sınıf düzeyine göre kademelidir. Temel eğitim ve ortaöğretim için güncel kapsamı aşağıdaki MEB sayfalarından kontrol et; tüm sınıfların aynı anda aynı programa geçtiğini varsayma.</p>
+                        <div class="overview-actions">
+                            <a class="study-action" href="https://tymm.meb.gov.tr/taslak-cerceve-planlari/temel-egitim" target="_blank" rel="noopener noreferrer">TEMEL EĞİTİM PLANI ↗</a>
+                            <a class="study-action secondary" href="https://tymm.meb.gov.tr/taslak-cerceve-planlari/ortaogretim" target="_blank" rel="noopener noreferrer">ORTAÖĞRETİM PLANI ↗</a>
+                        </div>
                     </div>
-                    <div class="detail-box" style="margin-top:16px">
-                        <strong>Meslekî ve teknik dersler hakkında</strong>
-                        <p>Meslek liselerindeki alan/dal dersleri okul türüne ve seçilen alana göre değişir. Platformdaki genel konu rehberi, bu derslerin resmî ünite listesi yerine geçmez. Resmî program kaydı doğrulanmadıkça içerik “genel rehber” olarak değerlendirilmelidir.</p>
+                    <div class="curriculum-filter-row">
+                        <label for="curriculum-search">Kaynak, ülke veya ders alanında ara
+                            <input id="curriculum-search" type="search" maxlength="120" placeholder="Örn. matematik, meslekî, imam hatip, Japonya" oninput="filterCurriculumCenter()">
+                        </label>
+                        <label for="curriculum-category">Kaynak türü
+                            <select id="curriculum-category" onchange="filterCurriculumCenter()">
+                                <option value="all">Tüm kaynaklar</option>
+                                <option value="general">Genel öğretim programları</option>
+                                <option value="vocational">Meslekî ve teknik eğitim</option>
+                                <option value="imamhatip">İmam hatip dersleri</option>
+                                <option value="international">Uluslararası kaynaklar</option>
+                            </select>
+                        </label>
                     </div>
-                    <div class="detail-box" style="margin-top:12px">
-                        <strong>Uluslararası müfredatlar</strong>
-                        <p>Ülke kodu seçmek tek başına o ülkenin bütün resmî müfredatının yüklü olduğu anlamına gelmez. Her ülke ve sınıf için kaynak, program yılı ve doğrulama tarihi ayrı kaydedilmelidir. Doğrulanmamış içerik resmî program gibi sunulmamalıdır.</p>
+                    <p id="curriculum-result-count" class="curriculum-result-count" aria-live="polite">Kaynak kataloğu yükleniyor…</p>
+                    <div id="curriculum-catalog-list" class="bots-grid" aria-live="polite"></div>
+                    <div class="detail-box curriculum-coverage-note">
+                        <h3>İÇERİK KAPSAMI VE DOĞRULAMA</h3>
+                        <p id="curriculum-db-status" aria-live="polite">Sunucu kapsam bilgisi kontrol ediliyor…</p>
+                        <ul>
+                            <li>Türkiye'nin genel öğretim programları, meslekî-teknik programları ve imam hatip dersleri farklı resmî kaynaklardan takip edilir.</li>
+                            <li>Meslekî içerikler alan, dal, okul türü, sınıf, ders ve program yılıyla; imam hatip içerikleri ders, sınıf ve program yılıyla doğrulanmalıdır.</li>
+                            <li>Ülke seçimi yalnızca genel bir öğrenme rehberi üretebilir. Bir ülkenin tüm resmî müfredatı aktarılmadıysa içerik “doğrulanmış resmî program” olarak gösterilmez.</li>
+                            <li>ABD, Almanya ve Birleşik Krallık gibi ülkelerde müfredat yetkileri bölge/eyalet/ülkeye göre değişebilir; tek bir bağlantı tüm bölgeleri kapsamayabilir.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1925,9 +1973,10 @@ function showTab(id, el) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const tab = document.getElementById('tab-'+id); if(tab) tab.classList.add('active');
     if(el) el.classList.add('active');
-    const titles = { lessons:'DERS MODÜLLERİ', curriculum:'MÜFREDAT KAYNAKLARI', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU' };
+    const titles = { lessons:'DERS MODÜLLERİ', curriculum:'YENİ MÜFREDAT MERKEZİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU' };
     document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
     if(id === 'devpanel') refreshDevPanel();
+    if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter();
 }
 
 // ---- SİSTEM DURUMU / E-POSTA YAPILANDIRMASI ----
@@ -2410,6 +2459,7 @@ window.onload = () => {
     document.getElementById('admin-content').style.display = 'none';
 };
 </script>
+<script src="curriculum-catalog.js" defer></script>
 <script src="study.js" defer></script>
 
 </body>
