@@ -15,7 +15,7 @@ function ensureRegistrationFields(){
   if([...country.options].some(option=>option.value===selected))country.value=selected;
  }
  if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-student-school-name">Okul adı (zorunlu)<input id="reg-student-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-student-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><label for="reg-class-name">Sınıf / şube (isteğe bağlı)<input id="reg-class-name" maxlength="40" placeholder="Örn. 10-A"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
- if(!$('reg-guardian-note')){const wrap=document.createElement('div');wrap.id='reg-guardian-note';wrap.className='school-account-extra';wrap.hidden=true;wrap.innerHTML='<p class="school-note">Veli hesabında okul veya sınıf seçimi gerekmez. Hesap oluşturduktan sonra öğrencinin TDEV ID kodunu “Öğrencilerim” bölümüne girerek bağlantı kurabilirsin.</p>';root.append(wrap);}
+ if(!$('reg-guardian-note')){const wrap=document.createElement('div');wrap.id='reg-guardian-note';wrap.className='school-account-extra';wrap.hidden=true;wrap.innerHTML='<p class="school-note">Veli hesabında okul veya sınıf seçimi gerekmez. Hesap oluşturduktan sonra öğrencinin TDEV ID kodunu “Öğrencilerim” bölümüne girerek bağlantı kurabilirsin.</p>';root.parentElement.append(wrap);}
 }
 window.updateRegistrationFields=function(){
  ensureRegistrationFields();
@@ -81,7 +81,6 @@ window.updateSidebarRole=function(type,p){
  const learningIds=['nav-curriculum','nav-quiz','nav-ai','nav-planner','nav-cards','nav-practice','nav-mistakes','nav-focus','nav-progress'];
  learningIds.forEach(id=>{const el=$(id);if(el)el.style.display=guardian?'none':'';});
  document.querySelectorAll('.sidebar .nav-btn').forEach(button=>{if(!['nav-school','nav-settings','nav-dev'].includes(button.id)&&!guardian)button.style.display='';});
- const sidebar=document.querySelector('.sidebar');
  if(sidebar&&!$('tdev-profile-shortcut')){
   const tile=document.createElement('div');tile.id='tdev-profile-shortcut';tile.className='school-profile-shortcut';
   tile.style.cssText='display:flex;align-items:center;gap:10px;padding:12px;margin:8px 10px 14px;border:1px solid rgba(148,163,184,.25);border-radius:12px;background:rgba(15,28,47,.8)';
