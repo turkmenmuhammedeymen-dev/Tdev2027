@@ -162,7 +162,8 @@ async function publicUser(user) {
 function verificationKey(email) {
   return 'emailVerification:' + sha256(normalizeEmail(email));
 }
-async function probeAppsScript(scriptUrl) {
+async function probeAppsScript(scriptUrl, expectedToken) {
+  if (!expectedToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
   const response = await fetch(scriptUrl, { method: 'GET' });
   const body = await response.text();
   if (!response.ok) throw new Error('Apps Script sağlık kontrolü HTTP ' + response.status);
@@ -171,7 +172,19 @@ async function probeAppsScript(scriptUrl) {
   if (!data || data.success !== true || data.configured !== true) {
     throw new Error('Apps Script Script Properties içinde APPS_SCRIPT_TOKEN bulunamadı. Doğru projeye eklediğini kontrol et.');
   }
-  return data;
+  const tokenCheck = await fetch(scriptUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'healthcheck', token: expectedToken })
+  });
+  const tokenBody = await tokenCheck.text();
+  if (!tokenCheck.ok) throw new Error('Apps Script token kontrolü HTTP ' + tokenCheck.status);
+  let tokenData;
+  try { tokenData = JSON.parse(tokenBody); } catch (_) { throw new Error('Apps Script token kontrolü JSON döndürmedi; güncel Code.gs dağıtımını kontrol et.'); }
+  if (!tokenData || tokenData.success !== true || tokenData.tokenValid !== true) {
+    throw new Error('Apps Script token doğrulaması başarısız. Back4App APPS_SCRIPT_TOKEN ile Script Properties değeri aynı mı kontrol et ve Code.gs güncellemesini dağıt.');
+  }
+  return tokenData;
 }
 
 async function sendVerificationEmail(email, code, name) {
@@ -190,7 +203,7 @@ async function sendVerificationEmail(email, code, name) {
     try {
       const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
       if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
-      await probeAppsScript(scriptUrl);
+      await probeAppsScript(scriptUrl, scriptToken);
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -258,7 +271,7 @@ async function sendPasswordResetEmail(email, code) {
     try {
       const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
       if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
-      await probeAppsScript(scriptUrl);
+      await probeAppsScript(scriptUrl, scriptToken);
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1016,7 +1029,7 @@ Parse.Cloud.define('healthCheck', async () => {
   let appsScriptDiagnostic = scriptUrl ? 'Kontrol edilmedi.' : 'Google Apps Script URL ayarlanmamış.';
   if (scriptUrl) {
     try {
-      await probeAppsScript(scriptUrl);
+      await probeAppsScript(scriptUrl, scriptToken);
       appsScriptConfigured = true;
       appsScriptDiagnostic = 'Web App erişilebilir ve Script Properties token mevcut.';
     } catch (error) {
@@ -1055,7 +1068,7 @@ async function sendSupportNotification(name, email, category, message) {
     try {
       const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
       if (!scriptToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
-      await probeAppsScript(scriptUrl);
+      await probeAppsScript(scriptUrl, scriptToken);
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
