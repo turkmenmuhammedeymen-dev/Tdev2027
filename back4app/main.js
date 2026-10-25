@@ -828,15 +828,100 @@ function tkTopicFor(subject, grade) {
   const bank = TK_TOPIC_BANK[aliases[subject] || 'Social Studies'] || TK_TOPIC_BANK['Social Studies'];
   return bank;
 }
+function tkLocalizedTopicFor(subject, grade, server) {
+  const languageArts = /language arts|english|deutsch|fran[cç]ais|espa[nñ]ol|portugu[eê]s|italiano|azərbaycan dili|国語|语文|國語|국어|اللغة العربية|русский язык|bahasa indonesia|ngữ văn|lengua|ภาษาไทย|हिंदी|اردو|বাংলা|nederlands|svenska|norsk|suomi|polski/i.test(subject);
+  const mathematics = /mathemat|matematik|mathématique|数学|수학|الرياضيات|riyaziyyat|matematika|toán|математ|rekenen|matematiikka/i.test(subject);
+  const science = /science|fen|fizik|kimya|biyoloji|naturwissenschaft|ciencias|sciences|ciências|理科|科学|과학|العلوم|тәбиғи|ilmu pengetahuan alam|khoa học|биологи|naturfag/i.test(subject);
+  const digital = /computer|computing|informatik|digital|teknoloji|technology|信息|信息科技|정보|الحاسوب|informatika|tin học|computación/i.test(subject);
+  const social = /social|history|histor|geograph|geografie|coğraf|tarih|sosyal|사회|社会|社会科|الدراسات|história|historia|sejarah|lịch sử|geografía|geografia/i.test(subject);
+  const category = mathematics ? 'math' : science ? 'science' : digital ? 'digital' : social ? 'social' : languageArts ? 'language' : 'general';
+  const en = {
+    language:[['Reading and meaning','Identify the main idea, supporting details, and the meaning of words in context.'],['Writing clearly','Organize ideas into a beginning, middle, and conclusion.'],['Grammar and sentences','Use sentence structure and punctuation to communicate meaning.'],['Speaking and listening','Summarize what you hear and respond with relevant details.'],['Vocabulary','Learn new words through context and use them in original sentences.'],['Text analysis','Compare information and distinguish fact from opinion.']],
+    math:[['Numbers and operations','Represent numbers, choose appropriate operations, and check whether a result is reasonable.'],['Patterns and algebra','Describe patterns and use symbols to represent unknown values.'],['Geometry and measurement','Use shapes, angles, units, perimeter, and area to solve problems.'],['Fractions and ratios','Compare parts and wholes and apply ratios to everyday situations.'],['Data and probability','Read tables and graphs and describe possible outcomes.'],['Problem solving','Show each step, explain the method, and check the answer.']],
+    science:[['Scientific inquiry','Ask a testable question, identify variables, and draw a conclusion from evidence.'],['Living systems','Describe how organisms interact with their environment.'],['Matter and materials','Compare material properties and explain observable changes.'],['Forces and energy','Explain how forces affect motion and how energy changes form.'],['Earth and space','Describe patterns in Earth systems and objects in space.'],['Evidence and models','Use observations, diagrams, and simple models to explain a claim.']],
+    social:[['People and communities','Explain how people, communities, and institutions influence one another.'],['Time and historical sources','Compare sources and distinguish evidence from interpretation.'],['Places and maps','Use maps, scale, direction, and location to describe places.'],['Civics and responsibility','Describe rights, responsibilities, and ways people participate in society.'],['Resources and choices','Explain how resources, needs, and decisions affect communities.'],['Culture and change','Compare cultural practices and explain how societies change over time.']],
+    digital:[['Digital systems','Identify common digital systems and explain their purpose.'],['Information literacy','Check sources and distinguish reliable information from unsupported claims.'],['Algorithms','Describe a process as clear, ordered steps.'],['Data and privacy','Explain why personal data should be protected.'],['Problem solving','Break a task into smaller steps and test a solution.'],['Responsible technology','Use technology respectfully, safely, and legally.']],
+    general:[['Key ideas','Identify the main ideas and explain them in your own words.'],['Important terms','Define the key terms and use them in an example.'],['Examples and evidence','Support an explanation with a relevant example.'],['Compare and connect','Find similarities, differences, and relationships.'],['Apply what you learn','Use the concept to solve a new, grade-appropriate problem.'],['Review and reflect','Summarize what you know and identify what needs more practice.']]
+  };
+  const banks = {
+    DE: {
+      language:[['Lesen und Bedeutung','Bestimme Hauptaussage, wichtige Details und die Bedeutung von Wörtern im Kontext.'],['Klar schreiben','Ordne Gedanken in Einleitung, Hauptteil und Schluss.'],['Grammatik und Sätze','Nutze Satzbau und Zeichensetzung, um Bedeutungen klar auszudrücken.'],['Wortschatz','Lerne neue Wörter im Kontext und verwende sie in eigenen Sätzen.'],['Texte untersuchen','Vergleiche Informationen und unterscheide Tatsachen von Meinungen.'],['Zuhören und sprechen','Fasse Gehörtes zusammen und antworte mit passenden Details.']],
+      math:[['Zahlen und Rechenoperationen','Stelle Zahlen dar, wähle passende Rechenoperationen und prüfe Ergebnisse.'],['Muster und Algebra','Beschreibe Muster und verwende Symbole für unbekannte Werte.'],['Geometrie und Messen','Nutze Formen, Winkel, Einheiten, Umfang und Fläche zur Problemlösung.'],['Brüche und Verhältnisse','Vergleiche Teile und Ganze und wende Verhältnisse an.'],['Daten und Wahrscheinlichkeit','Lies Tabellen und Diagramme und beschreibe mögliche Ergebnisse.'],['Problemlösen','Zeige die Rechenschritte und überprüfe das Ergebnis.']],
+      science:[['Wissenschaftliches Arbeiten','Formuliere eine überprüfbare Frage und leite Schlussfolgerungen aus Belegen ab.'],['Lebewesen und Umwelt','Beschreibe, wie Lebewesen mit ihrer Umwelt zusammenwirken.'],['Stoffe und Materialien','Vergleiche Materialeigenschaften und erkläre beobachtbare Veränderungen.'],['Kräfte und Energie','Erkläre die Wirkung von Kräften und Energieumwandlungen.'],['Erde und Weltraum','Beschreibe Vorgänge in Erdsystemen und im Weltraum.'],['Modelle und Belege','Nutze Beobachtungen und einfache Modelle zur Erklärung.']]
+    },
+    ES: {
+      language:[['Lectura y significado','Identifica la idea principal, los detalles y el significado de palabras por el contexto.'],['Escritura clara','Organiza las ideas en introducción, desarrollo y conclusión.'],['Gramática y oraciones','Usa la estructura de las oraciones y la puntuación para expresar ideas.'],['Vocabulario','Aprende palabras en contexto y utilízalas en frases propias.'],['Análisis de textos','Compara información y distingue hechos de opiniones.'],['Escucha y expresión oral','Resume lo que escuchas y responde con detalles relevantes.']],
+      math:[['Números y operaciones','Representa números, elige operaciones adecuadas y comprueba los resultados.'],['Patrones y álgebra','Describe patrones y utiliza símbolos para valores desconocidos.'],['Geometría y medida','Usa figuras, ángulos, unidades, perímetro y área para resolver problemas.'],['Fracciones y razones','Compara partes y totalidades y aplica razones en situaciones cotidianas.'],['Datos y probabilidad','Interpreta tablas y gráficos y describe resultados posibles.'],['Resolución de problemas','Explica los pasos y comprueba la respuesta.']],
+      science:[['Investigación científica','Formula una pregunta comprobable y extrae conclusiones a partir de evidencias.'],['Seres vivos y entorno','Explica cómo los organismos interactúan con su entorno.'],['Materia y materiales','Compara propiedades y explica cambios observables.'],['Fuerzas y energía','Describe cómo las fuerzas afectan al movimiento y cómo cambia la energía.'],['Tierra y espacio','Explica patrones de los sistemas terrestres y los objetos espaciales.'],['Modelos y evidencias','Utiliza observaciones y modelos sencillos para explicar ideas.']]
+    },
+    FR: {
+      language:[['Lecture et sens','Repère l’idée principale, les détails importants et le sens des mots en contexte.'],['Écriture claire','Organise les idées avec une introduction, un développement et une conclusion.'],['Grammaire et phrases','Utilise la structure des phrases et la ponctuation pour exprimer tes idées.'],['Vocabulaire','Apprends les mots en contexte et réutilise-les dans tes phrases.'],['Analyse de textes','Compare les informations et distingue les faits des opinions.'],['Écoute et expression','Résume ce que tu entends et réponds avec des détails pertinents.']],
+      math:[['Nombres et opérations','Représente les nombres, choisis les opérations adaptées et vérifie les résultats.'],['Motifs et algèbre','Décris des régularités et utilise des symboles pour les inconnues.'],['Géométrie et mesures','Utilise les formes, les angles, les unités, le périmètre et l’aire.'],['Fractions et rapports','Compare les parties et le tout et applique les rapports.'],['Données et probabilités','Lis des tableaux et graphiques et décris les résultats possibles.'],['Résolution de problèmes','Explique les étapes et vérifie la réponse.']],
+      science:[['Démarche scientifique','Pose une question vérifiable et tire une conclusion à partir de preuves.'],['Êtres vivants et environnement','Explique les interactions entre les organismes et leur environnement.'],['Matière et matériaux','Compare les propriétés et explique les changements observables.'],['Forces et énergie','Explique l’effet des forces sur le mouvement et les transformations d’énergie.'],['Terre et espace','Décris les phénomènes des systèmes terrestres et de l’espace.'],['Modèles et preuves','Utilise des observations et des modèles simples pour expliquer.']]
+    },
+    PT: {
+      language:[['Leitura e significado','Identifica a ideia principal, os detalhes e o sentido das palavras pelo contexto.'],['Escrita clara','Organiza as ideias em introdução, desenvolvimento e conclusão.'],['Gramática e frases','Usa a estrutura das frases e a pontuação para comunicar com clareza.'],['Vocabulário','Aprende palavras no contexto e usa-as em frases próprias.'],['Análise de textos','Compara informações e distingue factos de opiniões.'],['Escuta e expressão oral','Resume o que ouves e responde com detalhes relevantes.']],
+      math:[['Números e operações','Representa números, escolhe operações adequadas e verifica os resultados.'],['Padrões e álgebra','Descreve padrões e usa símbolos para valores desconhecidos.'],['Geometria e medidas','Usa formas, ângulos, unidades, perímetro e área para resolver problemas.'],['Frações e razões','Compara partes e totalidades e aplica razões em situações do dia a dia.'],['Dados e probabilidade','Interpreta tabelas e gráficos e descreve resultados possíveis.'],['Resolução de problemas','Explica os passos e confirma a resposta.']],
+      science:[['Investigação científica','Formula uma pergunta testável e tira conclusões com base em evidências.'],['Seres vivos e ambiente','Explica como os organismos interagem com o ambiente.'],['Matéria e materiais','Compara propriedades e explica mudanças observáveis.'],['Forças e energia','Explica como as forças afetam o movimento e como a energia se transforma.'],['Terra e espaço','Descreve padrões dos sistemas terrestres e do espaço.'],['Modelos e evidências','Usa observações e modelos simples para explicar ideias.']]
+    },
+    AZ: {
+      language:[['Oxuyub-anlama','Mətnin əsas fikrini, vacib detalları və sözlərin kontekstdə mənasını müəyyən et.'],['Aydın yazı','Fikirlərini giriş, əsas hissə və nəticə şəklində qur.'],['Qrammatika və cümlə','Fikri aydın çatdırmaq üçün cümlə quruluşundan və durğu işarələrindən istifadə et.'],['Söz ehtiyatı','Yeni sözləri kontekstdə öyrən və öz cümlələrində işlət.'],['Mətn təhlili','Məlumatları müqayisə et, faktı fikirdən ayır.'],['Dinləmə və danışıq','Eşitdiyini ümumiləşdir və uyğun detallarla cavab ver.']],
+      math:[['Ədədlər və əməllər','Ədədləri təsvir et, uyğun əməliyyat seç və nəticəni yoxla.'],['Qanunauyğunluq və cəbr','Qanunauyğunluqları təsvir et və naməlum qiymətlər üçün simvollardan istifadə et.'],['Həndəsə və ölçmə','Fiqurları, bucaqları, vahidləri, perimetr və sahəni tətbiq et.'],['Kəsrlər və nisbətlər','Hissə ilə bütövü müqayisə et və nisbətləri tətbiq et.'],['Məlumat və ehtimal','Cədvəl və qrafikləri oxu, mümkün nəticələri izah et.'],['Məsələ həlli','Həll addımlarını göstər və cavabı yoxla.']],
+      science:[['Elmi araşdırma','Yoxlanıla bilən sual ver və sübutlara əsasən nəticə çıxar.'],['Canlılar və mühit','Canlıların ətraf mühitlə qarşılıqlı əlaqəsini izah et.'],['Maddə və materiallar','Materialların xüsusiyyətlərini müqayisə et və dəyişiklikləri izah et.'],['Qüvvə və enerji','Qüvvənin hərəkətə təsirini və enerji çevrilmələrini izah et.'],['Yer və kosmos','Yer sistemlərində və kosmosda baş verən qanunauyğunluqları təsvir et.'],['Model və sübut','Müşahidələrdən və sadə modellərdən istifadə et.']]
+    },
+    JA: {
+      language:[['読解と意味','文章の主題、重要な情報、文脈による語句の意味を読み取ります。'],['分かりやすい文章','考えを導入・展開・まとめの順に整理します。'],['文法と文','文の構造や句読点を適切に使います。'],['語彙','新しい言葉を文脈で理解し、自分の文で使います。'],['文章の分析','情報を比較し、事実と意見を区別します。'],['聞く・話す','聞いた内容を要約し、関連する情報で答えます。']],
+      math:[['数と計算','数を表し、適切な計算を選び、結果を確かめます。'],['規則性と代数','規則性を説明し、未知の値を記号で表します。'],['図形と測定','図形、角度、単位、周の長さ、面積を使って考えます。'],['分数と比','部分と全体を比較し、比を活用します。'],['データと確率','表やグラフを読み、起こりうる結果を説明します。'],['問題解決','解き方を順序立てて示し、答えを確認します。']],
+      science:[['科学的な探究','検証できる問いを立て、証拠に基づいて結論を導きます。'],['生物と環境','生物と環境の関わりを説明します。'],['物質と材料','物質の性質を比べ、観察できる変化を説明します。'],['力とエネルギー','力が運動に与える影響とエネルギーの変化を説明します。'],['地球と宇宙','地球や宇宙で見られる規則性を説明します。'],['モデルと証拠','観察結果や簡単なモデルを使って説明します。']]
+    },
+    CN: {
+      language:[['阅读与理解','找出文章主旨、重要细节以及词语在上下文中的含义。'],['清晰表达','按开头、展开和总结的顺序组织想法。'],['语法与句子','运用句式和标点清楚地表达意思。'],['词汇积累','结合语境学习新词，并在自己的句子中使用。'],['文本分析','比较信息，区分事实与观点。'],['倾听与表达','概括听到的内容，并用相关细节回答。']],
+      math:[['数与运算','表示数，选择合适的运算，并检查结果是否合理。'],['规律与代数','描述规律，用符号表示未知数值。'],['几何与测量','运用图形、角度、单位、周长和面积解决问题。'],['分数与比例','比较部分与整体，并应用比例关系。'],['数据与概率','阅读表格和图表，描述可能出现的结果。'],['解决问题','写出步骤，说明方法并检查答案。']],
+      science:[['科学探究','提出可检验的问题，并根据证据得出结论。'],['生命与环境','解释生物与环境之间的相互作用。'],['物质与材料','比较材料性质并解释可观察到的变化。'],['力与能量','说明力对运动的影响以及能量的转化。'],['地球与宇宙','描述地球系统和宇宙中的规律。'],['模型与证据','运用观察结果和简单模型解释现象。']]
+    },
+    KO: {
+      language:[['읽기와 의미','글의 중심 생각과 세부 정보, 문맥 속 단어의 의미를 파악합니다.'],['명확한 글쓰기','생각을 도입, 전개, 결론 순서로 정리합니다.'],['문법과 문장','문장 구조와 문장 부호를 알맞게 사용합니다.'],['어휘','문맥에서 새 단어를 배우고 자신의 문장에 활용합니다.'],['텍스트 분석','정보를 비교하고 사실과 의견을 구분합니다.'],['듣기와 말하기','들은 내용을 요약하고 관련 정보로 답합니다.']],
+      math:[['수와 연산','수를 표현하고 적절한 연산을 선택해 결과를 확인합니다.'],['규칙과 대수','규칙을 설명하고 미지의 값을 기호로 나타냅니다.'],['도형과 측정','도형, 각도, 단위, 둘레와 넓이를 활용합니다.'],['분수와 비','부분과 전체를 비교하고 비를 적용합니다.'],['자료와 가능성','표와 그래프를 읽고 가능한 결과를 설명합니다.'],['문제 해결','풀이 단계를 쓰고 답을 확인합니다.']],
+      science:[['과학적 탐구','검증할 수 있는 질문을 만들고 증거로 결론을 내립니다.'],['생명과 환경','생물과 환경의 상호작용을 설명합니다.'],['물질과 재료','물질의 성질을 비교하고 관찰되는 변화를 설명합니다.'],['힘과 에너지','힘이 운동에 미치는 영향과 에너지 전환을 설명합니다.'],['지구와 우주','지구 시스템과 우주의 규칙성을 설명합니다.'],['모형과 증거','관찰과 간단한 모형을 사용해 현상을 설명합니다.']]
+    },
+    AR: {
+      language:[['القراءة والمعنى','حدد الفكرة الرئيسة والتفاصيل المهمة ومعاني الكلمات من السياق.'],['الكتابة الواضحة','رتب الأفكار في مقدمة وعرض وخاتمة.'],['القواعد والجمل','استخدم تركيب الجملة وعلامات الترقيم للتعبير بوضوح.'],['المفردات','تعلم الكلمات من السياق واستخدمها في جمل من إنشائك.'],['تحليل النصوص','قارن المعلومات وميّز بين الحقائق والآراء.'],['الاستماع والتحدث','لخص ما تسمعه وأجب بتفاصيل مناسبة.']],
+      math:[['الأعداد والعمليات','مثل الأعداد واختر العملية المناسبة وتحقق من معقولية النتيجة.'],['الأنماط والجبر','صف الأنماط واستخدم الرموز للقيم المجهولة.'],['الهندسة والقياس','استخدم الأشكال والزوايا والوحدات والمحيط والمساحة.'],['الكسور والنسب','قارن الجزء بالكل وطبق النسب في مواقف حياتية.'],['البيانات والاحتمالات','اقرأ الجداول والرسوم ووضح النتائج الممكنة.'],['حل المشكلات','اكتب خطوات الحل واشرح الطريقة وتحقق من الإجابة.']],
+      science:[['الاستقصاء العلمي','اطرح سؤالاً قابلاً للاختبار واستنتج بناءً على الأدلة.'],['الكائنات الحية والبيئة','اشرح تفاعل الكائنات الحية مع بيئتها.'],['المادة والمواد','قارن خصائص المواد واشرح التغيرات الملحوظة.'],['القوى والطاقة','اشرح تأثير القوى في الحركة وتحولات الطاقة.'],['الأرض والفضاء','صف الأنماط في أنظمة الأرض والفضاء.'],['النماذج والأدلة','استخدم الملاحظات والنماذج البسيطة لتفسير الظواهر.']]
+    },
+    RU: {
+      language:[['Чтение и смысл','Определи главную мысль, важные детали и значение слов по контексту.'],['Ясное письмо','Расположи мысли во вступлении, основной части и заключении.'],['Грамматика и предложения','Используй структуру предложений и знаки препинания для ясного выражения мысли.'],['Словарный запас','Изучай слова в контексте и используй их в собственных предложениях.'],['Анализ текста','Сравнивай информацию и отличай факты от мнений.'],['Слушание и речь','Кратко перескажи услышанное и ответь по существу.']],
+      math:[['Числа и действия','Представляй числа, выбирай подходящие действия и проверяй результат.'],['Закономерности и алгебра','Описывай закономерности и обозначай неизвестные символами.'],['Геометрия и измерения','Используй фигуры, углы, единицы, периметр и площадь.'],['Дроби и отношения','Сравнивай части и целое и применяй отношения.'],['Данные и вероятность','Читай таблицы и графики и описывай возможные результаты.'],['Решение задач','Показывай шаги решения и проверяй ответ.']],
+      science:[['Научное исследование','Задавай проверяемый вопрос и делай вывод на основе доказательств.'],['Живые системы','Объясняй взаимодействие организмов с окружающей средой.'],['Вещества и материалы','Сравнивай свойства материалов и объясняй наблюдаемые изменения.'],['Силы и энергия','Объясняй влияние сил на движение и превращения энергии.'],['Земля и космос','Описывай закономерности земных систем и космоса.'],['Модели и доказательства','Используй наблюдения и простые модели для объяснения.']]
+    },
+    ID: {
+      language:[['Membaca dan makna','Temukan gagasan utama, rincian penting, dan arti kata berdasarkan konteks.'],['Menulis dengan jelas','Susun gagasan menjadi pembuka, isi, dan kesimpulan.'],['Tata bahasa dan kalimat','Gunakan struktur kalimat dan tanda baca secara tepat.'],['Kosakata','Pelajari kata melalui konteks dan gunakan dalam kalimat sendiri.'],['Analisis teks','Bandingkan informasi dan bedakan fakta dari pendapat.'],['Menyimak dan berbicara','Ringkas hal yang didengar dan jawab dengan informasi yang relevan.']],
+      math:[['Bilangan dan operasi','Representasikan bilangan, pilih operasi yang sesuai, dan periksa hasilnya.'],['Pola dan aljabar','Jelaskan pola dan gunakan simbol untuk nilai yang belum diketahui.'],['Geometri dan pengukuran','Gunakan bentuk, sudut, satuan, keliling, dan luas.'],['Pecahan dan rasio','Bandingkan bagian dan keseluruhan serta gunakan rasio.'],['Data dan peluang','Baca tabel dan grafik serta jelaskan hasil yang mungkin.'],['Pemecahan masalah','Tunjukkan langkah penyelesaian dan periksa jawaban.']],
+      science:[['Penyelidikan ilmiah','Ajukan pertanyaan yang dapat diuji dan simpulkan berdasarkan bukti.'],['Makhluk hidup dan lingkungan','Jelaskan interaksi organisme dengan lingkungannya.'],['Materi dan bahan','Bandingkan sifat bahan dan jelaskan perubahan yang diamati.'],['Gaya dan energi','Jelaskan pengaruh gaya terhadap gerak dan perubahan energi.'],['Bumi dan antariksa','Jelaskan pola pada sistem bumi dan benda di ruang angkasa.'],['Model dan bukti','Gunakan pengamatan dan model sederhana untuk menjelaskan.']]
+    },
+    VI: {
+      language:[['Đọc hiểu và ý nghĩa','Xác định ý chính, chi tiết quan trọng và nghĩa của từ theo ngữ cảnh.'],['Viết rõ ràng','Sắp xếp ý thành mở bài, thân bài và kết luận.'],['Ngữ pháp và câu','Dùng cấu trúc câu và dấu câu để diễn đạt rõ ràng.'],['Từ vựng','Học từ mới qua ngữ cảnh và dùng trong câu của mình.'],['Phân tích văn bản','So sánh thông tin và phân biệt sự thật với ý kiến.'],['Nghe và nói','Tóm tắt điều đã nghe và trả lời bằng chi tiết phù hợp.']],
+      math:[['Số và phép tính','Biểu diễn số, chọn phép tính phù hợp và kiểm tra kết quả.'],['Quy luật và đại số','Mô tả quy luật và dùng ký hiệu cho giá trị chưa biết.'],['Hình học và đo lường','Sử dụng hình, góc, đơn vị, chu vi và diện tích để giải quyết vấn đề.'],['Phân số và tỷ lệ','So sánh phần với toàn thể và áp dụng tỷ lệ.'],['Dữ liệu và xác suất','Đọc bảng, biểu đồ và mô tả kết quả có thể xảy ra.'],['Giải quyết vấn đề','Trình bày các bước và kiểm tra đáp án.']],
+      science:[['Tìm hiểu khoa học','Đặt câu hỏi có thể kiểm chứng và kết luận dựa trên bằng chứng.'],['Sinh vật và môi trường','Giải thích sự tương tác giữa sinh vật và môi trường.'],['Vật chất và vật liệu','So sánh tính chất và giải thích thay đổi quan sát được.'],['Lực và năng lượng','Giải thích tác động của lực lên chuyển động và sự chuyển hóa năng lượng.'],['Trái Đất và vũ trụ','Mô tả các quy luật trong hệ Trái Đất và vũ trụ.'],['Mô hình và bằng chứng','Dùng quan sát và mô hình đơn giản để giải thích hiện tượng.']]
+    }
+  };
+  const locale = server === 'GB' || server === 'US' || server === 'CA' || server === 'AU' || server === 'NZ' || server === 'IN' || server === 'SG' || server === 'ZA' || server === 'GH' || server === 'NG' || server === 'UK' ? 'EN' : server;
+  const bank = banks[locale] || {};
+  const fallback = en[category] || en.general;
+  const localized = bank[category] || fallback;
+  if (server === 'TR') return TK_TOPIC_BANK[subject] || TK_TOPIC_BANK[category === 'math' ? 'Matematik' : category === 'science' ? 'Fen Bilimleri' : category === 'social' ? 'Sosyal Bilgiler' : 'Türkçe'] || fallback;
+  return localized;
+}
+
 function defaultCurriculum(gradeText, server, requestedCountryName) {
   const grade = Number(gradeText);
   const subjects = tkStageSubjects(grade, server);
-  const knownCountry = ['TR','US','UK','GB','DE','AZ','JP'].includes(server);
+  const knownCountry = false; // Fallback guides are not verified official national curricula.
   const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',GB:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
   const countryName = safeText(requestedCountryName, 100) || countryNames[server] || server;
   const result = {};
   subjects.forEach((subject) => {
-    const bank = tkTopicFor(subject, grade);
+    const bank = tkLocalizedTopicFor(subject, grade, server) || tkTopicFor(subject, grade);
     const topicCount = grade <= 4 ? 4 : 6;
     const topics = bank.slice(0, topicCount).map((entry, index) => ({
       id: server + '-' + grade + '-' + index,
@@ -925,15 +1010,15 @@ Parse.Cloud.define('getQuestions', async (request) => {
   const gradeInput = safeText(request.params && request.params.grade, 10);
   const grade = Number(gradeInput);
   const server = safeText(request.params && request.params.server, 5).toUpperCase();
-  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12) return [];
+  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12 || !/^[A-Z]{2}$/.test(server)) return [];
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
-  if (/^[A-Z]{2}$/.test(server)) q.equalTo('server', server);
+  q.equalTo('server', server === 'GB' ? 'UK' : server);
   q.equalTo('active', true);
   q.limit(100);
   q.ascending('createdAt');
   const rows = await q.find({ useMasterKey: true });
-  return rows.map((row) => ({
+  const stored = rows.map((row) => ({
     id: row.id,
     grade: String(row.get('grade') || ''),
     subject: safeText(row.get('subject'), 100),
@@ -942,6 +1027,34 @@ Parse.Cloud.define('getQuestions', async (request) => {
     explanation: safeText(row.get('explanation'), 1200),
     source: safeText(row.get('source'), 200)
   }));
+  if (stored.length) return stored;
+  // A useful fallback prevents an empty quiz when a grade has no manually curated
+  // Question rows. These are clearly labelled as guide-based practice, not official exam items.
+  const curriculum = defaultCurriculum(String(grade), server, safeText(request.params && request.params.countryName, 100));
+  const generated = [];
+  Object.keys(curriculum).forEach((subject, subjectIndex) => {
+    const topics = Array.isArray(curriculum[subject].topics) ? curriculum[subject].topics : [];
+    topics.forEach((topic, topicIndex) => {
+      const title = safeText(topic.title, 180);
+      const explanation = safeText(topic.explanation, 1000);
+      if (!title || !explanation) return;
+      generated.push({
+        id: 'guide-' + server + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-true',
+        grade: String(grade), subject: subject,
+        question: title + ': ' + explanation,
+        answer: 'true', explanation: explanation,
+        source: 'TdevKuantum genel konu rehberi; resmî sınav sorusu değildir'
+      });
+      generated.push({
+        id: 'guide-' + server + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-false',
+        grade: String(grade), subject: subject,
+        question: title + ': ' + (server === 'TR' ? 'Bu açıklama doğru değildir: ' : 'This explanation is not correct: ') + explanation,
+        answer: 'false', explanation: explanation,
+        source: 'TdevKuantum genel konu rehberi; resmî sınav sorusu değildir'
+      });
+    });
+  });
+  return generated;
 });
 
 Parse.Cloud.define('getAdmins', async (request) => {
