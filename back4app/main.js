@@ -135,7 +135,7 @@ async function writeAuditLog(request, action, targetId, details) {
     const actor = request && request.user;
     const row = new Parse.Object('AuditLog');
     row.set('actorId', actor ? actor.id : 'system');
-    row.set('actorEmail', normalizeEmail(actor && (actor.get('email') || actor.get('username'))));
+    row.set('actorEmail', normalizeEmail((actor && (actor.get('email') || actor.get('username'))) || (details && details.email)));
     row.set('action', safeText(action, 100));
     row.set('targetId', safeText(targetId, 100));
     row.set('details', details && typeof details === 'object' && !Array.isArray(details) ? details : {});
@@ -278,7 +278,7 @@ Parse.Cloud.define('registerUser', async (request) => {
   user.set('banned', false);
   user.set('emailVerified', false);
   await user.signUp(null, { useMasterKey: true });
-  await writeAuditLog(request, 'user.register', user.id, { email: email, verificationRequired: true });
+  await writeAuditLog(request, 'user.register', user.id, { email: email });
 
   const verificationRequired = (await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false';
   if (verificationRequired) {
