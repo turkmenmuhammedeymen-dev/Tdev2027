@@ -14,25 +14,25 @@ function ensureRegistrationFields(){
   country.innerHTML=COUNTRY_OPTIONS.map(item=>{const parts=String(item).split('|');return '<option value="'+esc(parts[0])+'">'+esc(parts.slice(1).join('|'))+'</option>';}).join('');
   if([...country.options].some(option=>option.value===selected))country.value=selected;
  }
- if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-school-name">Okul adı (zorunlu)<input id="reg-student-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-student-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><label for="reg-class-name">Sınıf / şube (isteğe bağlı)<input id="reg-class-name" maxlength="40" placeholder="Örn. 10-A"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
+ if(!$('reg-student-school-fields')){const wrap=document.createElement('div');wrap.id='reg-student-school-fields';wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-student-school-name">Okul adı (zorunlu)<input id="reg-student-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label for="reg-school-address">Okul adresi (zorunlu)<input id="reg-student-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><label for="reg-class-name">Sınıf / şube (isteğe bağlı)<input id="reg-class-name" maxlength="40" placeholder="Örn. 10-A"></label><p class="school-note">Okul bilgileri sınıf eşleştirmesi ve okul analizleri için kullanılır.</p>';root.append(wrap);}
  if(!$('reg-guardian-note')){const wrap=document.createElement('div');wrap.id='reg-guardian-note';wrap.className='school-account-extra';wrap.hidden=true;wrap.innerHTML='<p class="school-note">Veli hesabında okul veya sınıf seçimi gerekmez. Hesap oluşturduktan sonra öğrencinin TDEV ID kodunu “Öğrencilerim” bölümüne girerek bağlantı kurabilirsin.</p>';root.append(wrap);}
 }
 window.updateRegistrationFields=function(){
  ensureRegistrationFields();
  const type=$('reg-profile-type')?.value||'student';
  const student=$('reg-student-fields'), staff=$('reg-staff-fields'), school=$('reg-student-school-fields'), guardian=$('reg-guardian-note');
- if(student)student.style.display=['student','guardian'].includes(type)?'':'none';
- const gradeLabel=student&&student.querySelector('label[for="reg-grade"]');if(gradeLabel)gradeLabel.style.display=type==='student'?'':'none';
- const countryWrap=$('reg-country-code')?.parentElement;if(countryWrap)countryWrap.style.display=type==='guardian'?'none':'';
- if(school)school.style.display=type==='student'?'':'none';
- if(staff)staff.style.display=['teacher','principal'].includes(type)?'':'none';
- if(school)school.style.display=type==='student'?'':'none';
- if(guardian)guardian.hidden=type!=='guardian';
- const grade=$('reg-grade');if(grade&&!grade.options.length||grade&&grade.options.length<2){if(grade){grade.innerHTML='<option value="">Sınıfını seç</option>'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. sınıf</option>').join('');}}
- ['reg-grade','reg-student-school-name','reg-student-school-address'].forEach(id=>{const el=$(id);if(el)el.required=type==='student';});
- ['reg-stage'].forEach(id=>{const el=$(id);if(el)el.required=['teacher','principal'].includes(type);});
- if($('reg-school-name')) $('reg-school-name').required=['teacher','principal'].includes(type);
- if($('reg-school-address')) $('reg-school-address').required=['teacher','principal'].includes(type);
+ const isStudent=type==='student', isStaff=['teacher','principal'].includes(type), isGuardian=type==='guardian';
+ if(student)student.style.display=isStudent?'':'none';
+ const gradeLabel=student&&student.querySelector('label[for="reg-grade"]');if(gradeLabel)gradeLabel.style.display=isStudent?'':'none';
+ const countryWrap=$('reg-country-code')?.parentElement;if(countryWrap)countryWrap.style.display=isGuardian?'none':'';
+ if(school)school.style.display=isStudent?'':'none';
+ if(staff)staff.style.display=isStaff?'':'none';
+ if(guardian)guardian.hidden=!isGuardian;
+ const grade=$('reg-grade');if(grade&&grade.options.length<13){grade.innerHTML='<option value="">Sınıfını seç</option>'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. sınıf</option>').join('');}
+ ['reg-grade','reg-student-school-name','reg-student-school-address'].forEach(id=>{const el=$(id);if(el)el.required=isStudent;});
+ ['reg-stage','reg-school-name','reg-school-address'].forEach(id=>{const el=$(id);if(el)el.required=isStaff;});
+ if(isGuardian){['reg-grade','reg-student-school-name','reg-student-school-address','reg-stage','reg-school-name','reg-school-address'].forEach(id=>{const el=$(id);if(el){el.required=false;el.value='';}});}
+
 };
 function showPanel(){
  const tab=$('tab-school');if(!tab)return;
@@ -69,12 +69,14 @@ window.finishTdevAuthTransition=function(){return new Promise(resolve=>window.se
 function typeLabel(t){return ({student:'Öğrenci',teacher:'Öğretmen',principal:'Müdür',guardian:'Veli'})[t]||t;}
 window.updateSidebarRole=function(type,p){
  const guardian=type==='guardian';
- document.querySelectorAll('.sidebar .nav-btn').forEach(button=>{
-  if(button.id==='nav-school'){button.style.display='';if(guardian)button.innerHTML='<span class="nav-icon">👨‍👩‍👧</span>Öğrencilerim';else button.innerHTML='<span class="nav-icon">🏫</span>Sınıfım / Okulum';}
+ const sidebar=document.querySelector('.sidebar');
+ const navRoot=sidebar||document;
+ navRoot.querySelectorAll('.nav-btn').forEach(button=>{
+  if(button.id==='nav-school'){button.style.display='';button.innerHTML=guardian?'<span class="nav-icon">👨‍👩‍👧</span>Öğrencilerim':'<span class="nav-icon">🏫</span>Sınıfım / Okulum';}
   else if(guardian && button.id!=='nav-settings')button.style.display='none';
-  else if(['nav-curriculum','nav-quiz','nav-ai','nav-planner','nav-cards','nav-practice','nav-mistakes','nav-focus','nav-progress'].includes(button.id))button.style.display='';
+  else button.style.display='';
  });
- document.querySelectorAll('.sidebar .nav-section').forEach(section=>section.style.display=guardian?'none':'');
+ navRoot.querySelectorAll('.nav-section').forEach(section=>section.style.display=guardian?'none':'');
  const settings=$('nav-settings');if(settings)settings.style.display='';
  const learningIds=['nav-curriculum','nav-quiz','nav-ai','nav-planner','nav-cards','nav-practice','nav-mistakes','nav-focus','nav-progress'];
  learningIds.forEach(id=>{const el=$(id);if(el)el.style.display=guardian?'none':'';});
