@@ -52,6 +52,7 @@ for (const filename of requiredFiles) {
 }
 
 for (const filename of [
+  'school.js',
   'study.js',
   'curriculum-catalog.js',
   'back4app/main.js',
