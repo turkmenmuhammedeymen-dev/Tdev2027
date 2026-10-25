@@ -110,4 +110,9 @@ document.addEventListener('DOMContentLoaded',function(){
  const profileType=$('reg-profile-type');if(profileType)profileType.addEventListener('change',window.updateRegistrationFields);
 });
 window.addEventListener('load',function(){ensureRegistrationFields();window.updateRegistrationFields();});
+function refreshSchoolNav(){
+ try{const current=window.Parse&&Parse.User&&Parse.User.current&&Parse.User.current();const nav=$('nav-school');if(nav&&current)nav.style.display='';}catch(_){}
+}
+document.addEventListener('DOMContentLoaded',refreshSchoolNav);
+window.setInterval(refreshSchoolNav,1200);
 })();
