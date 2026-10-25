@@ -15,7 +15,10 @@ window.updateRegistrationFields=function(){
  ensureRegistrationFields();
  const type=$('reg-profile-type')?.value||'student';
  const student=$('reg-student-fields'), staff=$('reg-staff-fields'), school=$('reg-student-school-fields'), guardian=$('reg-guardian-note');
- if(student)student.style.display=type==='student'?'':'none';
+ if(student)student.style.display=['student','guardian'].includes(type)?'':'none';
+ const gradeLabel=student&&student.querySelector('label[for="reg-grade"]');if(gradeLabel)gradeLabel.style.display=type==='student'?'':'none';
+ const countryWrap=$('reg-country-code')?.parentElement;if(countryWrap)countryWrap.style.display=type==='student'?'':'none';
+ if(school)school.style.display=type==='student'?'':'none';
  if(staff)staff.style.display=['teacher','principal'].includes(type)?'':'none';
  if(school)school.style.display=type==='student'?'':'none';
  if(guardian)guardian.hidden=type!=='guardian';
