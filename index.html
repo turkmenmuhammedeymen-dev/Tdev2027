@@ -916,7 +916,7 @@ input,select,textarea { color:#172b4d; }
                             </div>
                         </div>
                     </div>
-                    <div class="ai-file-preview" id="ai-file-prev">📎 <span id="ai-file-name">—</span> yüklendi</div>
+                    <div class="ai-file-preview" id="ai-file-prev">📎 <span id="ai-file-name">—</span> seçildi</div>
                     <div class="chat-input-row">
                         <input type="file" id="ai-file-inp" style="display:none" accept="image/*,.pdf,.txt,.doc,.docx" onchange="aiFileLoad(this)">
                         <button class="chat-attach" onclick="document.getElementById('ai-file-inp').click()" title="Dosya/Fotoğraf Yükle">📎</button>
@@ -1759,33 +1759,14 @@ function ansQ(ans) {
     setTimeout(nextQ, 1800);
 }
 
-// ---- AI CHAT (Yerel) ----
+// ---- TDEV-AI CHAT (Cloud Code, optional provider) ----
 let aiFile = null;
-const aiDB = {
-    matematik:"Matematik sorularınızda yardımcıyım!",
-    fizik:"Fizik: Newton yasaları...",
-    kimya:"Kimya: organik...",
-    biyoloji:"Biyoloji: hücre...",
-    lgs:"LGS 2027!",
-    yks:"YKS 2027!",
-    türkçe:"Türkçe-Edebiyat...",
-    tarih:"Tarih: inkılap...",
-    coğrafya:"Coğrafya...",
-    felsefe:"Felsefe...",
-    merhaba:"Merhaba! Ben TDEV-AI.",
-    selam:"Selam!",
-    teşekkür:"Rica ederim!",
-    fotoğraf:"Fotoğraf analiz ediliyor...",
-    dosya:"Dosya alındı...",
-    default:"Daha spesifik bir soru sorarsanız..."
-};
-
 function aiFileLoad(inp) {
     const file = inp.files[0]; if(!file) return;
     aiFile = file;
     document.getElementById('ai-file-prev').style.display = 'block';
     document.getElementById('ai-file-name').innerText = file.name + ' (' + Math.round(file.size/1024) + ' KB)';
-    showNotif('📎 ' + file.name + ' yüklendi');
+    showNotif('📎 ' + file.name + ' seçildi. Bu sürümde dosya içeriği otomatik analiz edilmiyor.');
 }
 async function sendMsg() {
     const inp = document.getElementById('chat-in');
