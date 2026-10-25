@@ -54,6 +54,16 @@ For an official country curriculum, create a `Curriculum` record in Back4App for
 
 Use the official education ministry or curriculum authority for the selected country, check the academic year, and do not label a general guide as an official syllabus. Topic video links currently open a YouTube search for the topic rather than claiming to be a verified individual video.
 
+## Automated repository validation
+
+Run the dependency-free static checks locally with Node.js 20 or later:
+
+```bash
+node scripts/validate-project.js
+```
+
+The GitHub Actions workflow runs the same checks on pushes and pull requests. It checks JavaScript syntax, inline scripts in `index.html`, local script assets, frontend-to-Cloud-Code function names, the Apps Script token health-check contract, and the flashcard cloud-sync endpoints. Passing these checks does not prove that Back4App Config, the deployed Google Apps Script URL, email quotas, or live email delivery are configured correctly; those still require the live verification checklist below.
+
 ## Verification checklist
 
 - [ ] Deploy Cloud Code after each `back4app/main.js` change.
