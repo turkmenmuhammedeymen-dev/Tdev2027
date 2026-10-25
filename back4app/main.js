@@ -735,6 +735,58 @@ function defaultCurriculum(gradeText, server) {
   return result;
 }
 
+Parse.Cloud.define('tdevAIChat', async (request) => {
+  const user = requireUser(request);
+  const message = safeText(request.params && request.params.message, 8000);
+  const grade = safeText(request.params && request.params.grade, 2);
+  const country = safeText(request.params && request.params.country, 2).toUpperCase();
+  if (!message) return resultError('Mesaj boş olamaz.', 'EMPTY_MESSAGE');
+  if (!/^\d{1,2}$/.test(grade) || Number(grade) < 1 || Number(grade) > 12) return resultError('Sınıf bilgisi geçersiz.', 'INVALID_GRADE');
+  if (!/^[A-Z]{2}$/.test(country)) return resultError('Ülke seçimi geçersiz.', 'INVALID_COUNTRY');
+
+  const apiKey = await configValueAsync('AI_API_KEY');
+  if (!apiKey) {
+    return resultError('TDEV-AI için sunucu tarafında AI_API_KEY yapılandırılmamış. Back4App Config’e anahtar eklenirse gerçek yapay zekâ yanıtları etkinleşir; anahtarı HTML dosyasına koyma.', 'AI_PROVIDER_NOT_CONFIGURED');
+  }
+  const model = (await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini';
+  const endpoint = (await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions';
+  if (!/^https:\/\//i.test(endpoint)) return resultError('AI_BASE_URL yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
+
+  const systemPrompt = [
+    'Sen TdevKuantum eğitim platformunun Türkçe konuşan, güvenli ve sabırlı özel ders yardımcısısın.',
+    'Öğrencinin sınıfı: ' + grade + '. Ülke/müfredat kodu: ' + country + '.',
+    'Soruyu adım adım açıkla; gerekli tanımları, çözüm yolunu, örneği ve kısa bir kontrol sorusunu ekle.',
+    'Bilmediğin resmî müfredat ayrıntısını uydurma; resmî kaynakla doğrulanması gerektiğini açıkça belirt.',
+    'Öğrenciye zarar verebilecek yönlendirmeler yapma. Kısa değil, soruyu yanıtlayacak kadar tamamlanmış cevap ver.'
+  ].join(' ');
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }],
+        temperature: 0.35,
+        max_tokens: 1800
+      })
+    });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch (_) { data = null; }
+    if (!response.ok) {
+      console.error('[TdevKuantum] AI provider rejected request:', response.status);
+      return resultError('Yapay zekâ sağlayıcısı isteği kabul etmedi (HTTP ' + response.status + '). AI_API_KEY, AI_MODEL ve sağlayıcı limitlerini kontrol et.', 'AI_PROVIDER_ERROR');
+    }
+    const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (typeof answer !== 'string' || !answer.trim()) return resultError('Yapay zekâ boş yanıt verdi. Biraz sonra tekrar dene.', 'AI_EMPTY_RESPONSE');
+    await writeAuditLog(request, 'learning.ai_chat', user.id, { grade: grade, country: country, messageLength: message.length, model: model });
+    return { success: true, answer: answer.trim(), model: model };
+  } catch (error) {
+    console.error('[TdevKuantum] AI provider connection failed:', String(error && error.message || error).slice(0, 200));
+    return resultError('Yapay zekâ servisine ulaşılamadı. AI_BASE_URL ve sağlayıcı erişimini kontrol et.', 'AI_CONNECTION_FAILED');
+  }
+});
+
 Parse.Cloud.define('getQuestions', async (request) => {
   const gradeInput = safeText(request.params && request.params.grade, 10);
   const grade = Number(gradeInput);
@@ -742,7 +794,7 @@ Parse.Cloud.define('getQuestions', async (request) => {
   if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(grade) || grade < 1 || grade > 12) return [];
   const q = new Parse.Query('Question');
   q.equalTo('grade', grade);
-  if (/^(TR|US|UK|DE|AZ|JP)$/.test(server)) q.equalTo('server', server);
+  if (/^[A-Z]{2}$/.test(server)) q.equalTo('server', server);
   q.equalTo('active', true);
   q.limit(100);
   q.ascending('createdAt');
