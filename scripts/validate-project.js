@@ -101,7 +101,10 @@ for (const functionName of calledFunctions) {
 
 for (const functionName of [
   'registerUser', 'verifyEmailCode', 'resendVerificationCode', 'loginUser',
-  'requestTdevPasswordReset', 'completeTdevPasswordReset', 'healthCheck', 'getMyTdevId', 'linkGuardianStudent', 'getMyGuardianStudents', 'unlinkGuardianStudent', 'getMyDeviceSessions', 'recordDeviceSession', 'postClassroomMessage', 'getClassroomMessages', 'addClassroomMemberById',
+  'requestTdevPasswordReset', 'completeTdevPasswordReset', 'healthCheck',
+  'getMyTdevId', 'linkGuardianStudent', 'getMyGuardianStudents', 'unlinkGuardianStudent',
+  'getMyDeviceSessions', 'recordDeviceSession', 'postClassroomMessage',
+  'getClassroomMessages', 'addClassroomMemberById',
   'saveStudyPlan', 'getStudyPlans', 'saveStudyNote', 'getStudyNotes',
   'saveStudyProgress', 'getStudyProgress', 'saveStudyCard', 'getStudyCards',
   'saveStudyMistake', 'getStudyMistakes', 'deleteStudyRecord'
@@ -131,12 +134,12 @@ for (const functionName of [
   'registerUser', 'verifyEmailCode', 'resendVerificationCode', 'loginUser',
   'requestTdevPasswordReset', 'completeTdevPasswordReset'
 ]) {
-  check(new RegExp('runPublicAuthCloud\\(\\s*[\\'\\"]' + functionName + '[\\'\\"]').test(html),
+  check(html.includes("runPublicAuthCloud('" + functionName + "'"),
     'Public auth endpoint uses sessionless request: ' + functionName);
 }
 
 check(cloudCode.includes('async function assertVerificationProviderReady()') &&
-      cloudCode.includes("await assertVerificationProviderReady();") &&
+      cloudCode.includes('await assertVerificationProviderReady();') &&
       cloudCode.includes("'EMAIL_PROVIDER_NOT_READY'"),
   'Registration checks email-provider readiness before creating an account');
 
