@@ -36,11 +36,17 @@ The verification code is time-limited. Do not send real credentials, tokens, or 
 
 For full AI-generated answers, set these values in Back4App Config (or the corresponding server environment):
 
+NVIDIA NIM is preferred when `NVIDIA_API_KEY` is configured:
+- `NVIDIA_API_KEY` — secret NVIDIA API key.
+- `NVIDIA_BASE_URL` — optional HTTPS base URL; default is `https://integrate.api.nvidia.com/v1`. The server appends `/chat/completions` when needed.
+- `NVIDIA_MODEL` — optional NVIDIA model ID; default is `meta/llama-3.3-70b-instruct`.
+
+Fallback provider options:
 - `AI_API_KEY` — secret key for an OpenAI-compatible chat-completions provider.
-- `AI_MODEL` — optional model name; default is `gpt-4o-mini`.
+- `AI_MODEL` — optional fallback model name; default is `gpt-4o-mini`.
 - `AI_BASE_URL` — optional HTTPS chat-completions endpoint; default is `https://api.openai.com/v1/chat/completions`.
 
-Never put an AI key in `index.html`, `study.js`, a public repository, or a user-visible message. AI requests are made from Cloud Code. If no provider key is configured, the tutor explains that full AI service is not configured and can only use the limited topic guide fallback. Provider billing, quotas, and privacy terms must be reviewed before enabling it for students.
+Never put an AI key in `index.html`, `study.js`, a public repository, or a user-visible message. AI requests are made from Cloud Code. If neither provider key is configured, the tutor can only use the limited topic guide fallback. Provider billing, quotas, and privacy terms must be reviewed before enabling it for students.
 
 ## Curriculum accuracy
 
