@@ -7,7 +7,7 @@ const notify=m=>{if(typeof window.showNotif==='function')showNotif(m);else alert
 let activeClass=null, profile=null, classrooms=[];
 function ensureRegistrationFields(){
  const root=$('reg-student-fields'); if(!root)return;
- if(!$('reg-country-code')){const wrap=document.createElement('div');wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-country-code">Ülke / müfredat (zorunlu)<select id="reg-country-code" required><option value="TR">Türkiye</option><option value="AZ">Azerbaycan</option><option value="GB">Birleşik Krallık</option><option value="DE">Almanya</option><option value="US">Amerika Birleşik Devletleri</option><option value="JP">Japonya</option></select></label>';root.prepend(wrap);}
+ if(!$('reg-country-code')){const wrap=document.createElement('div');wrap.className='school-account-extra';wrap.innerHTML='<label for="reg-country-code">Ülke / müfredat (zorunlu)<select id="reg-country-code" required><option value="TR">Türkiye</option><option value="AZ">Azerbaycan</option><option value="GB">Birleşik Krallık</option><option value="DE">Almanya</option><option value="US">Amerika Birleşik Devletleri</option><option value="JP">Japonya</option></select></label>';root.parentElement.insertBefore(wrap,root);}
  const country=$('reg-country-code');
  if(country&&typeof COUNTRY_OPTIONS!=='undefined'&&Array.isArray(COUNTRY_OPTIONS)&&country.options.length<20){
   const selected=($('country-select')&&$('country-select').value)||country.value||'TR';
@@ -23,12 +23,12 @@ window.updateRegistrationFields=function(){
  const student=$('reg-student-fields'), staff=$('reg-staff-fields'), school=$('reg-student-school-fields'), guardian=$('reg-guardian-note');
  if(student)student.style.display=['student','guardian'].includes(type)?'':'none';
  const gradeLabel=student&&student.querySelector('label[for="reg-grade"]');if(gradeLabel)gradeLabel.style.display=type==='student'?'':'none';
- const countryWrap=$('reg-country-code')?.parentElement;if(countryWrap)countryWrap.style.display=type==='student'?'':'none';
+ const countryWrap=$('reg-country-code')?.parentElement;if(countryWrap)countryWrap.style.display=type==='guardian'?'none':'';
  if(school)school.style.display=type==='student'?'':'none';
  if(staff)staff.style.display=['teacher','principal'].includes(type)?'':'none';
  if(school)school.style.display=type==='student'?'':'none';
  if(guardian)guardian.hidden=type!=='guardian';
- const grade=$('reg-grade');if(grade&&!grade.options.length||grade&&grade.options.length<2){if(grade){grade.innerHTML='<option value="">Sınıfını seç</option>'+Array.from({length:13},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. sınıf</option>').join('');}}
+ const grade=$('reg-grade');if(grade&&!grade.options.length||grade&&grade.options.length<2){if(grade){grade.innerHTML='<option value="">Sınıfını seç</option>'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. sınıf</option>').join('');}}
  ['reg-grade','reg-student-school-name','reg-student-school-address'].forEach(id=>{const el=$(id);if(el)el.required=type==='student';});
  ['reg-stage'].forEach(id=>{const el=$(id);if(el)el.required=['teacher','principal'].includes(type);});
  if($('reg-school-name')) $('reg-school-name').required=['teacher','principal'].includes(type);
@@ -67,14 +67,18 @@ window.showTdevAuthTransition=function(){const overlay=$('auth-transition');if(!
 window.hideTdevAuthTransition=function(){const overlay=$('auth-transition');if(!overlay)return;overlay.classList.remove('active');overlay.removeAttribute('aria-busy');};
 window.finishTdevAuthTransition=function(){return new Promise(resolve=>window.setTimeout(()=>{window.hideTdevAuthTransition();resolve();},1650));};
 function typeLabel(t){return ({student:'Öğrenci',teacher:'Öğretmen',principal:'Müdür',guardian:'Veli'})[t]||t;}
-function updateSidebarRole(type,p){
+window.updateSidebarRole=function(type,p){
  const guardian=type==='guardian';
  document.querySelectorAll('.sidebar .nav-btn').forEach(button=>{
   if(button.id==='nav-school'){button.style.display='';if(guardian)button.innerHTML='<span class="nav-icon">👨‍👩‍👧</span>Öğrencilerim';else button.innerHTML='<span class="nav-icon">🏫</span>Sınıfım / Okulum';}
-  else if(guardian)button.style.display='none';
+  else if(guardian && button.id!=='nav-settings')button.style.display='none';
   else if(['nav-curriculum','nav-quiz','nav-ai','nav-planner','nav-cards','nav-practice','nav-mistakes','nav-focus','nav-progress'].includes(button.id))button.style.display='';
  });
  document.querySelectorAll('.sidebar .nav-section').forEach(section=>section.style.display=guardian?'none':'');
+ const settings=$('nav-settings');if(settings)settings.style.display='';
+ const learningIds=['nav-curriculum','nav-quiz','nav-ai','nav-planner','nav-cards','nav-practice','nav-mistakes','nav-focus','nav-progress'];
+ learningIds.forEach(id=>{const el=$(id);if(el)el.style.display=guardian?'none':'';});
+ document.querySelectorAll('.sidebar .nav-btn').forEach(button=>{if(!['nav-school','nav-settings','nav-dev'].includes(button.id)&&!guardian)button.style.display='';});
  const sidebar=document.querySelector('.sidebar');
  if(sidebar&&!$('tdev-profile-shortcut')){
   const tile=document.createElement('div');tile.id='tdev-profile-shortcut';tile.className='school-profile-shortcut';
