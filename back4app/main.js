@@ -624,6 +624,7 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   q.equalTo('server', server === 'GB' ? 'UK' : server);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
+  let legacySubjects = null;
   if (row && row.get('subjects') && typeof row.get('subjects') === 'object') {
     const sourceUrl = safeText(row.get('sourceUrl'), 500);
     const sourceName = safeText(row.get('sourceName'), 160);
@@ -649,9 +650,9 @@ Parse.Cloud.define('getCurriculum', async (request) => {
         ? Object.assign({}, item, { curriculumMeta: curriculumMeta })
         : item;
     });
-    return decorated;
+    legacySubjects = decorated;
   }
-  // Prefer imported country/grade-specific programs when no legacy Curriculum row exists.
+  // Prefer imported country/grade-specific programs. Merge them with legacy Curriculum rows when both exist.
   // The generated fallback below remains explicitly unverified and is not presented as an official syllabus.
   try {
     const programQuery = new Parse.Query('CurriculumProgram');
@@ -712,10 +713,26 @@ Parse.Cloud.define('getCurriculum', async (request) => {
       });
     });
     const importedKeys = Object.keys(imported);
-    if (importedKeys.length && importedKeys.some((key) => imported[key].topics.length)) return imported;
+    if (importedKeys.length && importedKeys.some((key) => imported[key].topics.length)) {
+      if (legacySubjects) {
+        importedKeys.forEach((subject) => {
+          let targetKey = subject;
+          if (legacySubjects[targetKey]) {
+            const suffix = safeText(imported[subject].curriculumMeta && imported[subject].curriculumMeta.programType, 24) || 'program';
+            targetKey = subject + ' · ' + suffix;
+            let duplicate = 2;
+            while (legacySubjects[targetKey]) targetKey = subject + ' · ' + suffix + ' ' + duplicate++;
+          }
+          legacySubjects[targetKey] = imported[subject];
+        });
+        return legacySubjects;
+      }
+      return imported;
+    }
   } catch (error) {
     console.warn('[TdevKuantum] Imported curriculum fallback unavailable:', String(error && error.message || error).slice(0, 180));
   }
+  if (legacySubjects) return legacySubjects;
   return defaultCurriculum(gradeInput, server, safeText(request.params && request.params.countryName, 100));
 });
 
