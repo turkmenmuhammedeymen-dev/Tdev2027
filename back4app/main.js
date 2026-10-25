@@ -648,6 +648,7 @@ Parse.Cloud.define('getClassroomRoster', async (request) => {
     roster.push(Object.assign(publicInfo, {
       activityCount: memberEvents.length,
       lessonOpens: memberEvents.filter(e => e.get('eventType') === 'lesson_open').length,
+      videoOpens: memberEvents.filter(e => e.get('eventType') === 'video_open').length,
       aiQuestions: memberEvents.filter(e => e.get('eventType') === 'ai_question').length,
       resourceClicks: memberEvents.filter(e => e.get('eventType') === 'external_resource').length,
       quizTotal: quizzes.length, quizCorrect: correct,
@@ -733,7 +734,7 @@ Parse.Cloud.define('deleteClassroomFile', async (request) => {
 Parse.Cloud.define('trackLearningActivity', async (request) => {
   const user = requireUser(request);
   const type = safeText(request.params && request.params.eventType, 40);
-  const allowedTypes = ['lesson_open','curriculum_open','ai_question','quiz_answer','external_resource'];
+  const allowedTypes = ['lesson_open','curriculum_open','ai_question','quiz_answer','external_resource','video_open'];
   if (!allowedTypes.includes(type)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Öğrenme etkinliği türü geçersiz.');
   if ((user.get('profileType') || 'student') !== 'student') return { success: true, skipped: true };
   const userId = user.id;
@@ -2338,7 +2339,14 @@ Parse.Cloud.define('getMyGuardianStudents', async (request) => {
   const links = await query.find({ useMasterKey: true }); const students = [];
   for (const link of links) {
     try { const student = await new Parse.Query(Parse.User).get(link.get('studentId'), { useMasterKey: true });
-      students.push({ linkId: link.id, userId: student.id, publicId: safeText(student.get('publicId'), 40), name: safeText(student.get('displayName') || student.get('name'), 100), grade: student.get('grade'), schoolName: safeText(student.get('schoolName'), 160), schoolAddress: safeText(student.get('schoolAddress'), 240) });
+      const activityQuery = new Parse.Query('LearningActivity'); activityQuery.equalTo('userId', student.id); activityQuery.limit(1000);
+      const activity = await activityQuery.find({ useMasterKey: true });
+      const quizzes = activity.filter(e => e.get('eventType') === 'quiz_answer' && e.get('hasAnswer') === true);
+      const correct = quizzes.filter(e => e.get('isCorrect') === true).length;
+      const membershipsQuery = new Parse.Query('ClassroomMembership'); membershipsQuery.equalTo('userId', student.id); membershipsQuery.equalTo('status', 'active'); membershipsQuery.limit(100);
+      const memberships = await membershipsQuery.find({ useMasterKey: true }); const classes = [];
+      for (const membership of memberships) { try { const classroom = await getClassroomForId(membership.get('classroomId')); if (classroom) classes.push({ name: safeText(classroom.get('name'),120), schoolName: safeText(classroom.get('schoolName'),160), grade: safeText(classroom.get('grade'),10) }); } catch (_) {} }
+      students.push({ linkId: link.id, userId: student.id, publicId: safeText(student.get('publicId'), 40), name: safeText(student.get('displayName') || student.get('name'), 100), grade: student.get('grade'), schoolName: safeText(student.get('schoolName'), 160), schoolAddress: safeText(student.get('schoolAddress'), 240), videoCount: activity.filter(e => e.get('eventType') === 'video_open').length, lessonCount: activity.filter(e => e.get('eventType') === 'lesson_open').length, linkCount: activity.filter(e => e.get('eventType') === 'external_resource').length, aiQuestions: activity.filter(e => e.get('eventType') === 'ai_question').length, quizTotal: quizzes.length, quizCorrect: correct, quizSuccessRate: quizzes.length ? Math.round(correct / quizzes.length * 100) : null, classes });
     } catch (_) {}
   }
   return { success: true, students };
