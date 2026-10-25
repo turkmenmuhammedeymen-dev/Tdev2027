@@ -1205,7 +1205,7 @@ function selServer(el,s) {
     document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
     if (el) el.classList.add('active');
     const select = document.getElementById('country-select');
-    if (select) select.value = s;
+    if (select) select.value = s === 'UK' ? 'GB' : s;
     if (curGrade) loadLessonsFromCloud(curGrade, curServer);
 }
 
