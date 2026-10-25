@@ -1752,7 +1752,7 @@ function ansQ(ans) {
     document.getElementById('qp').innerText = Math.round(qCor/tot*100) + '%';
     const r = document.getElementById('q-res');
     r.className = 'quiz-result ' + (ok ? 'correct' : 'wrong');
-    r.innerText = ok ? '✓ DOĞRU! Tebrikler!' : '✗ YANLIŞ! Doğru cevap: ' + (correctAnswer ? 'DOĞRU' : 'YANLIŞ') + (curQ.explanation ? '\\n' + curQ.explanation : '');
+    r.innerText = ok ? '✓ DOĞRU! Tebrikler!' : '✗ YANLIŞ! Doğru cevap: ' + (correctAnswer ? 'DOĞRU' : 'YANLIŞ') + (curQ.explanation ? '\n' + curQ.explanation : '');
     r.style.display = 'block';
     document.querySelectorAll('.quiz-btn').forEach(b => { b.style.opacity = '.4'; b.style.pointerEvents = 'none'; });
     setTimeout(nextQ, 1800);
