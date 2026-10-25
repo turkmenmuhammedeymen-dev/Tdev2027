@@ -816,21 +816,6 @@ Parse.Cloud.define('registerUser', async (request) => {
     return resultError('Müdür hesabı için okul adı ve adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
   }
   const schoolKey = (schoolName && schoolAddress) ? sha256(countryCode + '|' + schoolName.toLocaleLowerCase('tr').replace(/\\s+/g,' ').trim() + '|' + schoolAddress.toLocaleLowerCase('tr').replace(/\\s+/g,' ').trim()) : '';
-  // Config-defined staff credentials are reserved for the corresponding role.
-  const reservedRole = await roleForEmail(email);
-  if (reservedRole !== 'member') return resultError('Bu e-posta adresi özel bir hesap için ayrılmış. Giriş ekranını kullan.', 'RESERVED_ACCOUNT');
-
-  const existingQuery = new Parse.Query(Parse.User);
-  existingQuery.equalTo('username', email);
-  const existing = await existingQuery.first({ useMasterKey: true });
-  if (existing) return resultError('Bu e-posta ile bir hesap zaten var. Giriş yapmayı dene.', 'EMAIL_EXISTS');
-
-  const user = new Parse.User();
-  user.set('username', email);
-  user.set('email', email);
-  user.set('password', password);
-  user.set('displayName', name);
-  user.set('name', name);
   user.set('role', 'member');
   user.set('profileType', profileType);
   user.set('countryCode', countryCode);
