@@ -461,7 +461,7 @@ Parse.Cloud.define('getStats', async (request) => {
   await requireStaff(request, ['founder', 'admin']);
   const countClass = async (name) => { try { const query = new Parse.Query(name); return await query.count({ useMasterKey: true }); } catch (_) { return 0; } };
   const [total, banned, studyPlans, studyNotes, studySessions, studyCards, studyMistakes, auditEvents] = await Promise.all([
-    countClass('_User'),
+    (async () => { const query = new Parse.Query(Parse.User); return await query.count({ useMasterKey: true }); })(),
     (async () => { try { const query = new Parse.Query(Parse.User); query.equalTo('banned', true); return await query.count({ useMasterKey: true }); } catch (_) { return 0; } })(),
     countClass('StudyPlan'), countClass('StudyNote'), countClass('StudyProgress'), countClass('StudyCard'), countClass('StudyMistake'), countClass('AuditLog')
   ]);
