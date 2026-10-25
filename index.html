@@ -806,6 +806,7 @@ input,select,textarea { color:#172b4d; }
         <label class="auth-label" for="verify-email-code">Doğrulama kodu</label>
         <input type="text" id="verify-email-code" class="auth-input verification-code-input" placeholder="E-postana gelen kod" inputmode="numeric" autocomplete="one-time-code" maxlength="10">
         <button type="button" class="auth-primary" onclick="verifyEmailCode()">E-postayı doğrula</button>
+        <button type="button" class="auth-secondary" id="resend-verification-button" onclick="resendVerificationCode()">Doğrulama kodunu tekrar gönder</button>
         <button type="button" class="auth-secondary verification-back" onclick="goTo('register')">Kayıt ekranına dön</button>
         <div class="error-msg" id="verify-email-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
     </section>
@@ -1349,6 +1350,25 @@ async function completePasswordReset() {
     }
 }
 
+async function resendVerificationCode() {
+    const email = (document.getElementById('verify-email-address')?.value || '').trim().toLowerCase();
+    const button = document.getElementById('resend-verification-button');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAuthError('verify-email-err', 'Önce geçerli e-posta adresini gir.');
+        return;
+    }
+    if (button) { button.disabled = true; button.dataset.originalText = button.textContent; button.textContent = 'Gönderiliyor…'; }
+    try {
+        const result = await Parse.Cloud.run('resendVerificationCode', { email });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Yeni kod istenemedi.');
+        showAuthError('verify-email-err', result.message || 'Eğer hesap doğrulanmamışsa yeni kod gönderilecektir. Gelen kutunu ve spam klasörünü kontrol et.');
+    } catch (error) {
+        showAuthError('verify-email-err', error && error.message ? error.message : 'Yeni kod gönderilemedi. E-posta servisini kontrol et.');
+    } finally {
+        if (button) { button.disabled = false; button.textContent = button.dataset.originalText || 'Doğrulama kodunu tekrar gönder'; }
+    }
+}
+
 async function verifyEmailCode() {
     const email = (document.getElementById('verify-email-address')?.value || '').trim().toLowerCase();
     const code = (document.getElementById('verify-email-code')?.value || '').trim();
@@ -1483,7 +1503,15 @@ async function register() {
             goTo('gate');
         }
     } catch (error) {
-        showError(error && error.message ? error.message : 'Kayıt yapılamadı. Lütfen tekrar dene.');
+        const message = error && error.message ? error.message : 'Kayıt yapılamadı. Lütfen tekrar dene.';
+        if (/Doğrulama e-postası gönderilemedi/i.test(message)) {
+            const verifyEmail = document.getElementById('verify-email-address');
+            if (verifyEmail) verifyEmail.value = email;
+            goTo('verify-email');
+            showAuthError('verify-email-err', message + ' Ayar düzeltildiyse aşağıdaki tekrar gönder düğmesini kullan.');
+        } else {
+            showError(message);
+        }
     } finally {
         registrationInProgress = false;
         buttons.forEach(button => { button.disabled = false; button.textContent = button.dataset.originalText || 'Kayıt ol'; });
