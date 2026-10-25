@@ -154,7 +154,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Exo 2', sans-serif; b
 
 /* UYGULAMA */
 #app { display: none; position: fixed; inset: 0; z-index: 500; flex-direction: row; }
-.sidebar { width: 255px; min-width: 255px; background: rgba(0,0,0,0.97); border-right: 1px solid rgba(0,242,254,0.1); display: flex; flex-direction: column; overflow: hidden; }
+.sidebar { width: 255px; min-width: 255px; background: rgba(0,0,0,0.97); border-right: 1px solid rgba(0,242,254,0.1); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(0,242,254,.45) rgba(255,255,255,.04); } .sidebar::-webkit-scrollbar{width:7px}.sidebar::-webkit-scrollbar-track{background:rgba(255,255,255,.04)}.sidebar::-webkit-scrollbar-thumb{background:rgba(0,242,254,.4);border-radius:8px}.sidebar-head{flex-shrink:0}
 .sidebar-head { padding: 16px 16px 12px; border-bottom: 1px solid rgba(0,242,254,0.08); background: rgba(0,242,254,0.02); }
 .sidebar-logo { font-family: 'Orbitron', sans-serif; font-size: .98rem; font-weight: 900; color: var(--accent); letter-spacing: 3px; }
 .sidebar-ver { font-family: 'Share Tech Mono', monospace; font-size: .56rem; color: #555; margin-top: 2px; }
@@ -882,8 +882,8 @@ input,select,textarea { color:#172b4d; }
             <div id="tab-quiz" class="tab">
                 <div class="sec-title">DOĞRU / YANLIŞ — <span>KONU TESTİ</span></div>
                 <div class="quiz-select-row">
-                    <select class="quiz-select" id="qg" onchange="fillQLesson()"></select>
-                    <select class="quiz-select" id="ql"></select>
+                    <select class="quiz-select" id="qg" aria-label="Sınıf seç" onchange="changeQuizGrade()"></select>
+                    <select class="quiz-select" id="ql" aria-label="Ders seç" onchange="nextQ()"></select>
                     <button class="m5-btn" onclick="nextQ()">↺ YENİ SORU</button>
                 </div>
                 <div class="quiz-score-row">
@@ -1702,48 +1702,85 @@ function refreshDevPanel() {
 }
 
 // ---- DOĞRU / YANLIŞ (Cloud) ----
-let qAll = []; // tüm sorular cache
+let qAll = []; // seçili sınıfın soru havuzu
+let lastQuestionId = '';
+let quizLoadSequence = 0;
 
 function initQuiz() {
-    const g = document.getElementById('qg'); if(g) g.value = curGrade || '8';
-    // Cloud'dan soruları çek
-    Parse.Cloud.run('getQuestions', { grade: curGrade, server: curServer })
-        .then(questions => {
-            qAll = questions;
-            fillQLesson();
-            nextQ();
-        })
-        .catch(() => {
-            qAll = [];
-            fillQLesson();
-            nextQ();
-        });
+    const gradeSelect = document.getElementById('qg');
+    if (!gradeSelect) return;
+    if (!gradeSelect.options.length) {
+        gradeSelect.innerHTML = Array.from({length:12}, (_, i) =>
+            '<option value="' + (i + 1) + '">' + (i + 1) + '. Sınıf</option>'
+        ).join('');
+    }
+    gradeSelect.value = String(curGrade || '8');
+    changeQuizGrade();
+}
+
+async function changeQuizGrade() {
+    const gradeSelect = document.getElementById('qg');
+    const subjectSelect = document.getElementById('ql');
+    if (!gradeSelect || !subjectSelect) return;
+    const grade = String(gradeSelect.value || curGrade || '8');
+    const sequence = ++quizLoadSequence;
+    subjectSelect.innerHTML = '<option value="">Dersler yükleniyor…</option>';
+    subjectSelect.disabled = true;
+    const questionHost = document.getElementById('q-q');
+    if (questionHost) questionHost.textContent = 'Seçilen sınıfın soruları yükleniyor…';
+    try {
+        const questions = await Parse.Cloud.run('getQuestions', { grade: grade, server: curServer });
+        if (sequence !== quizLoadSequence) return;
+        qAll = Array.isArray(questions) ? questions.map(q => Object.assign({}, q, { grade: String(q.grade) })) : [];
+        fillQLesson();
+        nextQ();
+    } catch (error) {
+        if (sequence !== quizLoadSequence) return;
+        qAll = [];
+        subjectSelect.innerHTML = '<option value="">Ders bulunamadı</option>';
+        if (questionHost) questionHost.textContent = 'Sorular yüklenemedi. Bağlantıyı kontrol edip yeniden deneyin.';
+        const source = document.getElementById('q-src'); if (source) source.textContent = 'Sunucuya ulaşılamadı';
+        const result = document.getElementById('q-res'); if (result) result.style.display = 'none';
+        curQ = null;
+        subjectSelect.disabled = true;
+    }
 }
 
 function fillQLesson() {
-    const g = (document.getElementById('qg')||{}).value || '8';
-    const subjects = [...new Set(qAll.filter(q => q.grade === g).map(q => q.subject))];
-    const ls = document.getElementById('ql'); if(!ls) return;
-    ls.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('') || '<option value="">Ders yok</option>';
+    const grade = String((document.getElementById('qg') || {}).value || '8');
+    const subjectSelect = document.getElementById('ql');
+    if (!subjectSelect) return;
+    const previous = subjectSelect.value;
+    const subjects = [...new Set(qAll.filter(q => String(q.grade) === grade).map(q => String(q.subject || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'tr'));
+    subjectSelect.innerHTML = subjects.map(subject => '<option value="' + escapeHtml(subject) + '">' + escapeHtml(subject) + '</option>').join('') || '<option value="">Bu sınıfta kayıtlı ders yok</option>';
+    subjectSelect.disabled = subjects.length === 0;
+    if (subjects.includes(previous)) subjectSelect.value = previous;
 }
 
 function nextQ() {
-    const g = (document.getElementById('qg')||{}).value || '8';
-    const sub = (document.getElementById('ql')||{}).value || '';
-    const pool = qAll.filter(q => q.grade === g && (sub ? q.subject === sub : true));
-    if(!pool.length) {
-        document.getElementById('q-q').innerText = 'Bu ders için soru hazırlanıyor...';
-        document.getElementById('q-src').innerText = '—';
-        document.getElementById('q-res').style.display = 'none';
+    const grade = String((document.getElementById('qg') || {}).value || '8');
+    const subject = (document.getElementById('ql') || {}).value || '';
+    const pool = qAll.filter(q => String(q.grade) === grade && (!subject || q.subject === subject));
+    const questionHost = document.getElementById('q-q');
+    const sourceHost = document.getElementById('q-src');
+    const resultHost = document.getElementById('q-res');
+    if (!pool.length) {
+        if (questionHost) questionHost.textContent = 'Bu sınıf ve ders için henüz soru kaydı yok. İçerik yöneticisinden doğrulanmış sorular eklenmeli.';
+        if (sourceHost) sourceHost.textContent = grade + '. Sınıf · ' + (subject || 'Ders seçilmedi');
+        if (resultHost) resultHost.style.display = 'none';
         curQ = null;
+        document.querySelectorAll('.quiz-btn').forEach(button => { button.style.opacity = '.4'; button.style.pointerEvents = 'none'; });
         return;
     }
-    const rand = pool[Math.floor(Math.random() * pool.length)];
-    curQ = rand;
-    document.getElementById('q-q').innerText = rand.question;
-    document.getElementById('q-src').innerText = g + '. Sınıf · ' + rand.subject;
-    document.getElementById('q-res').style.display = 'none';
-    document.querySelectorAll('.quiz-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+    let poolWithoutLast = pool.filter(q => String(q.id || q.question) !== lastQuestionId);
+    if (!poolWithoutLast.length) poolWithoutLast = pool;
+    const chosen = poolWithoutLast[Math.floor(Math.random() * poolWithoutLast.length)];
+    lastQuestionId = String(chosen.id || chosen.question);
+    curQ = chosen;
+    if (questionHost) questionHost.textContent = chosen.question || 'Soru içeriği eksik.';
+    if (sourceHost) sourceHost.textContent = grade + '. Sınıf · ' + (chosen.subject || subject);
+    if (resultHost) resultHost.style.display = 'none';
+    document.querySelectorAll('.quiz-btn').forEach(button => { button.style.opacity = '1'; button.style.pointerEvents = 'auto'; });
 }
 
 function ansQ(ans) {
