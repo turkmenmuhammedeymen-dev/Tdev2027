@@ -788,7 +788,7 @@ Parse.Cloud.define('registerUser', async (request) => {
   const schoolName = safeText(request.params && request.params.schoolName, 160);
   const schoolAddress = safeText(request.params && request.params.schoolAddress, 240);
   const inviteCode = safeText(request.params && request.params.inviteCode, 80);
-  if (!['student','teacher','principal'].includes(profileType) || !/^[A-Z]{2}$/.test(countryCode)) {
+  if (!['student','teacher','principal','guardian'].includes(profileType) || !/^[A-Z]{2}$/.test(countryCode)) {
     return resultError('Hesap türü ve ülke seçimi geçersiz.', 'INVALID_PROFILE');
   }
   let grade = Number(gradeInput);
@@ -799,6 +799,9 @@ Parse.Cloud.define('registerUser', async (request) => {
     }
     grade = gradeInput === 'K' ? 0 : Number(gradeInput);
     stage = grade === 0 ? 'primary' : (grade <= 4 ? 'primary' : (grade <= 8 ? 'middle' : 'high'));
+    if (!schoolName || !schoolAddress) return resultError('Öğrenci hesabı için okul adı ve okul adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
+  } else if (profileType === 'guardian') {
+    stage = ''; grade = 0;
   } else {
     if (!['primary','middle','high'].includes(stage) || !schoolName || !schoolAddress) {
       return resultError('Öğretmen ve müdür hesapları için kademe, okul adı ve okul adresi zorunludur.', 'SCHOOL_PROFILE_REQUIRED');
@@ -833,6 +836,7 @@ Parse.Cloud.define('registerUser', async (request) => {
   user.set('schoolName', schoolName);
   user.set('schoolAddress', schoolAddress);
   user.set('schoolKey', schoolKey);
+  user.set('publicId', 'TDEV-' + crypto.randomBytes(6).toString('hex').toUpperCase());
   user.set('inviteCodePending', inviteCode);
   user.set('banned', false);
   user.set('emailVerified', false);
@@ -2286,4 +2290,87 @@ Parse.Cloud.define('setupDatabaseSchema', async (request) => {
     catch (error) { results.push({className, status:'error', message:String(error.message || error)}); }
   }
   return { success: !results.some(item => item.status === 'error'), results };
+});
+
+
+// TDEV school platform extensions: stable public IDs, guardian links, class chat.
+function tdevAuthUser(request) {
+  if (!request || !request.user) throw new Parse.Error(Parse.Error.SESSION_MISSING, 'Bu işlem için giriş yapmalısın.');
+  return request.user;
+}
+async function tdevGetMembership(userId, classroomId) {
+  const q = new Parse.Query('ClassroomMembership');
+  q.equalTo('userId', userId); q.equalTo('classroomId', classroomId); q.equalTo('status', 'active');
+  return q.first({ useMasterKey: true });
+}
+Parse.Cloud.define('getMyTdevId', async (request) => {
+  const user = tdevAuthUser(request);
+  let id = safeText(user.get('publicId'), 40);
+  if (!id) { id = 'TDEV-' + crypto.randomBytes(6).toString('hex').toUpperCase(); user.set('publicId', id); await user.save(null, { useMasterKey: true }); }
+  return { success: true, userId: id, profileType: safeText(user.get('profileType'), 20), displayName: safeText(user.get('displayName') || user.get('name'), 100) };
+});
+Parse.Cloud.define('linkGuardianStudent', async (request) => {
+  const user = tdevAuthUser(request);
+  if (user.get('profileType') !== 'guardian') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu özellik veli hesaplarına açıktır.');
+  const publicId = safeText(request.params && request.params.studentId, 40).toUpperCase();
+  if (!/^TDEV-[A-F0-9]{12}$/.test(publicId)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Geçerli öğrenci ID’sini gir.');
+  const query = new Parse.Query(Parse.User); query.equalTo('publicId', publicId);
+  const student = await query.first({ useMasterKey: true });
+  if (!student || student.get('profileType') !== 'student') throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Bu ID ile öğrenci bulunamadı.');
+  const existing = new Parse.Query('GuardianStudent'); existing.equalTo('guardianId', user.id); existing.equalTo('studentId', student.id);
+  const prior = await existing.first({ useMasterKey: true });
+  if (prior && prior.get('status') === 'active') return { success: true, alreadyLinked: true };
+  const link = prior || new Parse.Object('GuardianStudent');
+  link.set('guardianId', user.id); link.set('studentId', student.id); link.set('status', 'active'); link.set('createdAtISO', new Date().toISOString());
+  await link.save(null, { useMasterKey: true });
+  return { success: true, student: { linkId: link.id, userId: student.id, publicId, name: safeText(student.get('displayName') || student.get('name'), 100), grade: student.get('grade'), schoolName: safeText(student.get('schoolName'), 160) } };
+});
+Parse.Cloud.define('getMyGuardianStudents', async (request) => {
+  const user = tdevAuthUser(request);
+  if (user.get('profileType') !== 'guardian') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Veli hesabı gerekli.');
+  const query = new Parse.Query('GuardianStudent'); query.equalTo('guardianId', user.id); query.equalTo('status', 'active'); query.limit(100);
+  const links = await query.find({ useMasterKey: true }); const students = [];
+  for (const link of links) {
+    try { const student = await new Parse.Query(Parse.User).get(link.get('studentId'), { useMasterKey: true });
+      students.push({ linkId: link.id, userId: student.id, publicId: safeText(student.get('publicId'), 40), name: safeText(student.get('displayName') || student.get('name'), 100), grade: student.get('grade'), schoolName: safeText(student.get('schoolName'), 160), schoolAddress: safeText(student.get('schoolAddress'), 240) });
+    } catch (_) {}
+  }
+  return { success: true, students };
+});
+Parse.Cloud.define('unlinkGuardianStudent', async (request) => {
+  const user = tdevAuthUser(request);
+  if (user.get('profileType') !== 'guardian') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Veli hesabı gerekli.');
+  const query = new Parse.Query('GuardianStudent'); query.equalTo('objectId', safeText(request.params && request.params.linkId, 100)); query.equalTo('guardianId', user.id); query.equalTo('status', 'active');
+  const link = await query.first({ useMasterKey: true });
+  if (!link) throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Öğrenci bağlantısı bulunamadı.');
+  link.set('status', 'removed'); link.set('removedAtISO', new Date().toISOString()); await link.save(null, { useMasterKey: true }); return { success: true };
+});
+Parse.Cloud.define('postClassroomMessage', async (request) => {
+  const user = tdevAuthUser(request); const classroomId = safeText(request.params && request.params.classroomId, 100); const message = safeText(request.params && request.params.message, 3000);
+  if (!classroomId || !message) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Sınıf ve mesaj zorunludur.');
+  const classroom = await new Parse.Query('Classroom').get(classroomId, { useMasterKey: true });
+  const member = await tdevGetMembership(user.id, classroomId);
+  const isPrincipal = user.get('profileType') === 'principal' && safeText(user.get('schoolKey'), 64) === safeText(classroom.get('schoolKey'), 64);
+  if ((!member || member.get('status') !== 'active') && !isPrincipal) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu sınıf grubuna erişimin yok.');
+  const row = new Parse.Object('ClassroomMessage'); row.set('classroomId', classroomId); row.set('authorId', user.id);
+  row.set('authorName', safeText(user.get('displayName') || user.get('name'), 100)); row.set('authorRole', safeText(user.get('profileType'), 20));
+  row.set('message', message); row.set('createdAtISO', new Date().toISOString()); await row.save(null, { useMasterKey: true });
+  return { success: true, message: { id: row.id, authorName: row.get('authorName'), authorRole: row.get('authorRole'), message, createdAtISO: row.get('createdAtISO') } };
+});
+Parse.Cloud.define('getClassroomMessages', async (request) => {
+  const user = tdevAuthUser(request); const classroomId = safeText(request.params && request.params.classroomId, 100);
+  const classroom = await new Parse.Query('Classroom').get(classroomId, { useMasterKey: true }); const member = await tdevGetMembership(user.id, classroomId);
+  const isPrincipal = user.get('profileType') === 'principal' && safeText(user.get('schoolKey'), 64) === safeText(classroom.get('schoolKey'), 64);
+  if ((!member || member.get('status') !== 'active') && !isPrincipal) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Bu sınıf grubuna erişimin yok.');
+  const query = new Parse.Query('ClassroomMessage'); query.equalTo('classroomId', classroomId); query.ascending('createdAt'); query.limit(200);
+  const rows = await query.find({ useMasterKey: true });
+  return { success: true, messages: rows.map(row => ({ id: row.id, authorId: row.get('authorId'), authorName: row.get('authorName'), authorRole: row.get('authorRole'), message: row.get('message'), createdAtISO: row.get('createdAtISO') })) };
+});
+Parse.Cloud.define('saveMyAccountSettings', async (request) => {
+  const user = tdevAuthUser(request); const params = request.params || {};
+  const displayName = safeText(params.displayName, 100); const language = safeText(params.language, 5).toLowerCase();
+  if (language && !['tr', 'en'].includes(language)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Desteklenmeyen dil.');
+  if (displayName) { user.set('displayName', displayName); user.set('name', displayName); }
+  if (language) user.set('preferredLanguage', language);
+  await user.save(null, { useMasterKey: true }); return { success: true };
 });
