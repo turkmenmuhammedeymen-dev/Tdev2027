@@ -1199,7 +1199,7 @@ function selCountry(code) {
     });
     const label = document.getElementById('server-lbl');
     if (label) label.innerText = 'ÜLKE: ' + ((select && select.selectedOptions[0]) ? select.selectedOptions[0].textContent : curServer);
-    if (curGrade) loadLessonsFromCloud(curGrade, curServer);
+    if (curGrade) { loadLessonsFromCloud(curGrade, curServer); initQuiz(); }
 }
 function selServer(el,s) {
     curServer = s;
@@ -1207,7 +1207,7 @@ function selServer(el,s) {
     if (el) el.classList.add('active');
     const select = document.getElementById('country-select');
     if (select) select.value = s === 'UK' ? 'GB' : s;
-    if (curGrade) loadLessonsFromCloud(curGrade, curServer);
+    if (curGrade) { loadLessonsFromCloud(curGrade, curServer); initQuiz(); }
 }
 
 
@@ -1795,12 +1795,15 @@ let quizLoadSequence = 0;
 function initQuiz() {
     const gradeSelect = document.getElementById('qg');
     if (!gradeSelect) return;
-    if (!gradeSelect.options.length) {
-        gradeSelect.innerHTML = Array.from({length:12}, (_, i) =>
-            '<option value="' + (i + 1) + '">' + (i + 1) + '. Sınıf</option>'
-        ).join('');
-    }
-    gradeSelect.value = String(curGrade || '8');
+    let grades = Array.from({ length: 12 }, (_, i) => String(i + 1));
+    if (curServer === 'US') grades = ['K'].concat(grades);
+    if (curServer === 'UK' || curServer === 'GB' || curServer === 'DE') grades.push('13');
+    if (curServer === 'AZ') grades = grades.filter(g => Number(g) <= 11);
+    const previous = String(gradeSelect.value || curGrade || '');
+    gradeSelect.innerHTML = grades.map(g => '<option value="' + g + '">' +
+        (g === 'K' ? 'Kindergarten (K)' : g + '. Sınıf') + '</option>').join('');
+    gradeSelect.value = grades.includes(String(curGrade)) ? String(curGrade) :
+        (grades.includes(previous) ? previous : (grades.includes('8') ? '8' : grades[0]));
     changeQuizGrade();
 }
 
