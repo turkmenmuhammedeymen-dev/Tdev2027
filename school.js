@@ -55,6 +55,9 @@ window.loadSchoolDashboard=async function(){
   const q=new URLSearchParams(location.search), invite=q.get('invite');if(invite&&type==='student'){$('school-invite-code').value=invite;await window.joinSchoolClassroom();}
  }catch(e){if(status)status.textContent=e.message||'Okul bilgileri alınamadı.';if(list)list.innerHTML='';}
 };
+window.showTdevAuthTransition=function(){const overlay=$('auth-transition');if(!overlay)return;overlay.classList.add('active');overlay.setAttribute('aria-busy','true');};
+window.hideTdevAuthTransition=function(){const overlay=$('auth-transition');if(!overlay)return;overlay.classList.remove('active');overlay.removeAttribute('aria-busy');};
+window.finishTdevAuthTransition=function(){return new Promise(resolve=>window.setTimeout(()=>{window.hideTdevAuthTransition();resolve();},1650));};
 function typeLabel(t){return ({student:'Öğrenci',teacher:'Öğretmen',principal:'Müdür',guardian:'Veli'})[t]||t;}
 function updateSidebarRole(type,p){
  const guardian=type==='guardian';
