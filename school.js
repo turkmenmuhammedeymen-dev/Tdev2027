@@ -45,6 +45,7 @@ window.loadSchoolDashboard=async function(){
   if($('school-student-tools'))$('school-student-tools').hidden=!['student','teacher'].includes(type);
   if($('school-class-list-title'))$('school-class-list-title').textContent=type==='guardian'?'Öğrencilerim':type==='principal'?'Okulumdaki sınıflar':'Sınıflarım';
   const nav=$('nav-school');if(nav)nav.style.display='';
+  updateSidebarRole(type,p);
   if(status)status.innerHTML=(p.avatarUrl?'<img src="'+esc(p.avatarUrl)+'" alt="Profil fotoğrafı" style="width:54px;height:54px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px">':'')+'<strong>'+esc(p.displayName||p.name||'Hesap')+'</strong> · '+esc(typeLabel(type))+' · Kullanıcı ID: <code>'+esc(p.publicId||p.userId||'ID yükleniyor')+'</code><br>'+esc(p.schoolName||'Okul bilgisi eklenmemiş')+(p.schoolAddress?' · '+esc(p.schoolAddress):'')+'<div class="school-actions" style="margin-top:10px"><button type="button" class="school-button secondary" id="open-account-settings">⚙ Ayarlar / Hesap bilgilerim</button></div>';
   if($('open-account-settings'))$('open-account-settings').addEventListener('click',window.loadSchoolSettings);
   if(type==='guardian'){await loadGuardianPanel();return;}
@@ -55,6 +56,25 @@ window.loadSchoolDashboard=async function(){
  }catch(e){if(status)status.textContent=e.message||'Okul bilgileri alınamadı.';if(list)list.innerHTML='';}
 };
 function typeLabel(t){return ({student:'Öğrenci',teacher:'Öğretmen',principal:'Müdür',guardian:'Veli'})[t]||t;}
+function updateSidebarRole(type,p){
+ const guardian=type==='guardian';
+ document.querySelectorAll('.sidebar .nav-btn').forEach(button=>{
+  if(button.id==='nav-school'){button.style.display='';if(guardian)button.innerHTML='<span class="nav-icon">👨‍👩‍👧</span>Öğrencilerim';else button.innerHTML='<span class="nav-icon">🏫</span>Sınıfım / Okulum';}
+  else if(guardian)button.style.display='none';
+  else if(['nav-curriculum','nav-quiz','nav-ai','nav-planner','nav-cards','nav-practice','nav-mistakes','nav-focus','nav-progress'].includes(button.id))button.style.display='';
+ });
+ document.querySelectorAll('.sidebar .nav-section').forEach(section=>section.style.display=guardian?'none':'');
+ const sidebar=document.querySelector('.sidebar');
+ if(sidebar&&!$('tdev-profile-shortcut')){
+  const tile=document.createElement('div');tile.id='tdev-profile-shortcut';tile.className='school-profile-shortcut';
+  tile.style.cssText='display:flex;align-items:center;gap:10px;padding:12px;margin:8px 10px 14px;border:1px solid rgba(148,163,184,.25);border-radius:12px;background:rgba(15,28,47,.8)';
+  tile.innerHTML='<label for="tdev-profile-photo-input" style="display:block;cursor:pointer;flex:0 0 44px"><img id="tdev-profile-photo" alt="Profil fotoğrafı" style="width:44px;height:44px;border-radius:10px;object-fit:cover;background:#22344c" src="'+esc(p.avatarUrl||'')+'"><input id="tdev-profile-photo-input" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><div style="min-width:0"><strong style="display:block;color:#f3f6fb;font-size:.82rem">'+esc(p.displayName||p.name||'Hesabım')+'</strong><small style="display:block;color:#aebed1">Profil fotoğrafını değiştirmek için dokun</small></div>';
+  const first=sidebar.querySelector('.nav-section,.nav-btn');if(first)sidebar.insertBefore(tile,first);else sidebar.prepend(tile);
+  $('tdev-profile-photo-input').addEventListener('change',async function(){const file=this.files&&this.files[0];if(!file)return;if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>5*1024*1024){notify('Profil fotoğrafı PNG/JPEG/WEBP ve en fazla 5 MB olmalı.');this.value='';return;}try{const parseFile=new Parse.File(file.name,file);await parseFile.save();await cloud('saveMyAccountSettings',{avatarUrl:parseFile.url()});$('tdev-profile-photo').src=parseFile.url();notify('Profil fotoğrafı güncellendi.');}catch(e){notify(e.message||'Profil fotoğrafı kaydedilemedi.');}});
+ }
+ const photo=$('tdev-profile-photo');if(photo&&p.avatarUrl)photo.src=p.avatarUrl;
+}
+
 function renderClassrooms(items){
  const list=$('school-classroom-list');if(!list)return;
  if(!items.length){list.innerHTML='<div class="school-item"><strong class="school-item-title">Henüz sınıf yok</strong><p class="school-muted">Öğretmen yeni sınıf oluşturabilir. Öğrenci davet bağlantısı veya koduyla katılabilir.</p></div>';return;}
