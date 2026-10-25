@@ -1,6 +1,14 @@
 (function () {
   'use strict';
   const KEYS = {
+    plans: 'tdevkuantum.study.plans',
+    notes: 'tdevkuantum.study.notes',
+    cards: 'tdevkuantum.study.cards',
+    practice: 'tdevkuantum.study.practice',
+    mistakes: 'tdevkuantum.study.mistakes'
+  };
+  // Migrate earlier local records without losing a student's existing work.
+  const LEGACY_KEYS = {
     plans: 'tdev2027.study.plans',
     notes: 'tdev2027.study.notes',
     cards: 'tdev2027.study.cards',
@@ -8,10 +16,23 @@
     mistakes: 'tdev2027.study.mistakes'
   };
   function read(key) {
-    try { const v = JSON.parse(localStorage.getItem(KEYS[key]) || '[]'); return Array.isArray(v) ? v : []; }
-    catch (_) { return []; }
+    try {
+      let raw = localStorage.getItem(KEYS[key]);
+      if (raw === null && LEGACY_KEYS[key]) {
+        raw = localStorage.getItem(LEGACY_KEYS[key]);
+        if (raw !== null) {
+          localStorage.setItem(KEYS[key], raw);
+          localStorage.removeItem(LEGACY_KEYS[key]);
+        }
+      }
+      const v = JSON.parse(raw || '[]');
+      return Array.isArray(v) ? v : [];
+    } catch (_) { return []; }
   }
-  function write(key, items) { localStorage.setItem(KEYS[key], JSON.stringify(items)); }
+  function write(key, items) {
+    try { localStorage.setItem(KEYS[key], JSON.stringify(items)); }
+    catch (_) { notify('Cihaz depolaması dolu olabilir. Verilerini dışa aktarıp yer açmayı dene.'); }
+  }
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
       return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
@@ -245,6 +266,7 @@
     if (key === 'notes') renderStudyNotes();
     if (key === 'cards') renderStudyCards();
     if (key === 'practice') renderPracticeLog();
+    if (key === 'mistakes') renderStudyMistakes();
     window.renderLearningProgress();
   };
 
@@ -298,16 +320,38 @@
 
   window.renderLearningProgress = function () {
     const host = document.getElementById('learning-progress-summary'); if (!host) return;
-    const plans = read('plans'), notes = read('notes'), cards = read('cards'), practice = read('practice');
+    const plans = read('plans'), notes = read('notes'), cards = read('cards'), practice = read('practice'), mistakes = read('mistakes');
     const completed = plans.filter(function (p) { return p.done; }).length;
     const minutes = plans.filter(function (p) { return p.done; }).reduce(function (sum, p) { return sum + (Number(p.minutes) || 0); }, 0);
     const total = practice.reduce(function (sum, p) { return sum + (Number(p.total) || 0); }, 0);
     const correct = practice.reduce(function (sum, p) { return sum + (Number(p.correct) || 0); }, 0);
     const accuracy = total ? Math.round(correct / total * 100) : 0;
+    const activityDays = new Set();
+    function dayKey(value) {
+      if (!value) return '';
+      const text = String(value);
+      if (/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10);
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '' : date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+    plans.filter(function (p) { return p.done; }).forEach(function (p) { const key = dayKey(p.completedAt || p.updatedAt || p.date); if (key) activityDays.add(key); });
+    practice.forEach(function (p) { const key = dayKey(p.date); if (key) activityDays.add(key); });
+    let streak = 0;
+    for (let offset = 0; offset < 366; offset++) {
+      const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() - offset);
+      const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+      if (!activityDays.has(key)) break;
+      streak++;
+    }
+    const weekStart = new Date(); weekStart.setHours(0, 0, 0, 0); weekStart.setDate(weekStart.getDate() - 6);
+    const weeklyQuestions = practice.filter(function (p) { const date = new Date(p.date); return !Number.isNaN(date.getTime()) && date >= weekStart; }).reduce(function (sum, p) { return sum + (Number(p.total) || 0); }, 0);
+    const dueMistakes = mistakes.filter(function (m) { return m.status !== 'learned' && m.reviewDate && m.reviewDate <= today(); }).length;
     const tiles = [
       [completed + '/' + plans.length, 'Tamamlanan plan'], [minutes + ' dk', 'Tamamlanan plan süresi'],
       [String(notes.length), 'Kişisel not'], [cards.filter(function (c) { return c.known; }).length + '/' + cards.length, 'Bilinen bilgi kartı'],
-      [String(practice.length), 'Çalışma oturumu'], [accuracy + '%', 'Kaydedilen sorularda başarı'], [String(read('mistakes').length), 'Yanlış defteri kaydı']
+      [String(practice.length), 'Çalışma oturumu'], [accuracy + '%', 'Kaydedilen sorularda başarı'],
+      [String(mistakes.length), 'Yanlış defteri kaydı'], [String(streak) + ' gün', 'Çalışma serisi'],
+      [String(weeklyQuestions), 'Son 7 gündeki soru'], [String(dueMistakes), 'Tekrarı gelen yanlış']
     ];
     host.innerHTML = tiles.map(function (t) { return '<div class="progress-tile"><strong>' + esc(t[0]) + '</strong><span>' + esc(t[1]) + '</span></div>'; }).join('');
   };
@@ -315,12 +359,15 @@
     const data = { exportedAt: new Date().toISOString(), plans: read('plans'), notes: read('notes'), cards: read('cards'), practice: read('practice'), mistakes: read('mistakes') };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob), a = document.createElement('a');
-    a.href = url; a.download = 'tdev2027-ogrenme-verilerim.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    a.href = url; a.download = 'tdevkuantum-ogrenme-verilerim.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     notify('Verilerin dışa aktarıldı.');
   };
   window.clearLocalLearningData = function () {
     if (!window.confirm('Bu cihazdaki plan, not, kart ve oturum kayıtları silinsin mi? Sunucudaki kayıtlar silinmez.')) return;
-    Object.keys(KEYS).forEach(function (key) { localStorage.removeItem(KEYS[key]); });
+    Object.keys(KEYS).forEach(function (key) {
+      localStorage.removeItem(KEYS[key]);
+      if (LEGACY_KEYS[key]) localStorage.removeItem(LEGACY_KEYS[key]);
+    });
     renderStudyPlans(); renderStudyNotes(); renderStudyCards(); renderPracticeLog(); window.renderLearningProgress();
     notify('Bu cihazdaki öğrenme verileri temizlendi.');
   };
