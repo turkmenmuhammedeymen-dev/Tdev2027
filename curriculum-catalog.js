@@ -211,7 +211,7 @@
         return typeof topic === 'string' ? topic : (topic && (topic.title || topic.name || topic.unit) || '');
       }).filter(Boolean);
       const status = item.isOfficial === true ? 'RESMÎ KAYIT · TARİHLİ' : 'DOĞRULAMA GEREKLİ';
-      const details = [item.countryName, item.gradeLabel ? item.gradeLabel + '. sınıf' : '', item.schoolType, item.field, item.branch, item.subject, item.curriculumYear].filter(Boolean).join(' · ');
+      const details = [item.countryName, item.gradeLabel ? (item.gradeLabel === 'K' ? 'Kindergarten (K)' : item.gradeLabel + '. sınıf') : '', item.schoolType, item.field, item.branch, item.subject, item.curriculumYear].filter(Boolean).join(' · ');
       return '<article class="bot-card curriculum-source-card">' +
         '<div class="bot-header"><div class="bot-name">' + escapeHtml(item.title || item.subject || 'Müfredat kaydı') + '</div><span class="bot-status">' + status + '</span></div>' +
         '<div class="curriculum-card-meta">' + escapeHtml(details) + '</div>' +
