@@ -45,7 +45,7 @@ window.loadSchoolDashboard=async function(){
   if($('school-student-tools'))$('school-student-tools').hidden=!['student','teacher'].includes(type);
   if($('school-class-list-title'))$('school-class-list-title').textContent=type==='guardian'?'Öğrencilerim':type==='principal'?'Okulumdaki sınıflar':'Sınıflarım';
   const nav=$('nav-school');if(nav)nav.style.display='';
-  if(status)status.innerHTML='<strong>'+esc(p.displayName||p.name||'Hesap')+'</strong> · '+esc(typeLabel(type))+' · Kullanıcı ID: <code>'+esc(p.publicId||p.userId||'ID yükleniyor')+'</code><br>'+esc(p.schoolName||'Okul bilgisi eklenmemiş')+(p.schoolAddress?' · '+esc(p.schoolAddress):'')+'<div class="school-actions" style="margin-top:10px"><button type="button" class="school-button secondary" id="open-account-settings">⚙ Ayarlar / Hesap bilgilerim</button></div>';
+  if(status)status.innerHTML=(p.avatarUrl?'<img src="'+esc(p.avatarUrl)+'" alt="Profil fotoğrafı" style="width:54px;height:54px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px">':'')+'<strong>'+esc(p.displayName||p.name||'Hesap')+'</strong> · '+esc(typeLabel(type))+' · Kullanıcı ID: <code>'+esc(p.publicId||p.userId||'ID yükleniyor')+'</code><br>'+esc(p.schoolName||'Okul bilgisi eklenmemiş')+(p.schoolAddress?' · '+esc(p.schoolAddress):'')+'<div class="school-actions" style="margin-top:10px"><button type="button" class="school-button secondary" id="open-account-settings">⚙ Ayarlar / Hesap bilgilerim</button></div>';
   if($('open-account-settings'))$('open-account-settings').addEventListener('click',window.loadSchoolSettings);
   if(type==='guardian'){await loadGuardianPanel();return;}
   const data=await cloud('getMyClassrooms',{});classrooms=data.items||data.classrooms||[];
