@@ -581,6 +581,44 @@ input,select,textarea { color:#172b4d; }
 .password-toggle:focus-visible { outline:2px solid #69a1ff; outline-offset:2px; }
 .password-toggle:hover { background:rgba(37,87,197,.32); }
 .admin-password-field .password-toggle { top:calc(50% - 5px); }
+/* Mobile-first authentication and recovery polish */
+.auth-forgot { margin:12px 0 0; text-align:center; }
+.reset-card { margin-bottom:24px; }
+.reset-main-action,.reset-back { width:100%; margin-top:12px; }
+.reset-resend { display:block; margin:12px auto 0; min-height:40px; }
+[hidden] { display:none !important; }
+.auth-card button:disabled { opacity:.65; cursor:wait; transform:none; }
+@media (max-width:600px) {
+  html,body { min-height:100%; height:auto; overflow-x:hidden; overflow-y:auto; }
+  .screen { position:fixed; inset:0; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 12px 28px; }
+  #scr-gate { padding:14px 12px 28px; }
+  #scr-gate > div:first-child { margin-bottom:8px !important; }
+  .gate-brand-lockup { margin-bottom:10px; }
+  .gate-emblem { width:44px; height:44px; }
+  .coming-logo { font-size:clamp(1.65rem,8vw,2.25rem) !important; }
+  .logo-sub { font-size:.58rem; letter-spacing:.08em; }
+  .logo-quantum { font-size:.56rem; }
+  .server-row { width:100%; gap:6px; padding:7px; margin:8px 0 12px; }
+  .server-btn { flex:1 1 calc(33.333% - 6px); min-width:0; text-align:center; padding:9px 5px; font-size:.68rem; }
+  .auth-card,.reg-box { width:100%; max-width:470px; margin:8px auto 16px; padding:20px 16px; border-radius:17px !important; }
+  .auth-heading { font-size:1.55rem; line-height:1.2; }
+  .auth-description { margin:8px 0 16px; font-size:.87rem; }
+  .auth-label { margin:10px 0 6px; }
+  .auth-input,.reg-input { min-height:48px; font-size:16px !important; }
+  .auth-actions,.reg-actions { grid-template-columns:1fr; gap:8px; margin-top:12px; }
+  .auth-primary,.auth-secondary { min-height:48px; width:100%; font-size:.9rem; }
+  .auth-forgot { margin-top:14px; }
+  .auth-switch { margin-top:13px; }
+  .auth-security-note { margin-top:16px; padding-top:12px; }
+  .reset-card { margin-top:8px; }
+  .reset-main-action,.reset-back { min-height:48px; }
+  .password-toggle { right:7px; font-size:.75rem; }
+}
+@media (max-width:360px) {
+  .screen { padding-left:10px; padding-right:10px; }
+  .auth-card,.reg-box { padding:18px 13px; }
+  .server-btn { font-size:.62rem; }
+}
 </style>
 </head>
 <body>
@@ -633,8 +671,36 @@ input,select,textarea { color:#172b4d; }
             <button type="button" class="auth-secondary" onclick="goTo('register')">Hesap oluştur</button>
         </div>
         <p class="auth-switch">Yeni misin? <button type="button" class="auth-inline" onclick="goTo('register')">Kayıt ol</button></p>
+        <p class="auth-forgot"><button type="button" class="auth-inline" onclick="openPasswordReset()">Şifremi unuttum</button></p>
         <div class="error-msg" id="auth-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
         <div class="auth-security-note"><span class="auth-security-dot"></span> Güvenli hesap erişimi</div>
+    </section>
+</div>
+
+<!-- ===== ŞİFRE SIFIRLAMA ===== -->
+<div id="scr-password-reset" class="screen hidden">
+    <section class="auth-card reset-card" aria-labelledby="reset-heading">
+        <div class="verification-icon" aria-hidden="true">🔐</div>
+        <div class="auth-eyebrow">HESAP KURTARMA</div>
+        <h1 id="reset-heading" class="auth-heading">Şifreni yenile</h1>
+        <p class="auth-description">E-posta adresine tek kullanımlık bir kod göndereceğiz. Kod 10 dakika geçerlidir.</p>
+        <div id="reset-request-fields">
+            <label class="auth-label" for="reset-email">Hesabının e-posta adresi</label>
+            <input type="email" id="reset-email" class="auth-input" placeholder="ornek@eposta.com" autocomplete="email" inputmode="email">
+            <button type="button" class="auth-primary reset-main-action" id="reset-request-button" onclick="requestPasswordReset()">Sıfırlama kodu gönder</button>
+        </div>
+        <div id="reset-complete-fields" hidden>
+            <label class="auth-label" for="reset-code">E-postana gelen 6 haneli kod</label>
+            <input type="text" id="reset-code" class="auth-input verification-code-input" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+            <label class="auth-label" for="reset-new-password">Yeni şifre</label>
+            <div class="password-field"><input type="password" id="reset-new-password" class="auth-input" placeholder="En az 8 karakter" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Yeni şifreyi göster" aria-pressed="false" onclick="togglePasswordVisibility('reset-new-password', this)">Göster</button></div>
+            <label class="auth-label" for="reset-confirm-password">Yeni şifre tekrar</label>
+            <div class="password-field"><input type="password" id="reset-confirm-password" class="auth-input" placeholder="Yeni şifreyi tekrar yaz" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Yeni şifre tekrarını göster" aria-pressed="false" onclick="togglePasswordVisibility('reset-confirm-password', this)">Göster</button></div>
+            <button type="button" class="auth-primary reset-main-action" id="reset-complete-button" onclick="completePasswordReset()">Şifreyi güncelle</button>
+            <button type="button" class="auth-inline reset-resend" onclick="requestPasswordReset(true)">Yeni kod iste</button>
+        </div>
+        <div class="error-msg" id="reset-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
+        <button type="button" class="auth-secondary reset-back" onclick="goTo('gate')">Giriş ekranına dön</button>
     </section>
 </div>
 
@@ -1178,6 +1244,72 @@ async function loginWithEmail() {
         if (button) { button.disabled = false; button.textContent = 'Giriş yap'; }
     }
 }
+// ---- ŞİFREMİ UNUTTUM / GÜVENLİ ŞİFRE SIFIRLAMA ----
+let passwordResetEmail = '';
+function openPasswordReset() {
+    const loginEmail = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
+    const emailField = document.getElementById('reset-email');
+    if (emailField && loginEmail) emailField.value = loginEmail;
+    document.getElementById('reset-request-fields').hidden = false;
+    document.getElementById('reset-complete-fields').hidden = true;
+    const err = document.getElementById('reset-err');
+    if (err) err.style.display = 'none';
+    goTo('password-reset');
+}
+async function requestPasswordReset(isResend = false) {
+    const email = (document.getElementById('reset-email')?.value || '').trim().toLowerCase();
+    const button = document.getElementById('reset-request-button');
+    const err = document.getElementById('reset-err');
+    if (err) err.style.display = 'none';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAuthError('reset-err', 'Geçerli bir e-posta adresi gir.');
+        return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Gönderiliyor…'; }
+    try {
+        const result = await Parse.Cloud.run('requestTdevPasswordReset', { email });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'İstek tamamlanamadı.');
+        passwordResetEmail = email;
+        document.getElementById('reset-request-fields').hidden = true;
+        document.getElementById('reset-complete-fields').hidden = false;
+        showAuthError('reset-err', result.message || 'Bu e-posta için bir hesap varsa sıfırlama kodu gönderildi. Gelen kutunu ve spam klasörünü kontrol et.');
+        if (err) { err.style.display = 'block'; err.style.color = '#2457c5'; err.style.background = '#eff6ff'; err.style.borderColor = '#bfdbfe'; }
+    } catch (error) {
+        showAuthError('reset-err', error && error.message ? error.message : 'Kod gönderilemedi. Biraz sonra tekrar dene.');
+    } finally {
+        if (button) { button.disabled = false; button.textContent = 'Sıfırlama kodu gönder'; }
+    }
+}
+async function completePasswordReset() {
+    const email = passwordResetEmail || (document.getElementById('reset-email')?.value || '').trim().toLowerCase();
+    const code = (document.getElementById('reset-code')?.value || '').trim();
+    const password = document.getElementById('reset-new-password')?.value || '';
+    const confirmation = document.getElementById('reset-confirm-password')?.value || '';
+    const button = document.getElementById('reset-complete-button');
+    const err = document.getElementById('reset-err');
+    if (err) err.style.display = 'none';
+    if (!/^\d{6}$/.test(code)) { showAuthError('reset-err', 'E-postana gelen 6 haneli kodu gir.'); return; }
+    if (password.length < 8 || password.length > 128) { showAuthError('reset-err', 'Yeni şifre 8–128 karakter arasında olmalı.'); return; }
+    if (password !== confirmation) { showAuthError('reset-err', 'Yeni şifreler eşleşmiyor.'); return; }
+    if (button) { button.disabled = true; button.textContent = 'Güncelleniyor…'; }
+    try {
+        const result = await Parse.Cloud.run('completeTdevPasswordReset', { email, code, newPassword: password });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Şifre güncellenemedi.');
+        document.getElementById('auth-email').value = email;
+        document.getElementById('auth-password').value = '';
+        document.getElementById('reset-code').value = '';
+        document.getElementById('reset-new-password').value = '';
+        document.getElementById('reset-confirm-password').value = '';
+        passwordResetEmail = '';
+        goTo('gate');
+        showAuthError('auth-err', 'Şifren güncellendi. Yeni şifrenle giriş yapabilirsin.');
+    } catch (error) {
+        showAuthError('reset-err', error && error.message ? error.message : 'Şifre güncellenemedi. Kodun süresi dolmuş olabilir.');
+    } finally {
+        if (button) { button.disabled = false; button.textContent = 'Şifreyi güncelle'; }
+    }
+}
+
 async function verifyEmailCode() {
     const email = (document.getElementById('verify-email-address')?.value || '').trim().toLowerCase();
     const code = (document.getElementById('verify-email-code')?.value || '').trim();
