@@ -6,7 +6,9 @@ TdevKuantum is an educational web app with grade-based lesson browsing, topic ex
 
 - `index.html` — student interface, country selector, lesson/topic view, video/resource links and chat display.
 - `study.js` — study plans, personal notes, flashcards, revision records, mistake notebook and cloud-sync helpers.
-- `back4app/main.js` — Back4App Cloud Code, account/verification workflows, curriculum fallback content, user-scoped study data, quiz endpoints and optional AI tutor.
+- `back4app/main.js` — Back4App Cloud Code, account/verification workflows, email-provider diagnostics, user-scoped study data, quiz endpoints and optional AI tutor.
+- `apps-script/Code.gs` — Google Apps Script mail service with a token-only health check.
+- `back4app/schema-setup.js` — schema helper kept aligned with verification and study record classes.
 - `terms.html` / `privacy.html` — usage and privacy drafts. These are not legal advice and must be checked against the real production configuration.
 
 ## Back4App Cloud Code deployment
