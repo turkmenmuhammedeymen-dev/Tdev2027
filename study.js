@@ -22,7 +22,7 @@
       ? window.crypto.randomUUID()
       : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   }
-  function today() { return new Date().toISOString().slice(0, 10); }
+  function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function notify(message) { if (typeof window.showNotif === 'function') window.showNotif(message); }
   async function cloud(name, params) {
     try {
@@ -35,9 +35,18 @@
   }
   function mergeCloud(key, items) {
     if (!Array.isArray(items)) return;
-    const local = read(key);
-    const seen = new Set(local.map(function (x) { return x.id; }));
-    write(key, local.concat(items.filter(function (x) { return x && x.id && !seen.has(x.id); })));
+    const merged = new Map(read(key).filter(function (x) { return x && x.id; }).map(function (x) { return [x.id, x]; }));
+    items.forEach(function (remote) {
+      if (!remote || !remote.id) return;
+      const local = merged.get(remote.id);
+      const stamp = function (x) {
+        const value = x && (x.updatedAt || x.createdAt || x.date || x.reviewDate);
+        const time = value ? new Date(value).getTime() : 0;
+        return Number.isFinite(time) ? time : 0;
+      };
+      if (!local || stamp(remote) >= stamp(local)) merged.set(remote.id, remote);
+    });
+    write(key, Array.from(merged.values()));
   }
   window.saveStudyPlan = async function (event) {
     event.preventDefault();
@@ -50,6 +59,7 @@
       done: false,
       createdAt: new Date().toISOString()
     };
+    item.updatedAt = item.createdAt;
     if (!item.title || !item.subject || !item.date || !Number.isInteger(item.minutes) || item.minutes < 5 || item.minutes > 600) {
       notify('Plan bilgilerini kontrol et.'); return;
     }
@@ -81,7 +91,7 @@
   };
   window.toggleStudyPlan = async function (itemId) {
     const list = read('plans'); const item = list.find(function (x) { return x.id === itemId; }); if (!item) return;
-    item.done = !item.done; item.completedAt = item.done ? new Date().toISOString() : '';
+    item.done = !item.done; item.updatedAt = new Date().toISOString(); item.completedAt = item.done ? item.updatedAt : '';
     write('plans', list); renderStudyPlans(); await cloud('saveStudyPlan', { item: item }); window.renderLearningProgress();
   };
   window.saveStudyNote = async function (event) {
