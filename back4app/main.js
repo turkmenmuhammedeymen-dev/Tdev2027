@@ -2374,9 +2374,12 @@ Parse.Cloud.define('getClassroomMessages', async (request) => {
 Parse.Cloud.define('saveMyAccountSettings', async (request) => {
   const user = tdevAuthUser(request); const params = request.params || {};
   const displayName = safeText(params.displayName, 100); const language = safeText(params.language, 5).toLowerCase();
+  const avatarUrl = String(params.avatarUrl || '').trim();
   if (language && !['tr', 'en'].includes(language)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Desteklenmeyen dil.');
+  if (avatarUrl && !/^https:\/\//i.test(avatarUrl)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Profil fotoğrafı için güvenli HTTPS bağlantısı gerekli.');
   if (displayName) { user.set('displayName', displayName); user.set('name', displayName); }
   if (language) user.set('preferredLanguage', language);
+  if (avatarUrl) user.set('avatarUrl', avatarUrl);
   await user.save(null, { useMasterKey: true }); return { success: true };
 });
 
