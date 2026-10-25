@@ -1250,6 +1250,12 @@ input,select,textarea { color:#172b4d; }
                     <p id="curriculum-result-count" class="curriculum-result-count" aria-live="polite">Kaynak kataloğu yükleniyor…</p>
                     <div id="curriculum-catalog-list" class="bots-grid" aria-live="polite"></div>
                     <div class="detail-box curriculum-coverage-note">
+                        <h3>PLATFORMA AKTARILAN PROGRAM KAYITLARI</h3>
+                        <p>Bu liste, Back4App veritabanına ayrıca aktarılmış kayıtları gösterir; resmî kaynak kartlarının bulunması, tüm program verilerinin içe aktarıldığı anlamına gelmez.</p>
+                        <p id="curriculum-program-count" class="curriculum-result-count" aria-live="polite">Aktarılan kayıtlar yükleniyor…</p>
+                        <div id="curriculum-program-list" class="bots-grid" aria-live="polite"></div>
+                    </div>
+                    <div class="detail-box curriculum-coverage-note">
                         <h3>İÇERİK KAPSAMI VE DOĞRULAMA</h3>
                         <p id="curriculum-db-status" aria-live="polite">Sunucu kapsam bilgisi kontrol ediliyor…</p>
                         <ul>
@@ -1258,6 +1264,33 @@ input,select,textarea { color:#172b4d; }
                             <li>Ülke seçimi yalnızca genel bir öğrenme rehberi üretebilir. Bir ülkenin tüm resmî müfredatı aktarılmadıysa içerik “doğrulanmış resmî program” olarak gösterilmez.</li>
                             <li>ABD, Almanya ve Birleşik Krallık gibi ülkelerde müfredat yetkileri bölge/eyalet/ülkeye göre değişebilir; tek bir bağlantı tüm bölgeleri kapsamayabilir.</li>
                         </ul>
+                    </div>
+                    <div id="curriculum-admin-import" class="detail-box curriculum-coverage-note" style="display:none">
+                        <h3>YÖNETİCİ · MÜFREDAT KAYDI İÇE AKTARIMI</h3>
+                        <p>Yalnızca kurucu/yönetici hesabı için. Bir program kaydı eklerken resmî kaynağı ve doğrulama tarihlerini kontrol et. Sunucu, yalnızca tanınan resmî alan adları ve tarih bilgileri uygunsa kaydı resmî olarak işaretler.</p>
+                        <form class="study-form" onsubmit="submitCurriculumProgramForm(event)">
+                            <div class="study-form-grid">
+                                <label>Ülke kodu<input id="cp-country-code" maxlength="2" pattern="[A-Za-z]{2}" required placeholder="TR"></label>
+                                <label>Ülke adı<input id="cp-country-name" maxlength="100" required placeholder="Türkiye"></label>
+                                <label>Sınıf numarası<input id="cp-grade" type="number" min="0" max="13" required value="9"></label>
+                                <label>Program türü<select id="cp-program-type" required><option value="general">Genel</option><option value="vocational">Meslekî ve teknik</option><option value="imamhatip">İmam hatip</option><option value="international">Uluslararası</option></select></label>
+                                <label>Okul türü<input id="cp-school-type" maxlength="120" placeholder="Anadolu teknik programı"></label>
+                                <label>Alan<input id="cp-field" maxlength="120" placeholder="Bilişim teknolojileri"></label>
+                                <label>Dal<input id="cp-branch" maxlength="120" placeholder="Ağ işletmenliği"></label>
+                                <label>Ders<input id="cp-subject" maxlength="120" required placeholder="Programlama"></label>
+                                <label>Program başlığı<input id="cp-title" maxlength="180" required placeholder="9. sınıf programı"></label>
+                                <label>Öğretim yılı<input id="cp-year" maxlength="20" required pattern="20[0-9]{2}(-20[0-9]{2})?" placeholder="2026-2027"></label>
+                                <label>Kaynak adı<input id="cp-source-name" maxlength="180" required placeholder="MEB / ilgili resmî kurum"></label>
+                                <label>HTTPS kaynak URL'si<input id="cp-source-url" type="url" maxlength="500" required placeholder="https://..."></label>
+                                <label>Kaynak kontrol tarihi<input id="cp-source-checked" type="date" required></label>
+                                <label>Doğrulama tarihi<input id="cp-verified-at" type="date" required></label>
+                            </div>
+                            <label>Konu/ünite verisi (JSON)
+                                <textarea id="cp-topics-json" rows="6" required maxlength="60000" placeholder='{"topics":[{"title":"Ünite veya konu başlığı","explanation":"Kısa, özgün özet"}]}'></textarea>
+                            </label>
+                            <label class="study-checkbox-label"><input id="cp-is-official" type="checkbox"> Kaynağı ve program sürümünü resmî kaynaktan doğruladım</label>
+                            <button class="study-action" type="submit">PROGRAM KAYDINI GÜVENLİ KAYDET</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1976,7 +2009,7 @@ function showTab(id, el) {
     const titles = { lessons:'DERS MODÜLLERİ', curriculum:'YENİ MÜFREDAT MERKEZİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU' };
     document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
     if(id === 'devpanel') refreshDevPanel();
-    if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter();
+    if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter(curRole);
 }
 
 // ---- SİSTEM DURUMU / E-POSTA YAPILANDIRMASI ----
