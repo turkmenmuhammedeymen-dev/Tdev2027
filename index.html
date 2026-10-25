@@ -948,6 +948,7 @@ input,select,textarea { color:#172b4d; }
         </div>
         <div class="nav-section">MODÜLLER</div>
         <div class="nav-btn active" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Dersler</div>
+        <div class="nav-btn" onclick="showTab('curriculum',this)"><span class="nav-icon">🌐</span>Müfredat Kaynakları</div>
         <div class="nav-btn" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
         <div class="nav-btn" onclick="showTab('ai',this)"><span class="nav-icon">🤖</span>TDEV-AI</div>
         <div class="nav-btn" onclick="showTab('m5',this)"><span class="nav-icon">⚡</span>M5 Bilişim</div>
@@ -1176,6 +1177,39 @@ input,select,textarea { color:#172b4d; }
                             <div><span>[BOT]</span> Analiz-Bot-V3 çevrimiçi.</div>
                             <div><span>[BOT]</span> Eymen-Bot-V2 aktif.</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESMÎ MÜFREDAT KAYNAKLARI -->
+            <div id="tab-curriculum" class="tab">
+                <div class="sec-title">MÜFREDAT <span>KAYNAKLARI</span></div>
+                <div class="study-panel">
+                    <p class="study-intro">Ülke, sınıf ve ders programları zaman içinde değişebilir. Aşağıdaki resmî kaynaklar, özellikle ünite ve konu adlarını doğrulamak için kullanılır. Bu bağlantılar tüm içeriklerin platforma aktarılmış olduğu anlamına gelmez.</p>
+                    <div class="bots-grid">
+                        <article class="bot-card">
+                            <div class="bot-header"><div class="bot-name">TÜRKİYE · ÖĞRETİM PROGRAMLARI</div><span class="bot-status">MEB RESMÎ</span></div>
+                            <div class="bot-desc">Ders, kademe, sınıf ve ünite düzeyinde öğretim programlarını incele. Ortaokul, lise ve uygun ders programlarını resmî kaynaktan doğrula.</div>
+                            <p><a href="https://mufredat.meb.gov.tr/Programlar.aspx" target="_blank" rel="noopener noreferrer">MEB Öğretim Programları ↗</a></p>
+                        </article>
+                        <article class="bot-card">
+                            <div class="bot-header"><div class="bot-name">TÜRKİYE YÜZYILI MAARİF MODELİ</div><span class="bot-status">MEB RESMÎ</span></div>
+                            <div class="bot-desc">Güncel programlarda ders, sınıf ve ünite ayrıntılarını kontrol et. Programın hangi sınıflarda uygulandığını ilgili yılın resmî açıklamasından doğrula.</div>
+                            <p><a href="https://tymm.meb.gov.tr/ogretim-programlari" target="_blank" rel="noopener noreferrer">TYMM Öğretim Programları ↗</a></p>
+                        </article>
+                        <article class="bot-card">
+                            <div class="bot-header"><div class="bot-name">2026–2027 ÇERÇEVE PLANLARI</div><span class="bot-status">MEB RESMÎ</span></div>
+                            <div class="bot-desc">Ortaöğretim için yayımlanan taslak çerçeve yıllık planlarını ve hangi sınıflarda modelin uygulandığına dair açıklamayı incele.</div>
+                            <p><a href="https://tymm.meb.gov.tr/taslak-cerceve-planlari/ortaogretim" target="_blank" rel="noopener noreferrer">Ortaöğretim Çerçeve Planları ↗</a></p>
+                        </article>
+                    </div>
+                    <div class="detail-box" style="margin-top:16px">
+                        <strong>Meslekî ve teknik dersler hakkında</strong>
+                        <p>Meslek liselerindeki alan/dal dersleri okul türüne ve seçilen alana göre değişir. Platformdaki genel konu rehberi, bu derslerin resmî ünite listesi yerine geçmez. Resmî program kaydı doğrulanmadıkça içerik “genel rehber” olarak değerlendirilmelidir.</p>
+                    </div>
+                    <div class="detail-box" style="margin-top:12px">
+                        <strong>Uluslararası müfredatlar</strong>
+                        <p>Ülke kodu seçmek tek başına o ülkenin bütün resmî müfredatının yüklü olduğu anlamına gelmez. Her ülke ve sınıf için kaynak, program yılı ve doğrulama tarihi ayrı kaydedilmelidir. Doğrulanmamış içerik resmî program gibi sunulmamalıdır.</p>
                     </div>
                 </div>
             </div>
@@ -1891,7 +1925,7 @@ function showTab(id, el) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const tab = document.getElementById('tab-'+id); if(tab) tab.classList.add('active');
     if(el) el.classList.add('active');
-    const titles = { lessons:'DERS MODÜLLERİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU' };
+    const titles = { lessons:'DERS MODÜLLERİ', curriculum:'MÜFREDAT KAYNAKLARI', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU' };
     document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
     if(id === 'devpanel') refreshDevPanel();
 }
