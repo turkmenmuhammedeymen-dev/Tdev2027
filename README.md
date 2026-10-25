@@ -13,11 +13,12 @@ TdevKuantum is an educational web app with grade-based lesson browsing, topic ex
 
 1. Open the Back4App app's Cloud Code area, upload the latest `back4app/main.js` from this repository, and deploy it. A GitHub commit does **not** deploy Cloud Code automatically.
 2. In Back4App Config, set `GOOGLE_SCRIPT_URL` to the deployed Google Apps Script Web App URL and `APPS_SCRIPT_TOKEN` to the secret token you generated. The optional Resend fallback uses `RESEND_API_KEY` and `EMAIL_FROM`.
-3. In the matching Google Apps Script project, open **Project Settings → Script Properties** and add `APPS_SCRIPT_TOKEN`. Its value must match the Back4App Config value exactly. Never put the token in `index.html`, `study.js`, a public README, or any other public file.
-4. Open the deployed Apps Script Web App URL with a browser. Its JSON health response should contain `"configured": true`. If it says false, confirm the property name and that you edited the same Apps Script project referenced by `GOOGLE_SCRIPT_URL`.
-5. Run the Back4App `healthCheck` Cloud Function and inspect `emailDiagnostics`. It reports whether the URL, Back4App token and Apps Script Script Property are configured; it never returns the token itself.
-6. Test registration with an address you control. If delivery fails after the account has been created, use **Doğrulama kodunu tekrar gönder** on the verification screen after correcting the configuration. The resend endpoint applies a short rate limit.
-7. Sign in and test one topic note, one flashcard, one quiz question and a long chat message. The UI distinguishes local saves from confirmed cloud sync.
+3. Open `apps-script/Code.gs` in this repository and copy its complete contents into the matching Google Apps Script project's `Code.gs`. This version supports a token-only health check without sending an email.
+4. In that Google Apps Script project, open **Project Settings → Script Properties** and set `APPS_SCRIPT_TOKEN`. Its value must match the Back4App Config value exactly. Never put the token in `index.html`, `study.js`, a public README, or any other public file.
+5. Save the script, then open **Deploy → Manage deployments → Edit → New version → Deploy**. Keep the existing Web App URL in Back4App Config if you updated that deployment; if you created a new deployment URL, update `GOOGLE_SCRIPT_URL` too.
+6. Open the deployed Apps Script Web App URL with a browser. Its JSON health response should contain `"configured": true`. Then run the Back4App `healthCheck` Cloud Function and inspect `emailDiagnostics`; the token check should pass without sending an email. No secret token is returned.
+7. Test registration with an address you control. If delivery fails after the account has been created, use **Doğrulama kodunu tekrar gönder** on the verification screen after correcting the configuration. The resend endpoint applies a short rate limit.
+8. Sign in and test one topic note, one flashcard, one quiz question and a long chat message. The UI distinguishes local saves from confirmed cloud sync.
 
 The verification code is time-limited. Do not send real credentials, tokens, or private student data in public issues or screenshots.
 
