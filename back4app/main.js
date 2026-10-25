@@ -84,6 +84,11 @@ function validEmail(value) {
 function safeText(value, max) {
   return String(value == null ? '' : value).trim().slice(0, max || 160);
 }
+function escapeHtmlText(value) {
+  return String(value == null ? '' : value).replace(/[&<>\"']/g, function (ch) {
+    return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;', "'":'&#39;' })[ch];
+  });
+}
 function sha256(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
 }
@@ -203,7 +208,7 @@ async function sendVerificationEmail(email, code, name) {
   const from = await configValueAsync('EMAIL_FROM');
   const subject = 'TdevKuantum e-posta doğrulama kodu';
   const html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b4d">' +
-    '<h1 style="color:#2457c5">TdevKuantum</h1><p>Merhaba ' + safeText(name || 'öğrenci', 100) + ', hesabını doğrulamak için aşağıdaki kodu kullan:</p>' +
+    '<h1 style="color:#2457c5">TdevKuantum</h1><p>Merhaba ' + escapeHtmlText(safeText(name || 'öğrenci', 100)) + ', hesabını doğrulamak için aşağıdaki kodu kullan:</p>' +
     '<div style="font-size:30px;font-weight:700;letter-spacing:8px;padding:18px;background:#f3f6fb;border-radius:12px;text-align:center">' + code + '</div>' +
     '<p>Bu kod 10 dakika geçerlidir. Bu isteği sen yapmadıysan e-postayı yok sayabilirsin.</p></div>';
   const errors = [];
@@ -1262,7 +1267,9 @@ Parse.Cloud.define('getQuestionsForGrade', async (request) => {
   }));
 });
 
-Parse.Cloud.define('healthCheck', async () => {
+Parse.Cloud.define('healthCheck', async (request) => {
+  // Only authenticated users can request diagnostics; no secret values are returned.
+  requireUser(request);
   const scriptUrl = (await configValueAsync('GOOGLE_SCRIPT_URL')) || (await configValueAsync('GOOGLE_APPS_SCRIPT_URL'));
   const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
   const apiKey = await configValueAsync('RESEND_API_KEY');
