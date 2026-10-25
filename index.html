@@ -1529,7 +1529,7 @@ function launch(g) {
 
 // ---- DERSLER (Cloud Code'den) ----
 function loadLessonsFromCloud(grade, server) {
-    Parse.Cloud.run('getCurriculum', { grade, server })
+    Parse.Cloud.run('getCurriculum', { grade, server, countryName: document.getElementById('country-select')?.selectedOptions[0]?.textContent || server })
         .then(data => {
             renderLessons(data);
         })
@@ -1575,7 +1575,7 @@ function renderLessons(data) {
     currentLessonData = data;
 }
 function showDetail(subject) {
-    Parse.Cloud.run('getCurriculum', { grade: curGrade, server: curServer })
+    Parse.Cloud.run('getCurriculum', { grade: curGrade, server: curServer, countryName: document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer })
         .then(data => {
             if(!data || !data[subject]) { showNotif('Ders bilgisi bulunamadı.'); return; }
             currentLessonSubject = subject;
