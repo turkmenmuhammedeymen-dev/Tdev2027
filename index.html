@@ -1551,7 +1551,7 @@ function refreshAdminPage() {
                 return;
             }
             tbl.innerHTML = users.map((u,i) =>
-                `<tr><td>${i+1}</td><td>${u.name}</td><td style="font-size:.68rem">${u.email}</td><td>${u.date}</td><td><span class="online-dot ${u.banned ? 'off' : 'on'}"></span>${u.banned ? 'YASAK' : 'AKTİF'}</td><td><button class="ban-btn ${u.banned ? 'unbanbtn' : ''}" onclick="adminBan('${u.id}', ${u.banned})">${u.banned ? 'KALDIR' : 'YASAK'}</button></td></tr>`
+                `<tr><td>${i+1}</td><td>${escapeHtml(u.name)}</td><td style="font-size:.68rem">${escapeHtml(u.email)}</td><td>${escapeHtml(u.date)}</td><td><span class="online-dot ${u.banned ? 'off' : 'on'}"></span>${u.banned ? 'YASAK' : 'AKTİF'}</td><td><button class="ban-btn ${u.banned ? 'unbanbtn' : ''}" onclick="adminBan('${escapeHtml(u.id)}', ${u.banned})">${u.banned ? 'KALDIR' : 'YASAK'}</button></td></tr>`
             ).join('');
         })
         .catch(() => {});
@@ -1953,7 +1953,7 @@ function refreshDevPanel() {
             if(!tbl) return;
             if(!users.length) { tbl.innerHTML = '<tr><td colspan="5" style="color:#555;padding:14px">Kayıtlı kullanıcı yok.</td></tr>'; return; }
             tbl.innerHTML = users.map((u,i) =>
-                `<tr><td>${u.name}</td><td style="font-size:.68rem">${u.email}</td><td>${u.date}</td><td><span class="dev-badge ${u.banned ? 'banned-badge' : 'active'}">${u.banned ? 'YASAK' : 'AKTİF'}</span></td><td><button class="ban-btn ${u.banned ? 'unbanbtn' : ''}" onclick="adminBan('${u.id}', ${u.banned})">${u.banned ? 'AÇ' : 'YASAK'}</button></td></tr>`
+                `<tr><td>${escapeHtml(u.name)}</td><td style="font-size:.68rem">${escapeHtml(u.email)}</td><td>${escapeHtml(u.date)}</td><td><span class="dev-badge ${u.banned ? 'banned-badge' : 'active'}">${u.banned ? 'YASAK' : 'AKTİF'}</span></td><td><button class="ban-btn ${u.banned ? 'unbanbtn' : ''}" onclick="adminBan('${escapeHtml(u.id)}', ${u.banned})">${u.banned ? 'AÇ' : 'YASAK'}</button></td></tr>`
             ).join('');
         })
         .catch(() => {});
