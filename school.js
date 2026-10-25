@@ -40,12 +40,13 @@ window.loadSchoolDashboard=async function(){
   const result=await cloud('getMyProfile',{});profile=result.profile||{};const p=profile;
   const type=p.profileType||p.role||'student';
   const staff=['teacher','principal'].includes(type);
-  if($('school-staff-tools'))$('school-staff-tools').hidden=type!=='teacher';
+  if($('school-staff-tools'))$('school-staff-tools').hidden=!['teacher','principal'].includes(type);
   if($('school-principal-tools'))$('school-principal-tools').hidden=type!=='principal';
   if($('school-student-tools'))$('school-student-tools').hidden=!['student','teacher'].includes(type);
   if($('school-class-list-title'))$('school-class-list-title').textContent=type==='guardian'?'Öğrencilerim':type==='principal'?'Okulumdaki sınıflar':'Sınıflarım';
   const nav=$('nav-school');if(nav)nav.style.display='';
-  if(status)status.innerHTML='<strong>'+esc(p.displayName||p.name||'Hesap')+'</strong> · '+esc(typeLabel(type))+' · Kullanıcı ID: <code>'+esc(p.publicId||p.userId||'ID yükleniyor')+'</code><br>'+esc(p.schoolName||'Okul bilgisi eklenmemiş')+(p.schoolAddress?' · '+esc(p.schoolAddress):'');
+  if(status)status.innerHTML='<strong>'+esc(p.displayName||p.name||'Hesap')+'</strong> · '+esc(typeLabel(type))+' · Kullanıcı ID: <code>'+esc(p.publicId||p.userId||'ID yükleniyor')+'</code><br>'+esc(p.schoolName||'Okul bilgisi eklenmemiş')+(p.schoolAddress?' · '+esc(p.schoolAddress):'')+'<div class="school-actions" style="margin-top:10px"><button type="button" class="school-button secondary" id="open-account-settings">⚙ Ayarlar / Hesap bilgilerim</button></div>';
+  if($('open-account-settings'))$('open-account-settings').addEventListener('click',window.loadSchoolSettings);
   if(type==='guardian'){await loadGuardianPanel();return;}
   const data=await cloud('getMyClassrooms',{});classrooms=data.items||data.classrooms||[];
   renderClassrooms(classrooms);
@@ -78,6 +79,9 @@ async function openClassroom(id){
  const roster=await cloud('getClassroomRoster',{classroomId:id});const people=roster.items||roster.roster||[];
  $('classroom-roster').innerHTML=people.length?people.map(p=>'<div class="school-item"><strong>'+esc(p.name||p.displayName||'Öğrenci')+'</strong><span class="school-muted">ID: '+esc(p.publicId||p.userId||p.id||'—')+' · Etkinlik: '+esc(p.activityCount??0)+' · Başarı: '+esc(p.successRate??p.accuracy??'—')+'%</span>'+(c.ownerId&&window.Parse?.User?.current()?.id===c.ownerId&&p.userId?'<button class="school-button secondary" data-manager="'+esc(p.userId)+'">Yönetici ata/kaldır</button>':'')+'</div>').join(''):'<p class="school-muted">Henüz üye veya etkinlik yok.</p>';
  $('classroom-roster').querySelectorAll('[data-manager]').forEach(b=>b.addEventListener('click',async()=>{try{await cloud('assignClassroomManager',{classroomId:id,userId:b.dataset.manager,makeManager:true});notify('Yönetici yetkisi güncellendi.');await openClassroom(id);}catch(e){notify(e.message);}}));
+ if(c.ownerId&&window.Parse?.User?.current()?.id===c.ownerId){
+  let add=$('classroom-add-member');if(!add){add=document.createElement('form');add.id='classroom-add-member';add.className='school-form';add.innerHTML='<label>Öğrenci / öğretmen / müdür TDEV ID<input id="classroom-member-id" maxlength="40" placeholder="TDEV-XXXXXXXXXXXX" required></label><div style="align-self:end"><button class="school-button" type="submit">ID İLE ÜYE EKLE</button></div>';$('classroom-roster').prepend(add);add.addEventListener('submit',async e=>{e.preventDefault();try{await cloud('addClassroomMemberById',{classroomId:id,userId:$('classroom-member-id').value.trim()});$('classroom-member-id').value='';notify('Kullanıcı sınıfa eklendi.');await openClassroom(id);}catch(err){notify(err.message);}});}
+ }
  const files=await cloud('getClassroomFiles',{classroomId:id});renderFiles(files.items||[]);
  await loadMessages(id);
  }catch(e){notify(e.message||'Sınıf açılamadı.');}
@@ -100,8 +104,8 @@ async function loadGuardianPanel(){
 }
 function renderAnalytics(items){const box=$('school-analytics');if(!box)return;box.innerHTML=items.length?items.map(i=>'<article class="school-item"><strong>'+esc(i.name||i.classroomName||'Sınıf')+'</strong><span class="school-muted">Öğrenci: '+esc(i.studentCount??i.students??0)+' · Başarı: '+esc(i.successRate??i.accuracy??0)+'%</span><div style="height:8px;background:#26364b;border-radius:9px;overflow:hidden"><div style="height:100%;width:'+Math.max(0,Math.min(100,Number(i.successRate??i.accuracy)||0))+'%;background:linear-gradient(90deg,#3b82f6,#22c55e)"></div></div></article>').join(''):'<p class="school-muted">Okulunda henüz analiz edilecek sınıf veya etkinlik yok.</p>';}
 window.loadSchoolSettings=async function(){
- try{const r=await cloud('getMyTdevId',{});const tab=$('tab-school');if(!tab)return;let box=$('school-account-settings');if(!box){box=document.createElement('section');box.id='school-account-settings';box.className='school-card';box.innerHTML='<h3>Ayarlar · Hesap bilgilerim</h3><p class="school-muted">Kullanıcı ID: <code id="my-tdev-id"></code></p><form id="school-settings-form" class="school-form"><label>Görünen ad<input id="settings-display-name" maxlength="100"></label><label>Dil<select id="settings-language"><option value="tr">Türkçe</option><option value="en">English</option></select></label><div><button class="school-button" type="submit">Kaydet</button></div></form>';tab.append(box);$('school-settings-form').addEventListener('submit',async e=>{e.preventDefault();try{await cloud('saveMyAccountSettings',{displayName:$('settings-display-name').value.trim(),language:$('settings-language').value});notify('Hesap ayarları kaydedildi.');}catch(err){notify(err.message);}});}
- $('my-tdev-id').textContent=r.userId;const p=window.Parse.User.current();$('settings-display-name').value=p&&p.get('displayName')||''; }catch(e){notify(e.message);}
+ try{const r=await cloud('getMyTdevId',{});const tab=$('tab-school');if(!tab)return;let box=$('school-account-settings');if(!box){box=document.createElement('section');box.id='school-account-settings';box.className='school-card';box.innerHTML='<h3>Ayarlar · Hesap bilgilerim</h3><p class="school-muted">Kullanıcı ID: <code id="my-tdev-id"></code></p><form id="school-settings-form" class="school-form"><label>Görünen ad<input id="settings-display-name" maxlength="100"></label><label>Dil<select id="settings-language"><option value="tr">Türkçe</option><option value="en">English</option></select></label><label>Profil fotoğrafı<input id="settings-avatar-file" type="file" accept="image/png,image/jpeg,image/webp"></label><div><button class="school-button" type="submit">Kaydet</button></div></form><h4>Son 10 cihaz oturumu</h4><p class="school-muted">Yaklaşık bölge, tarayıcı saat diliminden çıkarılır; kesin konum değildir.</p><div id="device-session-list" class="school-list"></div>';tab.append(box);$('school-settings-form').addEventListener('submit',async e=>{e.preventDefault();try{let avatarUrl='';const avatarFile=$('settings-avatar-file')?.files?.[0];if(avatarFile){if(!/^image\/(png|jpeg|webp)$/.test(avatarFile.type)||avatarFile.size>5*1024*1024)throw new Error('Profil fotoğrafı PNG/JPEG/WEBP ve en fazla 5 MB olmalı.');const f=new Parse.File(avatarFile.name,avatarFile);await f.save();avatarUrl=f.url();}await cloud('saveMyAccountSettings',{displayName:$('settings-display-name').value.trim(),language:$('settings-language').value,avatarUrl});notify('Hesap ayarları kaydedildi.');}catch(err){notify(err.message);}});}
+ $('my-tdev-id').textContent=r.userId;const p=window.Parse.User.current();$('settings-display-name').value=p&&p.get('displayName')||'';const sessions=await cloud('getMyDeviceSessions',{});const box=$('device-session-list');if(box)box.innerHTML=(sessions.items||[]).map(s=>'<article class="school-item"><strong>'+esc(s.deviceLabel)+'</strong><span class="school-muted">'+esc(s.timezone)+' · '+esc(s.approximateRegion||'Bölge belirtilmedi')+'</span><small class="school-muted">'+esc(s.lastSeenISO)+'</small><small class="school-muted">'+esc(s.userAgent)+'</small></article>').join('')||'<p class="school-muted">Henüz cihaz kaydı yok.</p>'; }catch(e){notify(e.message);}
 };
 document.addEventListener('DOMContentLoaded',function(){
  ensureRegistrationFields();window.updateRegistrationFields();
@@ -110,8 +114,9 @@ document.addEventListener('DOMContentLoaded',function(){
  const profileType=$('reg-profile-type');if(profileType)profileType.addEventListener('change',window.updateRegistrationFields);
 });
 window.addEventListener('load',function(){ensureRegistrationFields();window.updateRegistrationFields();});
-function refreshSchoolNav(){
- try{const current=window.Parse&&Parse.User&&Parse.User.current&&Parse.User.current();const nav=$('nav-school');if(nav&&current)nav.style.display='';}catch(_){}
+let deviceRecordedFor='';
+async function refreshSchoolNav(){
+ try{const current=window.Parse&&Parse.User&&Parse.User.current&&Parse.User.current();const nav=$('nav-school');if(nav&&current)nav.style.display='';if(current&&deviceRecordedFor!==current.id){deviceRecordedFor=current.id;const ua=navigator.userAgent||'';const label=/Android/i.test(ua)?'Android cihaz':/iPhone|iPad/i.test(ua)?'Apple cihaz':/Windows/i.test(ua)?'Windows cihaz':/Macintosh/i.test(ua)?'Mac cihaz':'Tarayıcı';const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Bilinmiyor';const region=(navigator.language||'').split('-').slice(-1)[0]||'Bilinmiyor';cloud('recordDeviceSession',{deviceLabel:label,userAgent:ua,timezone,approximateRegion:region}).catch(()=>{});}}catch(_){}
 }
 document.addEventListener('DOMContentLoaded',refreshSchoolNav);
 window.setInterval(refreshSchoolNav,1200);
