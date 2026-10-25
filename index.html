@@ -1194,7 +1194,7 @@ function selCountry(code) {
     const select = document.getElementById('country-select');
     if (select && select.value !== curServer) select.value = curServer;
     document.querySelectorAll('.server-btn').forEach(b => {
-        b.classList.toggle('active', /selServer\(this,'([A-Z]{2})'\)/.exec(b.getAttribute('onclick') || '')?.[1] === curServer);
+        b.classList.toggle('active', /selServer\(this,'([A-Z]{2})'\)/.exec(b.getAttribute('onclick') || '')?.[1] === (curServer === 'GB' ? 'UK' : curServer));
     });
     const label = document.getElementById('server-lbl');
     if (label) label.innerText = 'ÜLKE: ' + ((select && select.selectedOptions[0]) ? select.selectedOptions[0].textContent : curServer);
