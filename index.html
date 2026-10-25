@@ -1806,10 +1806,11 @@ async function register() {
         const educationStage = document.getElementById('reg-stage')?.value || '';
         const schoolName = (profileType === 'student' ? document.getElementById('reg-student-school-name')?.value : document.getElementById('reg-school-name')?.value)?.trim() || '';
         const schoolAddress = (profileType === 'student' ? document.getElementById('reg-student-school-address')?.value : document.getElementById('reg-school-address')?.value)?.trim() || '';
+        const className = document.getElementById('reg-class-name')?.value.trim() || '';
         const inviteCode = new URLSearchParams(location.search).get('invite') || '';
         if (profileType === 'student' && (!grade || !schoolName || !schoolAddress)) { showError('Öğrenci hesabı için sınıf, okul adı ve okul adresi zorunludur.'); return; }
         if (['teacher','principal'].includes(profileType) && (!educationStage || !schoolName || !schoolAddress)) { showError('Öğretmen ve müdür hesabı için kademe, okul adı ve okul adresi zorunludur.'); return; }
-        const result = await Parse.Cloud.run('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true, profileType, countryCode, grade, educationStage, schoolName, schoolAddress, inviteCode });
+        const result = await Parse.Cloud.run('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true, profileType, countryCode, grade, educationStage, schoolName, schoolAddress, className, inviteCode });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Kayıt tamamlanamadı.');
         showNotif(result.verificationRequired ? 'Doğrulama kodu e-postana gönderildi.' : 'Kayıt başarılı!');
         if (result.verificationRequired) {
