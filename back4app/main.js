@@ -715,7 +715,6 @@ function tkStageSubjects(grade, server) {
     IR: ['فارسی','ریاضی','علوم تجربی','مطالعات اجتماعی','زبان انگلیسی','مطالعات دینی'],
     IQ: ['اللغة العربية','الرياضيات','العلوم','الاجتماعيات','اللغة الإنجليزية','الحاسوب'],
     KE: ['English','Kiswahili','Mathematics','Integrated Science','Social Studies','Creative Arts','Agriculture'],
-    NG: ['English Studies','Mathematics','Basic Science','Social Studies','Civic Education','Computer Studies'],
     ZA: ['English / Home Language','Mathematics','Natural Sciences','Social Sciences','Technology','Life Orientation'],
     GH: ['English Language','Mathematics','Integrated Science','Social Studies','Computing','Creative Arts'],
     NG: ['English Studies','Mathematics','Basic Science','Social Studies','Civic Education','Computer Studies']
@@ -729,12 +728,23 @@ function tkTopicFor(subject, grade) {
     'Təbiət':'Science','Azərbaycan tarixi':'Social Studies','国語':'Language Arts','数学':'Mathematics',
     '理科':'Science','社会':'Social Studies','English':'Language Arts','Englisch':'Language Arts',
     'Naturwissenschaften':'Science','Geographie':'Social Studies','Geschichte':'Social Studies',
-    'İngilis dili':'English','İnformatika':'Science','Computer Science':'Science','Computing':'Science',
+    'İngilis dili':'Language Arts','İnformatika':'Science','Computer Science':'Science','Computing':'Science',
     'Digital Literacy':'Science','Bilişim Teknolojileri':'Science','Hayat Bilgisi':'Social Studies',
     'Din Kültürü ve Ahlak Bilgisi':'Social Studies','T.C. İnkılap Tarihi ve Atatürkçülük':'Tarih',
     'Görsel Sanatlar':'Social Studies','Müzik':'Social Studies','Beden Eğitimi':'Science',
     'Art and Design':'Social Studies','Arts':'Social Studies','Physical Education':'Science',
     'Modern Foreign Languages':'Language Arts','English Language Development':'Language Arts',
+    'Français':'Language Arts','Lengua Castellana y Literatura':'Language Arts','Español':'Language Arts',
+    'Italiano':'Language Arts','Português':'Language Arts','Língua Portuguesa':'Language Arts',
+    'Matemática':'Mathematics','Matematica':'Mathematics','Mathématiques':'Mathematics','Matemáticas':'Mathematics',
+    'Rekenen / Wiskunde':'Mathematics','Matematiikka':'Mathematics','Математика':'Mathematics',
+    'علوم':'Science','العلوم':'Science','الرياضيات':'Mathematics','اللغة العربية':'Language Arts',
+    'فارسی':'Language Arts','Русский язык':'Language Arts','Українська мова':'Language Arts',
+    'বাংলা':'Language Arts','ภาษาไทย':'Language Arts','Ngữ văn':'Language Arts','Bahasa Indonesia':'Language Arts',
+    'Bahasa Melayu':'Language Arts','Svenska':'Language Arts','Norsk':'Language Arts','Język polski':'Language Arts',
+    'Νεοελληνική Γλώσσα':'Language Arts','Natuur en techniek':'Science','Natuurorienterande ämnen':'Science',
+    'Naturorienterande ämnen':'Science','Integrated Science':'Science','Basic Science':'Science',
+    'विज्ञान':'Science','科学':'Science','자연':'Science','Khoa học tự nhiên':'Science',
     '技術・家庭':'Science','美術':'Social Studies','保健体育':'Science','Informatik':'Science','Sport':'Science','Kunst':'Social Studies'
   };
   if (TK_TOPIC_BANK[subject]) return TK_TOPIC_BANK[subject];
