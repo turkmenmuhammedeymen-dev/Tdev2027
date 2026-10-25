@@ -1064,7 +1064,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
                 <div class="sec-title">DOĞRU / YANLIŞ — <span>KONU TESTİ</span></div>
                 <div class="quiz-select-row">
                     <select class="quiz-select" id="qg" aria-label="Sınıf seç" onchange="changeQuizGrade()"></select>
-                    <select class="quiz-select" id="ql" aria-label="Ders seç" onchange="nextQ()"></select>
+                    <select class="quiz-select" id="ql" aria-label="Ders seç" onchange="loadQuestionsForSubject()"></select>
                     <button class="m5-btn" onclick="nextQ()">↺ YENİ SORU</button>
                 </div>
                 <div class="quiz-score-row">
@@ -2260,6 +2260,22 @@ function fillQLesson() {
     if (subjects.includes(previous)) subjectSelect.value = previous;
 }
 
+async function loadQuestionsForSubject() {
+    const grade = String(document.getElementById('qg')?.value || curGrade || '8');
+    const subject = String(document.getElementById('ql')?.value || '').trim();
+    if (!subject) { nextQ(); return; }
+    const host = document.getElementById('q-q');
+    if (host) host.textContent = 'Seçilen dersin soruları yükleniyor…';
+    try {
+        const result = await Parse.Cloud.run('getQuestions', { grade, server: curServer, subject, countryName: document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer });
+        const items = Array.isArray(result) ? result.map(q => Object.assign({}, q, { grade: String(q.grade) })) : [];
+        qAll = qAll.filter(q => String(q.grade) !== grade || String(q.subject || '').trim() !== subject).concat(items);
+        nextQ();
+    } catch (_) {
+        qAll = qAll.filter(q => String(q.grade) !== grade || String(q.subject || '').trim() !== subject);
+        nextQ();
+    }
+}
 function nextQ() {
     const grade = String((document.getElementById('qg') || {}).value || '8');
     const subject = (document.getElementById('ql') || {}).value || '';
