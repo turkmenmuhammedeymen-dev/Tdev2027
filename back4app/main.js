@@ -523,31 +523,213 @@ Parse.Cloud.define('getCurriculum', async (request) => {
   const gradeInput = safeText(request.params && request.params.grade, 10);
   const gradeNumber = Number(gradeInput);
   const server = safeText(request.params && request.params.server, 5).toUpperCase();
-  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(gradeNumber) || gradeNumber < 1 || gradeNumber > 12 || !/^(TR|US|UK|DE|AZ|JP)$/.test(server)) return {};
-  const grade = String(gradeNumber);
+  if (!/^\d{1,2}$/.test(gradeInput) || !Number.isInteger(gradeNumber) || gradeNumber < 1 || gradeNumber > 12 || !/^[A-Z]{2}$/.test(server)) return {};
   const q = new Parse.Query('Curriculum');
   q.equalTo('grade', gradeNumber);
   q.equalTo('server', server);
+  q.equalTo('active', true);
   q.limit(1);
   const row = await q.first({ useMasterKey: true });
   if (row && row.get('subjects') && typeof row.get('subjects') === 'object') return row.get('subjects');
-  return defaultCurriculum(grade, server);
+  return defaultCurriculum(String(gradeNumber), server);
 });
-function defaultCurriculum(grade, server) {
-  const subjects = server === 'TR'
-    ? ['Türkçe', 'Matematik', 'Fen Bilimleri', 'Sosyal Bilgiler', 'İngilizce']
-    : ['Mathematics', 'Science', 'Language Arts', 'Social Studies'];
+
+// Seed content is a learning guide, not a claim that every item is an official
+// national syllabus. The database Curriculum class takes precedence for verified
+// country/grade-specific material. Unverified countries are labelled accordingly.
+const TK_TOPIC_BANK = {
+  'Türkçe': [
+    ['Okuduğunu anlama','Metni dikkatle okuyup ana düşünceyi, yardımcı düşünceleri ve metnin amacını belirle. Bilmediğin kelimelerin anlamını bağlamdan çıkar.'],
+    ['Sözcükte anlam','Sözcükleri gerçek, mecaz ve terim anlamlarıyla ayırt et; eş ve zıt anlam ilişkilerini örneklerle incele.'],
+    ['Cümlede anlam','Cümlenin bildirdiği yargıyı, neden-sonuç, amaç-sonuç ve koşul ilişkilerini belirle.'],
+    ['Yazım ve noktalama','Büyük harf, eklerin yazımı, nokta, virgül, soru işareti ve konuşma çizgisini anlamına uygun kullan.'],
+    ['Dil bilgisi','Sözcük türlerini ve cümle ögelerini sınıf düzeyine uygun örneklerle tanı.'],
+    ['Yazılı anlatım','Giriş, gelişme ve sonuç düzeni kur; düşüncelerini açık, tutarlı ve özgün cümlelerle ifade et.']
+  ],
+  'Matematik': [
+    ['Sayılar ve işlemler','Sayıların basamak değerini kavra; toplama, çıkarma, çarpma ve bölme işlemlerini işlem önceliğine göre uygula.'],
+    ['Kesirler ve ondalık gösterim','Kesrin bütüne oranını modelle; kesirleri karşılaştır ve uygun işlemleri yap.'],
+    ['Cebirsel düşünme','Bilinmeyeni sembolle göster; örüntüler, eşitlikler ve basit denklemler arasında ilişki kur.'],
+    ['Geometri ve ölçme','Şekillerin özelliklerini, açıları, çevreyi, alanı ve uygun ölçü birimlerini kullanarak çözümle.'],
+    ['Oran, orantı ve yüzde','İki niceliği karşılaştır; oran, yüzde ve orantıyı günlük hayat problemlerinde uygula.'],
+    ['Veri ve olasılık','Verileri tablo ve grafikle göster; sonuçları yorumla ve temel olasılık kavramlarını kullan.']
+  ],
+  'Fen Bilimleri': [
+    ['Canlılar ve yaşam','Canlıların ortak özelliklerini, hücreyi ve ekosistemdeki ilişkileri sınıf seviyene göre açıkla.'],
+    ['Madde ve değişim','Maddenin tanecikli yapısını, hâl değişimlerini ve fiziksel-kimyasal değişimleri örnekle.'],
+    ['Kuvvet ve hareket','Kuvvetin hareket üzerindeki etkisini gözlemle; sürat, enerji ve basit makinelerle ilişki kur.'],
+    ['Işık, ses ve elektrik','Işığın ve sesin yayılmasını, devre elemanlarını ve enerji dönüşümlerini deneylerle incele.'],
+    ['Dünya ve uzay','Dünya, Güneş ve Ay hareketlerini; mevsimler ve uzay araştırmalarıyla ilişkili temel kavramları öğren.'],
+    ['Bilimsel araştırma','Soru oluştur, tahmin yap, değişkenleri belirle, güvenli gözlem yap ve kanıta dayalı sonuç çıkar.']
+  ],
+  'Sosyal Bilgiler': [
+    ['Birey ve toplum','Kimlik, hak, sorumluluk ve toplumsal rollerin günlük yaşamdaki etkilerini örneklerle açıkla.'],
+    ['Kültür ve miras','Tarihî eserleri ve kültürel mirası tanı; kaynakları karşılaştırarak geçmiş hakkında çıkarım yap.'],
+    ['İnsanlar, yerler ve çevreler','Harita, yön, ölçek ve coğrafi özellikleri kullanarak insan-çevre ilişkisini incele.'],
+    ['Bilim, teknoloji ve toplum','Teknolojik gelişmelerin iletişim, üretim ve günlük yaşam üzerindeki etkilerini değerlendir.'],
+    ['Üretim, dağıtım ve tüketim','Kaynakların sınırlılığını, bütçe yapmayı ve bilinçli tüketimi örneklerle açıkla.'],
+    ['Etkin vatandaşlık','Demokrasi, katılım, kurallar ve temel hakların toplumdaki önemini kavra.']
+  ],
+  'İngilizce': [
+    ['Kendini tanıtma','Name, age, interests ve family gibi temel bilgilerle kısa ve anlaşılır cümleler kur.'],
+    ['Günlük rutinler','Simple present yapısını kullanarak alışkanlıkları ve günlük programı anlat.'],
+    ['Kelime ve bağlam','Yeni kelimeleri konu gruplarıyla öğren; anlamı cümle bağlamından çıkar.'],
+    ['Okuma ve dinleme','Kısa metinlerde ana fikir, önemli ayrıntı ve konuşmacının amacını bul.'],
+    ['Dil bilgisi','Sınıf düzeyine uygun zamanları, soru yapılarını ve zamirleri örneklerle uygula.'],
+    ['Yazma ve konuşma','Kısa paragraf, diyalog ve açıklamalar hazırlarken anlaşılır dil kullan.']
+  ],
+  'Türk Dili ve Edebiyatı': [
+    ['Metin türleri','Öykü, şiir, roman, tiyatro ve bilgilendirici metinlerin yapı ve amaçlarını karşılaştır.'],
+    ['Şiir bilgisi','İmge, tema, ahenk, ölçü ve söz sanatlarının metne katkısını örneklerle yorumla.'],
+    ['Edebî dönemler','Dönemleri tarihî ve kültürel bağlamlarıyla ele al; eser ve sanatçıları ezberden çok özellikleriyle ilişkilendir.'],
+    ['Anlatım ve paragraf','Düşünceyi geliştirme yollarını, anlatım biçimlerini ve paragrafın yapısını çözümle.'],
+    ['Dil bilgisi ve yazım','Anlatım bozukluklarını, sözcük türlerini ve yazım-noktalama kurallarını bağlam içinde uygula.'],
+    ['Yazılı anlatım','Planlı, kanıtlı ve tutarlı metinler yaz; kaynak gösterme ve özgün ifade ilkelerine uy.']
+  ],
+  'Fizik': [
+    ['Fizik ve ölçme','Fiziksel nicelikleri, SI birimlerini, ölçüm belirsizliğini ve bilimsel model kurmayı tanı.'],
+    ['Hareket ve kuvvet','Konum, hız, ivme ve Newton yasalarını grafikler ve günlük örneklerle açıkla.'],
+    ['Enerji ve momentum','Enerji korunumu, iş, güç ve momentum ilkelerini problem çözümünde kullan.'],
+    ['Elektrik ve manyetizma','Elektrik yükü, akım, gerilim, direnç ve manyetik alan arasındaki ilişkileri incele.'],
+    ['Dalgalar ve optik','Dalga özelliklerini, ses ve ışığın davranışını, yansıma ve kırılmayı modellerle açıkla.'],
+    ['Modern fizik','Atom modelleri, kuantum kavramları ve teknolojik uygulamalarını temel düzeyde tanı.']
+  ],
+  'Kimya': [
+    ['Atom ve periyodik sistem','Atomun yapısını, elektron dizilimini ve elementlerin periyodik özelliklerini ilişkilendir.'],
+    ['Kimyasal türler arası etkileşim','İyonik, kovalent ve metalik bağlarla moleküller arası etkileşimleri ayırt et.'],
+    ['Kimyasal tepkimeler','Tepkime denklemlerini denkleştir; kütlenin korunumu ve mol kavramını uygula.'],
+    ['Karışımlar ve çözeltiler','Karışım türlerini, çözünürlüğü ve derişimi örneklerle açıkla.'],
+    ['Asit, baz ve denge','Asit-baz özelliklerini, pH kavramını ve kimyasal dengeyi uygun modellerle yorumla.'],
+    ['Organik kimya ve günlük yaşam','Karbon bileşiklerinin temel özelliklerini ve kimyanın çevre-sağlık bağlantılarını incele.']
+  ],
+  'Biyoloji': [
+    ['Canlıların ortak özellikleri','Canlılık, organizasyon, metabolizma ve homeostaz kavramlarını örneklerle açıkla.'],
+    ['Hücre ve organeller','Hücre zarını, sitoplazmayı ve organellerin görevlerini karşılaştır.'],
+    ['Kalıtım ve genetik','DNA, gen, kromozom ve kalıtım ilkeleri arasındaki ilişkiyi problem ve modellerle incele.'],
+    ['Ekoloji ve çevre','Besin ağları, madde döngüleri, biyoçeşitlilik ve insan etkisini değerlendir.'],
+    ['İnsan fizyolojisi','Sistemlerin temel görevlerini ve vücudun dengeyi koruma biçimlerini öğren.'],
+    ['Evrim ve biyoteknoloji','Bilimsel kanıt, biyolojik çeşitlilik ve biyoteknolojik uygulamaların temel ilkelerini tartış.']
+  ],
+  'Tarih': [
+    ['Tarihî kaynak ve zaman','Birincil ve ikincil kaynakları ayırt et; kronoloji ve kanıtla tarihî çıkarım yap.'],
+    ['İlk uygarlıklar','Yerleşik yaşam, tarım, şehirleşme ve uygarlıkların gelişimini karşılaştır.'],
+    ['Türk ve dünya tarihi','Toplumların siyasi, ekonomik ve kültürel dönüşümlerini neden-sonuç ilişkisiyle incele.'],
+    ['Osmanlı tarihi','Devlet yapısı, toplum, ekonomi ve kültürel değişimleri dönemlere göre değerlendir.'],
+    ['Millî Mücadele ve Cumhuriyet','Yakın dönem olaylarını kaynaklar üzerinden incele; reformların toplumsal etkilerini açıkla.'],
+    ['Tarihsel yorum','Farklı bakış açılarını ve kaynakların sınırlarını dikkate alarak kanıta dayalı yorum yap.']
+  ],
+  'Coğrafya': [
+    ['Harita ve konum','Koordinat, ölçek, yön ve harita türlerini kullanarak mekânsal bilgi yorumla.'],
+    ['Doğal sistemler','İklim, yer şekilleri, su ve toprak süreçlerinin yaşam üzerindeki etkilerini incele.'],
+    ['Nüfus ve yerleşme','Nüfus dağılışı, göç ve kentleşmenin nedenlerini ve sonuçlarını değerlendir.'],
+    ['Ekonomik faaliyetler','Tarım, sanayi, hizmetler, ulaşım ve ticaretin mekânsal dağılışını açıkla.'],
+    ['Çevre ve sürdürülebilirlik','Doğal kaynakları, afet risklerini ve sürdürülebilir kalkınmayı örneklerle ele al.'],
+    ['Küresel bağlantılar','Ülkeler arası ilişkileri, bölgesel farklılıkları ve küreselleşmenin etkilerini incele.']
+  ],
+  'Felsefe': [
+    ['Felsefeye giriş','Soru sorma, kavram çözümleme, gerekçe sunma ve tutarlı düşünmenin önemini kavra.'],
+    ['Bilgi felsefesi','Bilginin kaynağı, doğruluğu ve sınırları hakkındaki görüşleri karşılaştır.'],
+    ['Varlık felsefesi','Varlık, değişim ve gerçeklik üzerine temel yaklaşımları argümanlarla incele.'],
+    ['Ahlak felsefesi','İyi, doğru, özgürlük ve sorumluluk kavramlarını farklı etik yaklaşımlarla tartış.'],
+    ['Siyaset ve toplum','Adalet, hak, devlet ve özgürlük kavramlarını felsefi argümanlarla değerlendir.'],
+    ['Mantık ve argüman','Öncül-sonuç ilişkisini kur; geçerli çıkarımları ve akıl yürütme hatalarını ayırt et.']
+  ],
+  'Language Arts': [
+    ['Reading comprehension','Identify the main idea, supporting details, tone, and purpose; infer meaning from context.'],
+    ['Writing and structure','Plan a paragraph or essay with a clear claim, evidence, transitions, and conclusion.'],
+    ['Vocabulary and grammar','Use context clues and grade-appropriate grammar to communicate clearly.'],
+    ['Literature and genres','Compare fiction, poetry, drama, and informational texts using evidence.']
+  ],
+  'Science': [
+    ['Scientific inquiry','Ask testable questions, identify variables, gather evidence, and explain conclusions.'],
+    ['Life science','Explore cells, organisms, ecosystems, heredity, and adaptation at grade-appropriate depth.'],
+    ['Physical science','Study matter, forces, energy, waves, and interactions using models and experiments.'],
+    ['Earth and space','Investigate Earth systems, weather, climate, and the solar system.']
+  ],
+  'Mathematics': [
+    ['Numbers and operations','Use number sense, operations, and estimation to solve problems and check reasonableness.'],
+    ['Algebraic thinking','Represent patterns and relationships with expressions, equations, and graphs.'],
+    ['Geometry and measurement','Reason about shapes, angles, dimensions, area, volume, and units.'],
+    ['Statistics and probability','Represent data, describe distributions, and reason about chance.']
+  ],
+  'Social Studies': [
+    ['Civics and citizenship','Explore rights, responsibilities, institutions, and participation in civic life.'],
+    ['History and sources','Use timelines and evidence to explain change and continuity.'],
+    ['Geography and people','Study maps, places, migration, resources, and human-environment interactions.'],
+    ['Economics','Understand needs, resources, trade, budgets, and choices.']
+  ]
+};
+function tkStageSubjects(grade, server) {
+  if (server === 'TR') {
+    if (grade <= 2) return ['Türkçe','Matematik','Hayat Bilgisi','İngilizce','Görsel Sanatlar','Müzik','Beden Eğitimi'];
+    if (grade <= 4) return ['Türkçe','Matematik','Fen Bilimleri','Sosyal Bilgiler','İngilizce','Din Kültürü ve Ahlak Bilgisi','Görsel Sanatlar','Müzik','Beden Eğitimi'];
+    if (grade <= 7) return ['Türkçe','Matematik','Fen Bilimleri','Sosyal Bilgiler','İngilizce','Din Kültürü ve Ahlak Bilgisi','Bilişim Teknolojileri','Görsel Sanatlar','Müzik','Beden Eğitimi'];
+    if (grade === 8) return ['Türkçe','Matematik','Fen Bilimleri','T.C. İnkılap Tarihi ve Atatürkçülük','İngilizce','Din Kültürü ve Ahlak Bilgisi','Bilişim Teknolojileri'];
+    return ['Türk Dili ve Edebiyatı','Matematik','Fizik','Kimya','Biyoloji','Tarih','Coğrafya','Felsefe','İngilizce','Din Kültürü ve Ahlak Bilgisi','Beden Eğitimi','Bilişim Teknolojileri'];
+  }
+  const profiles = {
+    US: ['Language Arts','Mathematics','Science','Social Studies','English Language Development','Computer Science','Arts','Physical Education'],
+    UK: ['English','Mathematics','Science','History','Geography','Computing','Modern Foreign Languages','Art and Design','Physical Education'],
+    DE: ['Deutsch','Mathematik','Naturwissenschaften','Geschichte','Geographie','Englisch','Informatik','Kunst','Sport'],
+    AZ: ['Azərbaycan dili','Riyaziyyat','Təbiət','Azərbaycan tarixi','İngilis dili','İnformatika','Fiziki tərbiyə'],
+    JP: ['国語','数学','理科','社会','英語','技術・家庭','美術','保健体育']
+  };
+  if (profiles[server]) return profiles[server];
+  return ['Language Arts','Mathematics','Science','Social Studies','Languages','Digital Literacy','Arts','Physical Education'];
+}
+function tkTopicFor(subject, grade) {
+  const aliases = {
+    'Deutsch':'Language Arts','Azərbaycan dili':'Language Arts','Riyaziyyat':'Mathematics',
+    'Təbiət':'Science','Azərbaycan tarixi':'Social Studies','国語':'Language Arts','数学':'Mathematics',
+    '理科':'Science','社会':'Social Studies','English':'Language Arts','Englisch':'Language Arts',
+    'Naturwissenschaften':'Science','Geographie':'Social Studies','Geschichte':'Social Studies',
+    'İngilis dili':'English','İnformatika':'Science','Computer Science':'Science','Computing':'Science',
+    'Digital Literacy':'Science','Bilişim Teknolojileri':'Science','Hayat Bilgisi':'Social Studies',
+    'Din Kültürü ve Ahlak Bilgisi':'Social Studies','T.C. İnkılap Tarihi ve Atatürkçülük':'Tarih',
+    'Görsel Sanatlar':'Social Studies','Müzik':'Social Studies','Beden Eğitimi':'Science',
+    'Art and Design':'Social Studies','Arts':'Social Studies','Physical Education':'Science',
+    'Modern Foreign Languages':'Language Arts','English Language Development':'Language Arts',
+    '技術・家庭':'Science','美術':'Social Studies','保健体育':'Science','Informatik':'Science','Sport':'Science','Kunst':'Social Studies'
+  };
+  if (TK_TOPIC_BANK[subject]) return TK_TOPIC_BANK[subject];
+  const bank = TK_TOPIC_BANK[aliases[subject] || 'Social Studies'] || TK_TOPIC_BANK['Social Studies'];
+  return bank;
+}
+function defaultCurriculum(gradeText, server) {
+  const grade = Number(gradeText);
+  const subjects = tkStageSubjects(grade, server);
+  const knownCountry = ['TR','US','UK','DE','AZ','JP'].includes(server);
+  const countryNames = {TR:'Türkiye',US:'United States',UK:'United Kingdom',DE:'Deutschland',AZ:'Azərbaycan',JP:'日本'};
+  const countryName = countryNames[server] || server;
   const result = {};
   subjects.forEach((subject) => {
+    const bank = tkTopicFor(subject, grade);
+    const topicCount = grade <= 4 ? 4 : 6;
+    const topics = bank.slice(0, topicCount).map((entry, index) => ({
+      id: server + '-' + grade + '-' + index,
+      title: entry[0],
+      explanation: entry[1],
+      objectives: ['Konuyu kendi cümlenle açıklayabilmek','En az bir örnek çözebilmek veya günlük hayatla ilişkilendirebilmek'],
+      videos: [{
+        title: entry[0] + ' — konu anlatımı',
+        query: subject + ' ' + grade + '. sınıf ' + entry[0] + ' konu anlatımı',
+        url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(subject + ' ' + grade + '. sınıf ' + entry[0] + ' konu anlatımı')
+      }]
+    }));
     result[subject] = {
-      icon: subject.toLowerCase().includes('mat') ? '📐' : (subject.toLowerCase().includes('fen') || subject.toLowerCase().includes('science') ? '🔬' : '📚'),
-      desc: grade + '. sınıf için temel ders içerikleri',
-      tag: grade === '8' ? 'lgs' : 'temel',
-      topics: [],
-      videos: [],
-      meb1: 'İçerik yönetim panelinden eklenecek.',
-      meb2: 'İçerik yönetim panelinden eklenecek.',
-      mebLink: ''
+      icon: /mat|matematik|数学/i.test(subject) ? '📐' : (/fen|science|fizik|kimya|biyoloji|理科/i.test(subject) ? '🔬' : '📚'),
+      desc: grade + '. sınıf · ' + countryName + ' öğrenme rehberi',
+      tag: server === 'TR' && grade === 8 ? 'lgs' : (grade >= 9 && grade <= 12 ? 'lise' : 'temel'),
+      topics: topics,
+      videos: topics.slice(0, 3).map(t => t.videos[0]),
+      meb1: knownCountry ? 'Bu sayfa genel konu rehberidir; resmî yıllık plan ve kazanımlar ülkenin güncel resmî kaynağından kontrol edilmelidir.' : 'Bu ülke için doğrulanmış resmî müfredat kaydı henüz eklenmedi; aşağıdaki içerik genel öğrenme rehberidir.',
+      meb2: 'Konu başlıkları öğrenmeyi desteklemek için hazırlanmıştır; sınav kapsamı veya resmî kazanım garantisi değildir.',
+      mebLink: server === 'TR' ? 'https://mufredat.meb.gov.tr/' :
+        server === 'US' ? 'https://www.ed.gov/' :
+        server === 'UK' ? 'https://www.gov.uk/government/organisations/department-for-education' :
+        server === 'DE' ? 'https://www.kmk.org/' :
+        server === 'AZ' ? 'https://edu.gov.az/' :
+        server === 'JP' ? 'https://www.mext.go.jp/en/' : 'https://www.unesco.org/en/education'
     };
   });
   return result;
