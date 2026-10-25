@@ -15,11 +15,11 @@ Bu klasör, uygulamanın müfredat kaynaklarını ve içe aktarma politikasını
 2. Back4App Config'e en az 24 karakterlik rastgele `SCHEMA_SETUP_TOKEN` değeri ekle.
 3. Kurucu/yönetici oturumuyla `setupDatabaseSchema({ token: SCHEMA_SETUP_TOKEN })` Cloud Function'ını bir kez çalıştır.
 4. Sonuçta `CurriculumProgram` sınıfının oluşturulduğunu doğrula. Kurulumdan sonra `SCHEMA_SETUP_TOKEN` değerini döndürme/yenileme; mümkünse Config'ten kaldır.
-5. Giriş sonrası menüden **Yeni Müfredat Merkezi** bölümünü aç. Kurucu/yönetici formundan bir kayıt ekle ve “Aktarılan program kayıtları” bölümünde göründüğünü kontrol et.
+5. Giriş sonrası menüden **Yeni Müfredat Merkezi** bölümünü aç. Tek kayıt formunu kullanabilir veya toplu JSON formuyla bir istekte en fazla 20 kayıt (toplam 500.000 karaktere kadar) aktarabilirsin. “Aktarılan program kayıtları” bölümünde filtreleyerek kontrol et.
 
 ## Kayıt alanları
 
-Her kayıt ülke kodu/adı, sınıf, program türü, okul türü, alan, dal, ders, başlık, öğretim yılı, kaynak adı/HTTPS URL'si, kaynak kontrol tarihi ve konu verisini taşıyabilir. Konu verisi JSON nesnesi olmalı; örneğin:
+Her kayıt ülke kodu/adı, sınıf, program türü, okul türü, alan, dal, ders, başlık, öğretim yılı, kaynak adı/HTTPS URL'si, kaynak kontrol tarihi ve konu verisini taşıyabilir. Toplu aktarım Cloud Function'ı kurucu/yönetici yetkisi ister; kayıtları sunucu tarafında tek tek doğrular, başarısız satırları indeksleriyle bildirir ve işlem özetini denetim kaydına yazar. Konu verisi JSON nesnesi olmalı; örneğin:
 
 ```json
 {
