@@ -107,6 +107,18 @@ window.loadSchoolSettings=async function(){
  try{const r=await cloud('getMyTdevId',{});const tab=$('tab-school');if(!tab)return;let box=$('school-account-settings');if(!box){box=document.createElement('section');box.id='school-account-settings';box.className='school-card';box.innerHTML='<h3>Ayarlar · Hesap bilgilerim</h3><p class="school-muted">Kullanıcı ID: <code id="my-tdev-id"></code></p><form id="school-settings-form" class="school-form"><label>Görünen ad<input id="settings-display-name" maxlength="100"></label><label>Dil<select id="settings-language"><option value="tr">Türkçe</option><option value="en">English</option></select></label><label>Profil fotoğrafı<input id="settings-avatar-file" type="file" accept="image/png,image/jpeg,image/webp"></label><div><button class="school-button" type="submit">Kaydet</button></div></form><h4>Son 10 cihaz oturumu</h4><p class="school-muted">Yaklaşık bölge, tarayıcı saat diliminden çıkarılır; kesin konum değildir.</p><div id="device-session-list" class="school-list"></div>';tab.append(box);$('school-settings-form').addEventListener('submit',async e=>{e.preventDefault();try{let avatarUrl='';const avatarFile=$('settings-avatar-file')?.files?.[0];if(avatarFile){if(!/^image\/(png|jpeg|webp)$/.test(avatarFile.type)||avatarFile.size>5*1024*1024)throw new Error('Profil fotoğrafı PNG/JPEG/WEBP ve en fazla 5 MB olmalı.');const f=new Parse.File(avatarFile.name,avatarFile);await f.save();avatarUrl=f.url();}await cloud('saveMyAccountSettings',{displayName:$('settings-display-name').value.trim(),language:$('settings-language').value,avatarUrl});notify('Hesap ayarları kaydedildi.');}catch(err){notify(err.message);}});}
  $('my-tdev-id').textContent=r.userId;const p=window.Parse.User.current();$('settings-display-name').value=p&&p.get('displayName')||'';const sessions=await cloud('getMyDeviceSessions',{});const box=$('device-session-list');if(box)box.innerHTML=(sessions.items||[]).map(s=>'<article class="school-item"><strong>'+esc(s.deviceLabel)+'</strong><span class="school-muted">'+esc(s.timezone)+' · '+esc(s.approximateRegion||'Bölge belirtilmedi')+'</span><small class="school-muted">'+esc(s.lastSeenISO)+'</small><small class="school-muted">'+esc(s.userAgent)+'</small></article>').join('')||'<p class="school-muted">Henüz cihaz kaydı yok.</p>'; }catch(e){notify(e.message);}
 };
+document.addEventListener('click',function(event){
+ const link=event.target&&event.target.closest?event.target.closest('a[href]'):null;
+ if(link&&/^https?:/i.test(link.href)&&new URL(link.href,location.href).origin!==location.origin&&window.Parse&&Parse.User&&Parse.User.current&&Parse.User.current()){
+  const subject=(document.getElementById('ql')?.value||'').trim();
+  cloud('trackLearningActivity',{eventType:'external_resource',grade:String(profile&&profile.grade||''),subject}).catch(()=>{});
+ }
+});
+document.addEventListener('play',function(event){
+ if(event.target&&event.target.tagName==='VIDEO'&&window.Parse&&Parse.User&&Parse.User.current&&Parse.User.current()){
+  cloud('trackLearningActivity',{eventType:'video_open',grade:String(profile&&profile.grade||''),subject:(document.getElementById('ql')?.value||'').trim()}).catch(()=>{});
+ }
+},true);
 document.addEventListener('DOMContentLoaded',function(){
  ensureRegistrationFields();window.updateRegistrationFields();
  const grade=$('classroom-grade');if(grade&&grade.options.length<2)grade.innerHTML='<option value="">Sınıf seç</option>'+Array.from({length:13},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. sınıf</option>').join('');
