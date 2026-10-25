@@ -1007,6 +1007,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
         <div class="nav-btn" id="nav-focus" onclick="showTab('focus',this)"><span class="nav-icon">⏱️</span>Odak Sayacı</div>
         <div class="nav-btn" id="nav-progress" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">📈</span>Gelişimim</div>
         <div class="nav-btn" id="nav-school" style="display:none" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">🏫</span>Sınıfım / Okulum</div>
+        <div class="nav-btn" id="nav-settings" style="display:none" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙️</span>Ayarlar · Hesap bilgilerim</div>
         <div class="nav-section">SİSTEM</div>
         <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
         <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
@@ -1583,6 +1584,7 @@ async function loginWithEmail() {
         const launchGrade = String((accountProfile && accountProfile.profileType === 'student' && accountProfile.grade) || curGrade || '8');
         if (typeof window.finishTdevAuthTransition === 'function') await window.finishTdevAuthTransition();
         launch(launchGrade);
+        if (accountProfile && typeof window.updateSidebarRole === 'function') window.updateSidebarRole(accountProfile.profileType || accountProfile.role || 'student', accountProfile);
         const roleLabels = {student:'ÖĞRENCİ',teacher:'ÖĞRETMEN',principal:'MÜDÜR',guardian:'VELİ'};
         const roleDisplay = document.getElementById('role-name-disp');
         if (roleDisplay && accountProfile && roleLabels[accountProfile.profileType]) roleDisplay.textContent = roleLabels[accountProfile.profileType];
@@ -1801,14 +1803,14 @@ async function register() {
     if (err) err.style.display = 'none';
     try {
         const profileType = document.getElementById('reg-profile-type')?.value || 'student';
-        const countryCode = (document.getElementById('reg-country-code')?.value || document.getElementById('country-select')?.value || 'TR').toUpperCase();
+        const countryCode = (profileType === 'guardian' ? (document.getElementById('country-select')?.value || 'TR') : (document.getElementById('reg-country-code')?.value || document.getElementById('country-select')?.value || 'TR')).toUpperCase();
         const grade = document.getElementById('reg-grade')?.value || '';
         const educationStage = document.getElementById('reg-stage')?.value || '';
         const schoolName = (profileType === 'student' ? document.getElementById('reg-student-school-name')?.value : document.getElementById('reg-school-name')?.value)?.trim() || '';
         const schoolAddress = (profileType === 'student' ? document.getElementById('reg-student-school-address')?.value : document.getElementById('reg-school-address')?.value)?.trim() || '';
         const className = document.getElementById('reg-class-name')?.value.trim() || '';
         const inviteCode = new URLSearchParams(location.search).get('invite') || '';
-        if (profileType === 'student' && (!grade || !schoolName || !schoolAddress)) { showError('Öğrenci hesabı için sınıf, okul adı ve okul adresi zorunludur.'); return; }
+        if (profileType === 'student' && (!/^(?:[1-9]|1[0-2])$/.test(String(grade)) || !schoolName || !schoolAddress)) { showError('Öğrenci hesabı için sınıf, okul adı ve okul adresi zorunludur.'); return; }
         if (['teacher','principal'].includes(profileType) && (!educationStage || !schoolName || !schoolAddress)) { showError('Öğretmen ve müdür hesabı için kademe, okul adı ve okul adresi zorunludur.'); return; }
         const result = await Parse.Cloud.run('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true, profileType, countryCode, grade, educationStage, schoolName, schoolAddress, className, inviteCode });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Kayıt tamamlanamadı.');
