@@ -1535,6 +1535,7 @@ async function loginWithEmail() {
         const result = await Parse.Cloud.run('loginUser', { email, password });
         if (!result || result.success !== true) {
             if (result && result.verificationRequired) {
+                if (typeof window.hideTdevAuthTransition === 'function') window.hideTdevAuthTransition();
                 document.getElementById('verify-email-address').value = email;
                 goTo('verify-email');
                 showAuthError('verify-email-err', result.message || 'Önce e-posta adresini doğrula.');
@@ -1548,12 +1549,14 @@ async function loginWithEmail() {
         }
         curRole = result.role || 'member';
         if (result.verificationRequired) {
+            if (typeof window.hideTdevAuthTransition === 'function') window.hideTdevAuthTransition();
             document.getElementById('verify-email-address').value = email;
             goTo('verify-email');
             showAuthError('verify-email-err', 'Hesabına devam etmek için e-postanı doğrula.');
             return;
         }
         if (result.role === 'admin' || result.role === 'founder') {
+            if (typeof window.finishTdevAuthTransition === 'function') await window.finishTdevAuthTransition();
             const loginArea = document.getElementById('admin-login-area');
             const adminContent = document.getElementById('admin-content');
             if (loginArea) loginArea.style.display = 'none';
