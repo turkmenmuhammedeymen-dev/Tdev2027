@@ -36,6 +36,8 @@ function syntaxCheck(source, filename) {
 
 const requiredFiles = [
   'index.html',
+  'school.js',
+  'school.js',
   'study.js',
   'curriculum-catalog.js',
   'back4app/main.js',
@@ -98,7 +100,7 @@ for (const functionName of calledFunctions) {
 
 for (const functionName of [
   'registerUser', 'verifyEmailCode', 'resendVerificationCode', 'loginUser',
-  'requestTdevPasswordReset', 'completeTdevPasswordReset', 'healthCheck',
+  'requestTdevPasswordReset', 'completeTdevPasswordReset', 'healthCheck', 'getMyTdevId', 'linkGuardianStudent', 'getMyGuardianStudents', 'unlinkGuardianStudent', 'getMyDeviceSessions', 'recordDeviceSession', 'postClassroomMessage', 'getClassroomMessages', 'addClassroomMemberById',
   'saveStudyPlan', 'getStudyPlans', 'saveStudyNote', 'getStudyNotes',
   'saveStudyProgress', 'getStudyProgress', 'saveStudyCard', 'getStudyCards',
   'saveStudyMistake', 'getStudyMistakes', 'deleteStudyRecord'
