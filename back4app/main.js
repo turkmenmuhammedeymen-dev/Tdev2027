@@ -580,7 +580,8 @@ const TK_SCHEMA = {
   Referral: { code:'string', ownerId:'string', referredUserId:'string', status:'string', createdAtISO:'string' },
   StudyPlan: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyNote: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
-  StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' }
+  StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' }
 };
 const TK_FIELD_METHODS = { string:'addString', number:'addNumber', boolean:'addBoolean', date:'addDate', array:'addArray', object:'addObject' };
 
@@ -609,16 +610,16 @@ function studyPayload(value, kind) {
     item.body = safeText(value.body, 12000);
     item.updatedAt = safeText(value.updatedAt, 40) || new Date().toISOString();
     if (!item.title || !item.body) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Not başlığı ve içeriği zorunludur.');
-  } else {
-    item.subject = safeText(value.subject, 60);
-    item.kind = safeText(value.kind, 40);
-    item.total = Number(value.total);
-    item.correct = Number(value.correct);
-    item.reflection = safeText(value.reflection, 1000);
-    item.date = safeText(value.date, 40) || new Date().toISOString();
-    if (!item.subject || !Number.isInteger(item.total) || !Number.isInteger(item.correct) || item.total < 0 || item.correct < 0 || item.correct > item.total || item.total > 1000) {
-      throw new Parse.Error(Parse.Error.INVALID_JSON, 'Çalışma oturumu alanları geçersiz.');
-    }
+  } else if (kind === 'progress') {
+    item.subject = safeText(value.subject, 60); item.kind = safeText(value.kind, 40);
+    item.total = Number(value.total); item.correct = Number(value.correct);
+    item.reflection = safeText(value.reflection, 1000); item.date = safeText(value.date, 40) || new Date().toISOString();
+    if (!item.subject || !Number.isInteger(item.total) || !Number.isInteger(item.correct) || item.total < 0 || item.correct < 0 || item.correct > item.total || item.total > 1000) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Çalışma oturumu alanları geçersiz.');
+  } else if (kind === 'mistake') {
+    item.subject=safeText(value.subject,60); item.title=safeText(value.title,180);
+    item.reason=safeText(value.reason,1200); item.fix=safeText(value.fix,2000);
+    item.reviewDate=safeText(value.reviewDate,10); item.status=value.status==='learned'?'learned':'review';
+    if(!item.subject||!item.title||!item.reason||!item.fix||!/^\d{4}-\d{2}-\d{2}$/.test(item.reviewDate)) throw new Parse.Error(Parse.Error.INVALID_JSON,'Yanlış defteri alanları geçersiz.');
   }
   return item;
 }
@@ -656,6 +657,20 @@ Parse.Cloud.define('saveStudyNote', async (request) => saveStudyRecord(request, 
 Parse.Cloud.define('getStudyNotes', async (request) => getStudyRecords(request, 'StudyNote'));
 Parse.Cloud.define('saveStudyProgress', async (request) => saveStudyRecord(request, 'StudyProgress', 'progress'));
 Parse.Cloud.define('getStudyProgress', async (request) => getStudyRecords(request, 'StudyProgress'));
+Parse.Cloud.define('saveStudyMistake', async (request) => saveStudyRecord(request, 'StudyMistake', 'mistake'));
+Parse.Cloud.define('getStudyMistakes', async (request) => getStudyRecords(request, 'StudyMistake'));
+Parse.Cloud.define('deleteStudyRecord', async (request) => {
+  const user = requireUser(request);
+  const allowed = ['StudyPlan', 'StudyNote', 'StudyProgress', 'StudyMistake'];
+  const className = safeText(request.params && request.params.className, 40);
+  const itemId = safeText(request.params && request.params.itemId, 100);
+  if (!allowed.includes(className) || !itemId) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Silinecek kayıt geçersiz.');
+  const query = new Parse.Query(className);
+  query.equalTo('ownerId', user.id); query.equalTo('itemId', itemId);
+  const row = await query.first({ useMasterKey: true });
+  if (row) await row.destroy({ useMasterKey: true });
+  return { success: true };
+});
 
 Parse.Cloud.define('setupDatabaseSchema', async (request) => {
   const config = await Parse.Config.get({ useMasterKey: true });
