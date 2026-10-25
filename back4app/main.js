@@ -1975,6 +1975,7 @@ const TK_SCHEMA = {
   School: { schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', principalId:'string', createdAtISO:'string' },
   GuardianStudent: { guardianId:'string', studentId:'string', status:'string', createdAtISO:'string', removedAtISO:'string' },
   ClassroomMessage: { classroomId:'string', authorId:'string', authorName:'string', authorRole:'string', message:'string', createdAtISO:'string' },
+  DeviceSession: { userId:'string', deviceLabel:'string', userAgent:'string', timezone:'string', approximateRegion:'string', lastSeenISO:'string' },
   Classroom: { ownerId:'string', name:'string', schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', educationStage:'string', grade:'string', invitationCode:'string', active:'boolean', academicYear:'string', managerIds:'array', createdAtISO:'string' },
   ClassroomMembership: { classroomId:'string', userId:'string', role:'string', status:'string', createdAtISO:'string' },
   ClassroomFile: { classroomId:'string', uploaderId:'string', name:'string', url:'string', fileType:'string', size:'number', createdAtISO:'string' },
@@ -2377,4 +2378,43 @@ Parse.Cloud.define('saveMyAccountSettings', async (request) => {
   if (displayName) { user.set('displayName', displayName); user.set('name', displayName); }
   if (language) user.set('preferredLanguage', language);
   await user.save(null, { useMasterKey: true }); return { success: true };
+});
+
+
+Parse.Cloud.define('recordDeviceSession', async (request) => {
+  const user = requireUser(request); const p = request.params || {};
+  const ua = safeText(p.userAgent, 500); const timezone = safeText(p.timezone, 80);
+  const deviceLabel = safeText(p.deviceLabel, 120) || 'Bilinmeyen cihaz';
+  const query = new Parse.Query('DeviceSession'); query.equalTo('userId', user.id); query.equalTo('deviceLabel', deviceLabel); query.equalTo('userAgent', ua);
+  let row = await query.first({ useMasterKey: true });
+  if (!row) row = new Parse.Object('DeviceSession');
+  row.set('userId', user.id); row.set('deviceLabel', deviceLabel); row.set('userAgent', ua); row.set('timezone', timezone);
+  row.set('approximateRegion', safeText(p.approximateRegion, 80)); row.set('lastSeenISO', new Date().toISOString());
+  await row.save(null, { useMasterKey: true });
+  const all = new Parse.Query('DeviceSession'); all.equalTo('userId', user.id); all.descending('lastSeenISO'); all.limit(50);
+  const sessions = await all.find({ useMasterKey: true });
+  if (sessions.length > 10) await Parse.Object.destroyAll(sessions.slice(10), { useMasterKey: true });
+  return { success: true };
+});
+Parse.Cloud.define('getMyDeviceSessions', async (request) => {
+  const user = requireUser(request); const query = new Parse.Query('DeviceSession'); query.equalTo('userId', user.id); query.descending('lastSeenISO'); query.limit(10);
+  const rows = await query.find({ useMasterKey: true });
+  return { success: true, items: rows.map(row => ({ id: row.id, deviceLabel: safeText(row.get('deviceLabel'),120), userAgent: safeText(row.get('userAgent'),500), timezone: safeText(row.get('timezone'),80), approximateRegion: safeText(row.get('approximateRegion'),80), lastSeenISO: safeText(row.get('lastSeenISO'),40) })) };
+});
+Parse.Cloud.define('addClassroomMemberById', async (request) => {
+  const user = requireUser(request); const classroomId = safeText(request.params && request.params.classroomId,100);
+  const publicId = safeText(request.params && request.params.userId,40).toUpperCase();
+  const classroom = await getClassroomForId(classroomId);
+  if (!classroom || classroom.get('ownerId') !== user.id) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN,'Yalnızca sınıfı oluşturan öğretmen üye ekleyebilir.');
+  if (!/^TDEV-[A-F0-9]{12}$/.test(publicId)) throw new Parse.Error(Parse.Error.INVALID_JSON,'Geçerli TDEV kullanıcı ID’si gir.');
+  const q = new Parse.Query(Parse.User); q.equalTo('publicId',publicId); const target = await q.first({useMasterKey:true});
+  if (!target || !['student','principal','teacher'].includes(target.get('profileType'))) throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND,'Bu ID ile öğrenci, öğretmen veya müdür bulunamadı.');
+  if (safeText(target.get('schoolKey'),64) !== safeText(classroom.get('schoolKey'),64)) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN,'Yalnızca aynı okulun kullanıcıları sınıfa eklenebilir.');
+  if (target.get('profileType') === 'student' && String(target.get('grade')) !== String(classroom.get('grade'))) throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN,'Öğrencinin sınıf düzeyi bu grupla eşleşmiyor.');
+  const priorQ = new Parse.Query('ClassroomMembership'); priorQ.equalTo('classroomId',classroomId); priorQ.equalTo('userId',target.id);
+  let membership = await priorQ.first({useMasterKey:true}); if (membership && membership.get('status')==='active') return {success:true,alreadyMember:true};
+  if (!membership) membership = new Parse.Object('ClassroomMembership');
+  membership.set('classroomId',classroomId); membership.set('userId',target.id); membership.set('role',target.get('profileType')==='student'?'student':'member'); membership.set('status','active'); membership.set('createdAtISO',new Date().toISOString());
+  await membership.save(null,{useMasterKey:true}); await writeAuditLog(request,'classroom.member_added_by_id',target.id,{classroomId});
+  return {success:true,member:{userId:target.id,publicId,name:safeText(target.get('displayName')||target.get('name'),100),profileType:target.get('profileType')}};
 });
