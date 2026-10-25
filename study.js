@@ -355,6 +355,22 @@
     ];
     host.innerHTML = tiles.map(function (t) { return '<div class="progress-tile"><strong>' + esc(t[0]) + '</strong><span>' + esc(t[1]) + '</span></div>'; }).join('');
   };
+  window.loadLearningDashboard = async function () {
+    window.renderLearningProgress();
+    const sources = [
+      ['plans', 'getStudyPlans'],
+      ['notes', 'getStudyNotes'],
+      ['cards', 'getStudyCards'],
+      ['practice', 'getStudyProgress'],
+      ['mistakes', 'getStudyMistakes']
+    ];
+    await Promise.all(sources.map(async function (entry) {
+      const result = await cloud(entry[1], {});
+      if (result && result.success === true && Array.isArray(result.items)) mergeCloud(entry[0], result.items);
+    }));
+    window.renderLearningProgress();
+  };
+
   window.exportLearningData = function () {
     const data = { exportedAt: new Date().toISOString(), plans: read('plans'), notes: read('notes'), cards: read('cards'), practice: read('practice'), mistakes: read('mistakes') };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
