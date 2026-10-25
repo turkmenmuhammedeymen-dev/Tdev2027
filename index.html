@@ -1420,11 +1420,41 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 // Öğrenme araçları çevrimdışı kullanım için cihazda yerel kopya tutabilir; oturum açıldığında plan/not/oturum verileri Cloud Code ile eşitlenir.
 // ============================================================
 
-Parse.initialize(
-    "viElIg1RmufR9nW86Cw8inmscrIpiiEpkSDCk98d",
-    "3mTkUnuKy25u07xW87ekGB0aDjuHd4sf7z8uLcBr"
-);
+const TDEV_PARSE_APP_ID = "viElIg1RmufR9nW86Cw8inmscrIpiiEpkSDCk98d";
+const TDEV_PARSE_JS_KEY = "3mTkUnuKy25u07xW87ekGB0aDjuHd4sf7z8uLcBr";
+Parse.initialize(TDEV_PARSE_APP_ID, TDEV_PARSE_JS_KEY);
 Parse.serverURL = "https://parseapi.back4app.com";
+
+/**
+ * Public account/verification endpoints must not inherit a stale Parse session
+ * from this browser. Parse Server rejects a request carrying an expired session
+ * token with error 209 before the public Cloud Function can run.
+ */
+async function runPublicAuthCloud(functionName, params) {
+    const baseUrl = String(Parse.serverURL || 'https://parseapi.back4app.com').replace(/\/+$/, '');
+    const response = await fetch(baseUrl + '/functions/' + encodeURIComponent(functionName), {
+        method: 'POST',
+        headers: {
+            'X-Parse-Application-Id': TDEV_PARSE_APP_ID,
+            'X-Parse-JavaScript-Key': TDEV_PARSE_JS_KEY,
+            'Content-Type': 'application/json'
+        },
+        // Intentionally omit X-Parse-Session-Token: these endpoints are public.
+        body: JSON.stringify(params || {})
+    });
+    let payload;
+    try {
+        payload = await response.json();
+    } catch (_) {
+        throw new Error('Back4App geçerli bir yanıt döndürmedi. Bağlantıyı ve Cloud Code dağıtımını kontrol et.');
+    }
+    if (!response.ok || (payload && payload.error && !Object.prototype.hasOwnProperty.call(payload, 'result'))) {
+        const error = new Error(String((payload && (payload.error || payload.message)) || ('Back4App isteği başarısız: HTTP ' + response.status)));
+        if (payload && payload.code !== undefined) error.code = payload.code;
+        throw error;
+    }
+    return payload && Object.prototype.hasOwnProperty.call(payload, 'result') ? payload.result : payload;
+}
 
 // ---- GLOBAL STATE ----
 let curRole = '', curGrade = '', curServer = 'TR';
@@ -1533,7 +1563,7 @@ async function loginWithEmail() {
     if (err) err.style.display = 'none';
     try {
         // Rol ve yetki, istemciye güvenilmeden sunucu tarafında belirlenir.
-        const result = await Parse.Cloud.run('loginUser', { email, password });
+        const result = await runPublicAuthCloud('loginUser', { email, password });
         if (!result || result.success !== true) {
             if (result && result.verificationRequired) {
                 if (typeof window.hideTdevAuthTransition === 'function') window.hideTdevAuthTransition();
@@ -1619,7 +1649,7 @@ async function requestPasswordReset(isResend = false) {
     }
     if (button) { button.disabled = true; button.textContent = 'Gönderiliyor…'; }
     try {
-        const result = await Parse.Cloud.run('requestTdevPasswordReset', { email });
+        const result = await runPublicAuthCloud('requestTdevPasswordReset', { email });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'İstek tamamlanamadı.');
         passwordResetEmail = email;
         document.getElementById('reset-request-fields').hidden = true;
@@ -1645,7 +1675,7 @@ async function completePasswordReset() {
     if (password !== confirmation) { showAuthError('reset-err', 'Yeni şifreler eşleşmiyor.'); return; }
     if (button) { button.disabled = true; button.textContent = 'Güncelleniyor…'; }
     try {
-        const result = await Parse.Cloud.run('completeTdevPasswordReset', { email, code, newPassword: password });
+        const result = await runPublicAuthCloud('completeTdevPasswordReset', { email, code, newPassword: password });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Şifre güncellenemedi.');
         document.getElementById('auth-email').value = email;
         document.getElementById('auth-password').value = '';
@@ -1671,7 +1701,7 @@ async function resendVerificationCode() {
     }
     if (button) { button.disabled = true; button.dataset.originalText = button.textContent; button.textContent = 'Gönderiliyor…'; }
     try {
-        const result = await Parse.Cloud.run('resendVerificationCode', { email });
+        const result = await runPublicAuthCloud('resendVerificationCode', { email });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Yeni kod istenemedi.');
         showAuthError('verify-email-err', result.message || 'Eğer hesap doğrulanmamışsa yeni kod gönderilecektir. Gelen kutunu ve spam klasörünü kontrol et.');
     } catch (error) {
@@ -1691,7 +1721,7 @@ async function verifyEmailCode() {
         return;
     }
     try {
-        const result = await Parse.Cloud.run('verifyEmailCode', { email, code });
+        const result = await runPublicAuthCloud('verifyEmailCode', { email, code });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Kod doğrulanamadı.');
         showNotif('E-posta doğrulandı. Şimdi giriş yapabilirsin.');
         document.getElementById('auth-email').value = email;
@@ -1812,7 +1842,7 @@ async function register() {
         const inviteCode = new URLSearchParams(location.search).get('invite') || '';
         if (profileType === 'student' && (!/^(?:[1-9]|1[0-2])$/.test(String(grade)) || !schoolName || !schoolAddress)) { showError('Öğrenci hesabı için sınıf, okul adı ve okul adresi zorunludur.'); return; }
         if (['teacher','principal'].includes(profileType) && (!educationStage || !schoolName || !schoolAddress)) { showError('Öğretmen ve müdür hesabı için kademe, okul adı ve okul adresi zorunludur.'); return; }
-        const result = await Parse.Cloud.run('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true, profileType, countryCode, grade, educationStage, schoolName, schoolAddress, className, inviteCode });
+        const result = await runPublicAuthCloud('registerUser', { name, email, password: pass, acceptedTerms: document.getElementById('reg-terms')?.checked === true, profileType, countryCode, grade, educationStage, schoolName, schoolAddress, className, inviteCode });
         if (!result || result.success !== true) throw new Error((result && result.error) || 'Kayıt tamamlanamadı.');
         showNotif(result.verificationRequired ? 'Doğrulama kodu e-postana gönderildi.' : 'Kayıt başarılı!');
         if (result.verificationRequired) {
