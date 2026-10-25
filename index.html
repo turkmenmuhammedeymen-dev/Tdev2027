@@ -1688,7 +1688,7 @@ function showTopicDetail(index) {
     host.innerHTML = '<h3>📖 ' + escapeHtml(topic.title || 'Konu anlatımı') + '</h3><p class="topic-explanation">' +
         escapeHtml(explanation) + '</p>' +
         (objectives ? '<h4>Bu konunun sonunda</h4><ul>' + objectives + '</ul>' : '') +
-        '<div class="detail-box lesson-note-generated"><h4>📘 HAZIR DERS NOTU</h4><p class="detail-help">Seçtiğin konu için otomatik hazırlanmış anlatım, hedefler ve tekrar soruları. Notu düzenleyip hesabına kaydedebilirsin.</p><pre class="topic-explanation">' + escapeHtml(generatedLessonNote) + '</pre></div>' +
+        '<div class="detail-box lesson-note-generated"><h4>📘 HAZIR DERS NOTU</h4><p class="detail-help">Seçtiğin konu için hazırlanmış konu anlatımı ve tekrar hedefleri. Yapılandırılmış yapay zekâ hizmeti varsa daha ayrıntılı ders notu da oluşturabilirsin.</p><button type="button" class="study-action" id="generate-lesson-note-button" onclick="generateCurrentLessonNote()">YAPAY ZEKÂ İLE AYRINTILI DERS NOTU OLUŞTUR</button><p id="lesson-note-status" class="detail-help" aria-live="polite"></p><pre class="topic-explanation">' + escapeHtml(generatedLessonNote) + '</pre></div>' +
         (videos ? '<h4>🎬 Konu videoları</h4><p class="topic-links">' + videos + '</p>' : '') +
         '<label class="topic-note-label" for="topic-note-body">Ders notunu düzenle / kişisel not ekle</label><textarea id="topic-note-body" rows="10" maxlength="12000" placeholder="Konu anlatımı, önemli tanımlar, örnekler ve kendi cümlelerinle açıklama…">' +
         escapeHtml(savedNote || generatedLessonNote) + '</textarea><button type="button" class="study-action" onclick="saveCurrentTopicNote()">DERS NOTUNU KAYDET</button>';
@@ -1696,7 +1696,7 @@ function showTopicDetail(index) {
     if (typeof window.loadCurriculumTopicNote === 'function') {
         window.loadCurriculumTopicNote(curGrade, curServer, currentLessonSubject, topic.title).then(savedBody => {
             const field = document.getElementById('topic-note-body');
-            if (field && currentTopicIndex === index && savedBody && !field.value) field.value = savedBody;
+            if (field && currentTopicIndex === index && savedBody && field.value === generatedLessonNote) field.value = savedBody;
         }).catch(() => {});
     }
 }
@@ -1706,6 +1706,42 @@ async function saveCurrentTopicNote() {
     const body = document.getElementById('topic-note-body')?.value || '';
     if (typeof window.saveCurriculumTopicNote !== 'function') { showNotif('Not modülü yüklenemedi; sayfayı yenileyip tekrar dene.'); return; }
     await window.saveCurriculumTopicNote(curGrade, curServer, currentLessonSubject, topic.title, body);
+}
+async function generateCurrentLessonNote() {
+    if (currentTopicIndex < 0 || !currentLessonData || !Array.isArray(currentLessonData.topics)) {
+        showNotif('Önce bir konu seç.');
+        return;
+    }
+    const topic = normalizeTopic(currentLessonData.topics[currentTopicIndex], currentTopicIndex);
+    const button = document.getElementById('generate-lesson-note-button');
+    const status = document.getElementById('lesson-note-status');
+    if (button) { button.disabled = true; button.textContent = 'DERS NOTU HAZIRLANIYOR…'; }
+    if (status) status.textContent = 'Sınıf, ülke, ders ve konu bilgisine göre ayrıntılı anlatım isteniyor.';
+    const countryName = document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer;
+    const prompt = [
+        'TdevKuantum için sınıf düzeyine uygun, güvenli ve öğretici bir ders notu hazırla.',
+        'Ülke: ' + countryName + ' (' + curServer + '). Sınıf: ' + curGrade + '. Ders: ' + currentLessonSubject + '. Konu: ' + topic.title + '.',
+        'Yanıtı bu ülkede dersler için yaygın kullanılan öğretim dilinde yaz. Türkçe dışındaki bir ülke için içerik dilini o ülkenin eğitim diline göre seç.',
+        'Başlıklar kullan: 1) Konuyu adım adım anlatım, 2) temel kavramlar ve tanımlar, 3) çözülmüş örnek veya somut uygulama, 4) sık yapılan hatalar, 5) kısa özet, 6) 3 alıştırma ve cevap anahtarı.',
+        'Sınıf düzeyini aşma. Emin olmadığın resmî kazanım, kaynak veya güncel mevzuat iddiası uydurma. Verilen konu açıklaması: ' + String(topic.explanation || '').slice(0, 2500)
+    ].join('\n');
+    try {
+        if (!window.Parse || !Parse.Cloud || typeof Parse.Cloud.run !== 'function') throw new Error('Bulut hizmeti kullanılamıyor.');
+        const result = await Parse.Cloud.run('tdevAIChat', { message: prompt, grade: String(curGrade), country: curServer });
+        if (!result || result.success !== true || !result.answer) throw new Error((result && result.error) || 'Yapay zekâ hizmeti bu isteği tamamlayamadı.');
+        const note = String(result.answer).trim().slice(0, 11500);
+        const field = document.getElementById('topic-note-body');
+        if (field) field.value = note;
+        const generated = document.querySelector('#topic-detail-view .lesson-note-generated pre');
+        if (generated) generated.textContent = note;
+        if (status) status.textContent = 'Ayrıntılı ders notu hazır. İçeriği kontrol edip “DERS NOTUNU KAYDET” düğmesine bas.';
+        showNotif('Ayrıntılı ders notu oluşturuldu. Kaydetmeyi unutma.');
+    } catch (error) {
+        if (status) status.textContent = 'Ayrıntılı not üretilemedi: ' + (error && error.message ? error.message : 'Yapay zekâ hizmeti kullanılamıyor.') + ' Hazır temel ders notunu düzenleyip yine kaydedebilirsin.';
+        showNotif('Yapay zekâ notu oluşturulamadı; hazır konu notu kullanılabilir.');
+    } finally {
+        if (button) { button.disabled = false; button.textContent = 'YAPAY ZEKÂ İLE AYRINTILI DERS NOTU OLUŞTUR'; }
+    }
 }
 function openYT(q) {
     window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank', 'noopener,noreferrer');
@@ -1786,10 +1822,29 @@ function buildCurriculumQuizFallback(curriculum, grade) {
                 answer: true, explanation: explanation,
                 source: 'TdevKuantum konu rehberi · otomatik oluşturulan çalışma sorusu'
             });
+            const falseText = ({
+                TR: 'konusu seçilen dersin konu rehberinde yer almaz.',
+                DE: 'gehört nicht zum Themenführer dieses Fachs.',
+                ES: 'no aparece en la guía de temas de esta asignatura.',
+                FR: 'ne figure pas dans le guide de cette matière.',
+                PT: 'não aparece no guia de conteúdos desta disciplina.',
+                AZ: 'bu fənnin mövzu bələdçisinə daxil deyil.',
+                JP: 'はこの科目の学習ガイドに含まれていません。',
+                CN: '不属于这门课程的学习指南。',
+                TW: '不屬於這門課程的學習指南。',
+                KR: '은(는) 이 과목의 학습 안내에 포함되지 않습니다.',
+                SA: 'لا يرد ضمن دليل موضوعات هذه المادة.',
+                AE: 'لا يرد ضمن دليل موضوعات هذه المادة.',
+                EG: 'لا يرد ضمن دليل موضوعات هذه المادة.',
+                IQ: 'لا يرد ضمن دليل موضوعات هذه المادة.',
+                RU: 'не входит в тематический план этого предмета.',
+                ID: 'tidak termasuk dalam panduan topik mata pelajaran ini.',
+                VN: 'không có trong hướng dẫn chủ đề của môn học này.'
+            })[curServer] || 'is not included in this subject guide.';
             items.push({
                 id: 'guide-' + curServer + '-' + grade + '-' + subjectIndex + '-' + topicIndex + '-false',
                 grade: String(grade), subject: subject,
-                question: '“' + title + '” konusu, seçilen dersin konu rehberinde yer almaz.',
+                question: '“' + title + '” ' + falseText,
                 answer: false, explanation: title + ': ' + explanation,
                 source: 'TdevKuantum konu rehberi · otomatik oluşturulan çalışma sorusu'
             });
