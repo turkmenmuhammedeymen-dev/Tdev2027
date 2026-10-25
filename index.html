@@ -1629,15 +1629,20 @@ function showDetail(subject) {
                     '<span class="video-thumb"><span class="play-icon">▶</span></span><span class="video-info"><span class="video-title">' +
                     escapeHtml(v.title || 'Konu anlatımı') + '</span><span class="video-src">YouTube · Yeni sekmede açılır</span></span></a>';
             }).join('');
-            const sourceUrl = /^https:\/\//i.test(String(d.mebLink || '')) ? d.mebLink : '';
+            const curriculumMeta = d.curriculumMeta && typeof d.curriculumMeta === 'object' ? d.curriculumMeta : {};
+            const sourceUrl = /^https:\/\//i.test(String(curriculumMeta.sourceUrl || d.mebLink || '')) ? (curriculumMeta.sourceUrl || d.mebLink) : '';
+            const verified = curriculumMeta.status === 'verified';
             document.getElementById('d-content').innerHTML =
                 '<div class="detail-box"><h3>📋 KONU LİSTESİ</h3><p class="detail-help">Bir konuya dokun; açıklaması, öğrenme hedefleri, video araması ve kişisel not alanı açılır.</p><div class="topic-list">' +
                 (topicButtons || '<p>Bu ders için ayrıntılı konu kaydı henüz eklenmemiş.</p>') + '</div></div>' +
                 '<div id="topic-detail-view" class="detail-box"><h3>📝 KONU NOTLARI</h3><p>Başlamak için yukarıdaki konu başlıklarından birini seç.</p></div>' +
-                '<div class="meb-grid"><div class="meb-card s1"><h4>📘 MÜFREDAT DURUMU</h4><p>' + escapeHtml(d.meb1 || 'Genel öğrenme rehberi.') + '</p></div>' +
+                '<div class="meb-grid"><div class="meb-card s1"><h4>📘 MÜFREDAT DURUMU</h4><p><strong>' + (verified ? 'DOĞRULANMIŞ RESMÎ KAYIT' : 'GENEL REHBER / DOĞRULANMAMIŞ') + '</strong></p><p>' + escapeHtml(d.meb1 || curriculumMeta.statusLabel || 'Bu kayıt için resmîlik ve güncellik bilgisi doğrulanmadı.') + '</p>' +
+                (curriculumMeta.curriculumYear ? '<p>Müfredat sürümü: ' + escapeHtml(curriculumMeta.curriculumYear) + '</p>' : '') +
+                (curriculumMeta.verifiedAt ? '<p>Son doğrulama: ' + escapeHtml(curriculumMeta.verifiedAt) + '</p>' : '') + '</div>' +
                 '<div class="meb-card s2"><h4>🎯 ÇALIŞMA ÖNERİSİ</h4><p>' + escapeHtml(d.meb2 || 'Önce konuyu oku, sonra örnek çöz ve kendini değerlendir.') + '</p></div></div>' +
-                '<div class="detail-box"><h3>🔗 RESMÎ / KAYNAK BAĞLANTISI</h3><p>' +
-                (sourceUrl ? '<a href="' + escapeHtml(sourceUrl) + '" target="_blank" rel="noopener noreferrer">Kaynak sayfasını aç ↗</a>' : 'Bu ülke için resmî kaynak bağlantısı henüz doğrulanmadı.') +
+                '<div class="detail-box"><h3>🔗 KAYNAK / DOĞRULAMA</h3><p>' +
+                (curriculumMeta.sourceName ? '<strong>' + escapeHtml(curriculumMeta.sourceName) + '</strong><br>' : '') +
+                (sourceUrl ? '<a href="' + escapeHtml(sourceUrl) + '" target="_blank" rel="noopener noreferrer">' + (verified ? 'Doğrulanmış müfredat kaynağını aç ↗' : 'Kaynak portalını aç — müfredat içeriği ayrıca doğrulanmalı ↗') + '</a>' : 'Bu ülke için güvenilir kaynak bağlantısı henüz doğrulanmadı.') +
                 '</p></div><div class="detail-box"><h3>🎬 VİDEO GALERİSİ</h3><div class="video-grid">' +
                 (videoCards || '<p>Bu ders için video araması hazırlanmadı.</p>') + '</div></div>';
             Array.from(document.querySelectorAll('[data-topic-index]')).forEach(button => {
