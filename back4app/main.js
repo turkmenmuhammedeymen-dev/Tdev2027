@@ -473,7 +473,7 @@ function academicProfile(user) {
   return {
     profileType: profileType,
     countryCode: countryCode,
-    grade: grade === 0 && countryCode === 'US' ? 'K' : String(grade || 8),
+    grade: profileType === 'student' ? (grade === 0 && countryCode === 'US' ? 'K' : String(grade || 8)) : '',
     educationStage: educationStage,
     schoolName: safeText(user.get('schoolName'), 160),
     schoolAddress: safeText(user.get('schoolAddress'), 240),
