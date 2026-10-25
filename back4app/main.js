@@ -520,6 +520,7 @@ function classroomSummary(row) {
 }
 Parse.Cloud.define('getMyProfile', async (request) => {
   const user = requireUser(request);
+  if (!safeText(user.get('publicId'), 40)) { user.set('publicId', 'TDEV-' + crypto.randomBytes(6).toString('hex').toUpperCase()); await user.save(null, { useMasterKey: true }); }
   await applyAnnualGradePromotion(user);
   return { success: true, profile: academicProfile(user), user: await publicUser(user) };
 });
@@ -2331,7 +2332,18 @@ Parse.Cloud.define('getMyGuardianStudents', async (request) => {
       const membershipsQuery = new Parse.Query('ClassroomMembership'); membershipsQuery.equalTo('userId', student.id); membershipsQuery.equalTo('status', 'active'); membershipsQuery.limit(100);
       const memberships = await membershipsQuery.find({ useMasterKey: true }); const classes = [];
       for (const membership of memberships) { try { const classroom = await getClassroomForId(membership.get('classroomId')); if (classroom) { const classEventsQ = new Parse.Query('LearningActivity'); classEventsQ.equalTo('userId', student.id); classEventsQ.equalTo('classroomId', classroom.id); classEventsQ.limit(1000); const classEvents = await classEventsQ.find({useMasterKey:true}); const classQuizzes = classEvents.filter(e=>e.get('eventType')==='quiz_answer'&&e.get('hasAnswer')===true); const classCorrect = classQuizzes.filter(e=>e.get('isCorrect')===true).length; classes.push({ name: safeText(classroom.get('name'),120), schoolName: safeText(classroom.get('schoolName'),160), grade: safeText(classroom.get('grade'),10), successRate: classQuizzes.length ? Math.round(classCorrect/classQuizzes.length*100) : null }); } } catch (_) {} }
-      students.push({ linkId: link.id, userId: student.id, publicId: safeText(student.get('publicId'), 40), name: safeText(student.get('displayName') || student.get('name'), 100), grade: student.get('grade'), schoolName: safeText(student.get('schoolName'), 160), schoolAddress: safeText(student.get('schoolAddress'), 240), videoCount: activity.filter(e => e.get('eventType') === 'video_open').length, lessonCount: activity.filter(e => e.get('eventType') === 'lesson_open').length, linkCount: activity.filter(e => e.get('eventType') === 'external_resource').length, aiQuestions: activity.filter(e => e.get('eventType') === 'ai_question').length, quizTotal: quizzes.length, quizCorrect: correct, quizSuccessRate: quizzes.length ? Math.round(correct / quizzes.length * 100) : null, classes });
+      let schoolSuccessRate = null;
+      const schoolKey = safeText(student.get('schoolKey'),64);
+      if (schoolKey) {
+        const schoolClassesQ = new Parse.Query('Classroom'); schoolClassesQ.equalTo('schoolKey',schoolKey); schoolClassesQ.equalTo('active',true); schoolClassesQ.limit(200);
+        const schoolClasses = await schoolClassesQ.find({useMasterKey:true}); const schoolClassIds = schoolClasses.map(c=>c.id);
+        if (schoolClassIds.length) {
+          const schoolEventsQ = new Parse.Query('LearningActivity'); schoolEventsQ.containedIn('classroomId',schoolClassIds); schoolEventsQ.limit(1000);
+          const schoolEvents = await schoolEventsQ.find({useMasterKey:true}); const schoolQuizzes = schoolEvents.filter(e=>e.get('eventType')==='quiz_answer'&&e.get('hasAnswer')===true);
+          if (schoolQuizzes.length) schoolSuccessRate = Math.round(schoolQuizzes.filter(e=>e.get('isCorrect')===true).length/schoolQuizzes.length*100);
+        }
+      }
+      students.push({ linkId: link.id, userId: student.id, publicId: safeText(student.get('publicId'), 40), name: safeText(student.get('displayName') || student.get('name'), 100), grade: student.get('grade'), schoolName: safeText(student.get('schoolName'), 160), schoolAddress: safeText(student.get('schoolAddress'), 240), videoCount: activity.filter(e => e.get('eventType') === 'video_open').length, lessonCount: activity.filter(e => e.get('eventType') === 'lesson_open').length, linkCount: activity.filter(e => e.get('eventType') === 'external_resource').length, aiQuestions: activity.filter(e => e.get('eventType') === 'ai_question').length, quizTotal: quizzes.length, quizCorrect: correct, quizSuccessRate: quizzes.length ? Math.round(correct / quizzes.length * 100) : null, schoolSuccessRate, classes });
     } catch (_) {}
   }
   return { success: true, students };
