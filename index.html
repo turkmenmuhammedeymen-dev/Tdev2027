@@ -1562,9 +1562,26 @@ async function loginWithEmail() {
             showNotif(result.role === 'founder' ? 'Kurucu girişi başarılı.' : 'Admin girişi başarılı.');
             return;
         }
-        goTo('class');
-        loadClassList();
-        showNotif(result.role === 'beta' ? 'Beta hesabıyla giriş başarılı.' : 'Giriş başarılı. Hoş geldin!');
+        let accountProfile = null;
+        try {
+            const profileResult = await Parse.Cloud.run('getMyProfile', {});
+            accountProfile = profileResult && profileResult.success ? profileResult.profile : null;
+        } catch (_) {}
+        if (accountProfile) {
+            const profileCountry = String(accountProfile.countryCode || curServer || 'TR').toUpperCase();
+            curServer = profileCountry;
+            if (document.getElementById('country-select')) {
+                const countrySelect = document.getElementById('country-select');
+                if ([...countrySelect.options].some(option => option.value === profileCountry)) countrySelect.value = profileCountry;
+            }
+            curGrade = String(accountProfile.grade || '8');
+        }
+        const launchGrade = String((accountProfile && accountProfile.profileType === 'student' && accountProfile.grade) || curGrade || '8');
+        launch(launchGrade);
+        const roleLabels = {student:'ÖĞRENCİ',teacher:'ÖĞRETMEN',principal:'MÜDÜR',guardian:'VELİ'};
+        const roleDisplay = document.getElementById('role-name-disp');
+        if (roleDisplay && accountProfile && roleLabels[accountProfile.profileType]) roleDisplay.textContent = roleLabels[accountProfile.profileType];
+        showNotif(result.role === 'beta' ? 'Beta hesabıyla giriş başarılı.' : 'Giriş başarılı. Hesabın açılıyor…');
     } catch (error) {
         showAuthError(errorId, error && error.message ? error.message : 'Giriş yapılamadı.');
     } finally {
