@@ -200,7 +200,9 @@ function verificationKey(email) {
 }
 async function probeAppsScript(scriptUrl, expectedToken) {
   if (!expectedToken) throw new Error('Back4App Config APPS_SCRIPT_TOKEN ayarlanmamış.');
-  const response = await fetch(scriptUrl, { method: 'GET' });
+  // Avoid a cached deployment health response masking the currently deployed token state.
+  const healthUrl = scriptUrl + (scriptUrl.includes('?') ? '&' : '?') + 'tdev_healthcheck=' + Date.now();
+  const response = await fetch(healthUrl, { method: 'GET', cache: 'no-store' });
   const body = await response.text();
   if (!response.ok) throw new Error('Apps Script sağlık kontrolü HTTP ' + response.status);
   let data;
@@ -467,7 +469,10 @@ async function issueVerificationCode(email, name) {
     await verification.save(null, { useMasterKey: true });
     return { alreadySent: false, message: 'Altı haneli doğrulama kodu e-postana gönderildi.' };
   } catch (error) {
+    // Never leave a valid code active when delivery failed. The recovery action
+    // can issue a fresh code immediately after the provider is repaired.
     verification.set('deliveryFailed', true);
+    verification.set('used', true);
     await verification.save(null, { useMasterKey: true });
     throw error;
   }
