@@ -184,9 +184,9 @@ check(cloudCode.includes('async function issueVerificationCode(') &&
       cloudCode.includes('deliveryFailed') &&
       cloudCode.includes('EMAIL_DELIVERY_FAILED'),
   'Verification delivery failures are recorded and recoverable');
-check(cloudCode.includes('Prefer the current deployment environment') &&
-      cloudCode.indexOf('const env =') < cloudCode.indexOf('const cfg = await loadParseConfig()'),
-  'Environment secrets take precedence over stale Parse Config values');
+check(cloudCode.includes('Environment variables are a fallback only') &&
+      cloudCode.indexOf("const cfg = await loadParseConfig();") < cloudCode.indexOf("const env = (typeof process !== 'undefined' && process.env)"),
+  'Back4App Config values take precedence over environment fallbacks');
 check(cloudCode.includes('AI_ALL_PROVIDERS_FAILED') &&
       cloudCode.includes('fallbackUsed: index > 0') &&
       cloudCode.includes("configValueAsync('AI_FALLBACK_API_KEY')"),
