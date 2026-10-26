@@ -107,7 +107,8 @@ for (const functionName of [
   'getClassroomMessages', 'addClassroomMemberById',
   'saveStudyPlan', 'getStudyPlans', 'saveStudyNote', 'getStudyNotes',
   'saveStudyProgress', 'getStudyProgress', 'saveStudyCard', 'getStudyCards',
-  'saveStudyMistake', 'getStudyMistakes', 'deleteStudyRecord'
+  'saveStudyMistake', 'getStudyMistakes', 'deleteStudyRecord',
+  'getMyActiveSessions', 'revokeMySession', 'deleteMyAccountData'
 ]) {
   check(definedFunctions.has(functionName), 'Required Cloud function exists: ' + functionName);
 }
@@ -157,6 +158,25 @@ check(cloudCode.includes('async function assertVerificationProviderReady()') &&
 check(cloudCode.includes('StudyCard:') && cloudCode.includes("Parse.Cloud.define('saveStudyCard'") &&
       cloudCode.includes("Parse.Cloud.define('getStudyCards'"),
   'Flashcards have a server schema and cloud sync endpoints');
+
+check(cloudCode.includes('async function issueVerificationCode(') &&
+      cloudCode.includes('deliveryFailed') &&
+      cloudCode.includes('EMAIL_DELIVERY_FAILED'),
+  'Verification delivery failures are recorded and recoverable');
+check(cloudCode.includes('Prefer the current deployment environment') &&
+      cloudCode.indexOf('const env =') < cloudCode.indexOf('const cfg = await loadParseConfig()'),
+  'Environment secrets take precedence over stale Parse Config values');
+check(cloudCode.includes('AI_ALL_PROVIDERS_FAILED') &&
+      cloudCode.includes('fallbackUsed: index > 0'),
+  'AI provider errors trigger a configured fallback and return provider metadata');
+check(cloudCode.includes("Parse.Query('_Session')") &&
+      cloudCode.includes("Parse.Cloud.define('revokeMySession'") &&
+      cloudCode.includes("Parse.Cloud.define('deleteMyAccountData'"),
+  'Security center supports active-session listing, remote sign-out and account deletion');
+check(html.includes('id="tab-security"') && html.includes('id="nav-security"') &&
+      html.includes("Parse.Cloud.run('getMyActiveSessions'") &&
+      html.includes("Parse.Cloud.run('revokeMySession'"),
+  'Security and privacy center is connected to server endpoints');
 
 console.log('TdevKuantum repository validation');
 console.log('Passed: ' + passed.length);
