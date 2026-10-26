@@ -873,12 +873,73 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 #chat-msgs .msg.user .msg-avatar { background: #eaf2ff; border: 1px solid #b8cff4; }
 #chat-msgs .msg.ai .msg-avatar { background: #eaf7ff; border: 1px solid #c4e2f5; }
 </style>
+<style id="tdev-learning-hero-refresh">
+:root{--tdev-primary:#2356bd;--tdev-primary-strong:#19469f;--tdev-ink:#172b49;--tdev-muted:#586d88;--tdev-line:#dce5f1;--tdev-panel:#fff;--tdev-sky:#eaf2ff;--tdev-mint:#eaf7f1;--tdev-gold:#b88936}
+html,body{font-family:'DM Sans',sans-serif!important}body{background:#f4f7fc!important}
+.wallpaper{background:radial-gradient(ellipse at 12% 18%,rgba(76,132,226,.14),transparent 34%),radial-gradient(ellipse at 82% 70%,rgba(51,163,139,.08),transparent 31%),linear-gradient(135deg,#f8faff,#eef3fa)!important}
+.wallpaper::after{background:linear-gradient(125deg,rgba(248,250,255,.32),rgba(241,246,253,.58))!important}
+.grid-overlay{opacity:.48!important;background-image:linear-gradient(rgba(46,83,140,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(46,83,140,.045) 1px,transparent 1px)!important;background-size:44px 44px!important}
+.learning-ambient{position:fixed;inset:0;z-index:4;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .35s ease}
+body:has(#scr-gate:not(.hidden)) .learning-ambient{opacity:1}
+.ambient-chip{position:absolute;display:flex;align-items:center;gap:9px;padding:10px 14px;border:1px solid rgba(195,210,233,.9);border-radius:13px;background:rgba(255,255,255,.72);box-shadow:0 12px 30px rgba(31,62,108,.055);color:#627895;font:800 .64rem 'DM Sans',sans-serif;letter-spacing:.08em;white-space:nowrap;backdrop-filter:blur(8px);animation:ambientFloat 8s ease-in-out infinite}
+.ambient-chip i{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;background:#eaf1ff;color:#2859ad;font-style:normal;font-size:.9rem}
+.ambient-chip-a{top:17%;left:3.5%;animation-delay:-1s}.ambient-chip-b{top:32%;right:3.2%;animation-delay:-4s}.ambient-chip-c{bottom:18%;left:4.5%;animation-delay:-2.5s}.ambient-chip-d{bottom:10%;right:7%;animation-delay:-5.5s}
+.ambient-orbit{position:absolute;display:block;width:300px;height:300px;border:1px solid rgba(53,105,186,.1);border-radius:50%;animation:ambientOrbit 32s linear infinite}
+.ambient-orbit-a{top:10%;right:12%}.ambient-orbit-b{bottom:-180px;left:25%;width:420px;height:420px;animation-direction:reverse;border-color:rgba(39,153,125,.09)}
+@keyframes ambientFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes ambientOrbit{to{transform:rotate(360deg)}}
+#scr-gate:not(.hidden){display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(340px,.78fr);grid-template-areas:"brand auth" "server auth" "showcase auth";grid-template-rows:auto auto 1fr;align-content:start;align-items:start;justify-items:stretch;gap:19px clamp(22px,4vw,54px);width:100%;padding:clamp(22px,4vw,54px);overflow-x:hidden;overflow-y:auto}
+#scr-gate>.gate-brand-block{grid-area:brand;width:100%;max-width:730px;margin:0!important;text-align:left!important;position:relative;z-index:5}
+.gate-brand-lockup{align-items:flex-start!important;display:grid!important;grid-template-columns:58px minmax(0,1fr);grid-template-areas:"emblem logo" "emblem sub" "emblem quantum";column-gap:15px;row-gap:2px;margin:0 0 22px!important}
+.gate-emblem{grid-area:emblem;width:58px!important;height:58px;align-self:center}
+.gate-brand-lockup .coming-logo{grid-area:logo;text-align:left!important;font-size:clamp(1.8rem,3.5vw,2.7rem)!important;line-height:1.1}
+.gate-brand-lockup .logo-sub{grid-area:sub;text-align:left!important;font-size:.64rem!important}.gate-brand-lockup .logo-quantum{grid-area:quantum;text-align:left!important;font-size:.62rem!important}
+.gate-intro-copy{max-width:690px;padding:clamp(19px,2.5vw,30px);border:1px solid rgba(213,225,241,.9);border-radius:22px;background:linear-gradient(125deg,rgba(255,255,255,.92),rgba(247,250,255,.78));box-shadow:0 18px 48px rgba(26,54,97,.06);position:relative;overflow:hidden}
+.gate-intro-copy::after{content:"";position:absolute;width:190px;height:190px;right:-90px;bottom:-110px;border:24px solid rgba(42,94,183,.045);border-radius:50%;pointer-events:none}
+.gate-intro-label{display:inline-flex;align-items:center;gap:8px;color:#3b659f;font-size:.67rem;font-weight:850;letter-spacing:.13em}.gate-live-dot{width:7px;height:7px;border-radius:50%;background:#209a76;box-shadow:0 0 0 4px rgba(32,154,118,.12)}
+.gate-intro-copy h1{max-width:640px;margin:13px 0 10px;color:#182e4d;font:800 clamp(1.85rem,3.3vw,3.2rem)/1.08 'Manrope','DM Sans',sans-serif!important;letter-spacing:-.055em!important}
+.gate-intro-copy>p{max-width:560px;color:#61748d;font-size:clamp(.88rem,1.15vw,1rem);line-height:1.75}
+.gate-value-points{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.gate-value-points span{padding:7px 10px;border:1px solid #dce7f5;border-radius:999px;background:#f7faff;color:#3e5c82;font-size:.7rem;font-weight:750}
+#scr-gate>.server-row{grid-area:server;width:100%;max-width:730px;justify-content:flex-start;align-self:start;margin:0;padding:10px;background:rgba(255,255,255,.8);box-shadow:0 8px 24px rgba(26,54,97,.04);position:relative;z-index:5}
+#scr-gate .country-select-wrap{flex:1 1 100%;justify-content:flex-start;align-items:center;flex-direction:row}#scr-gate .country-select{max-width:330px}
+#scr-gate>.auth-card{grid-area:auth;width:100%;max-width:460px;justify-self:center;align-self:center;margin:0!important;padding:clamp(24px,3vw,36px)!important;border-radius:24px!important;border-color:#dbe5f2!important;box-shadow:0 28px 75px rgba(25,52,91,.12),0 3px 10px rgba(25,52,91,.025)!important;position:relative;z-index:5}
+#scr-gate .auth-card::before{content:"";display:block;width:44px;height:4px;margin-bottom:22px;border-radius:99px;background:linear-gradient(90deg,#2457c5,#83b4ff)}
+#scr-gate .auth-eyebrow{font-size:.68rem;letter-spacing:.14em}#scr-gate .auth-heading{font-size:clamp(1.7rem,2.5vw,2.15rem);line-height:1.12}#scr-gate .auth-description{font-size:.88rem;margin-bottom:21px}
+#scr-gate .auth-input{min-height:50px;background:#fbfcff!important}#scr-gate .auth-primary{box-shadow:0 9px 20px rgba(35,86,189,.19)}#scr-gate .auth-security-note{color:#647790}
+#scr-gate>.learning-showcase{grid-area:showcase;width:100%;max-width:760px;margin:0;padding:0;position:relative;z-index:5}
+#scr-gate .showcase-heading{margin-bottom:15px;align-items:flex-start}#scr-gate .showcase-title{font-size:clamp(1.35rem,2.2vw,1.9rem);line-height:1.14;max-width:600px}
+#scr-gate .showcase-subtitle{max-width:700px;font-size:.82rem;line-height:1.65}#scr-gate .showcase-count{font-size:.62rem}
+#scr-gate .showcase-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#scr-gate .showcase-card{border-radius:14px;background:rgba(255,255,255,.9);box-shadow:0 6px 18px rgba(24,48,86,.035)}
+#scr-gate .showcase-art{height:82px}#scr-gate .showcase-card-body{padding:10px 11px 0}#scr-gate .showcase-card h3{font-size:.82rem}#scr-gate .showcase-card p{font-size:.71rem}
+#scr-gate .showcase-bottom{padding:13px 14px;margin-top:14px}#scr-gate .showcase-foot{font-size:.67rem}
+@media(max-width:980px){#scr-gate:not(.hidden){grid-template-columns:minmax(0,1fr) minmax(300px,.82fr);gap:16px}#scr-gate .showcase-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ambient-chip-a{left:1%;top:10%}.ambient-chip-b{right:1%;top:40%}.ambient-chip-c{left:1%;bottom:9%}.ambient-chip-d{right:1%;bottom:4%}}
+@media(max-width:720px){
+ #scr-gate:not(.hidden){display:flex!important;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:20px 14px 36px;gap:15px}
+ #scr-gate>.gate-brand-block,#scr-gate>.server-row,#scr-gate>.auth-card,#scr-gate>.learning-showcase{width:100%;max-width:none}
+ .gate-brand-lockup{grid-template-columns:48px minmax(0,1fr);column-gap:11px;margin-bottom:15px!important}.gate-emblem{width:48px!important;height:48px}
+ .gate-brand-lockup .coming-logo{font-size:1.85rem!important}.gate-intro-copy{padding:19px;border-radius:17px}
+ .gate-intro-copy h1{font-size:clamp(1.8rem,7vw,2.4rem);max-width:580px}.gate-intro-copy>p{font-size:.88rem}
+ #scr-gate>.server-row{padding:8px}#scr-gate .country-select-wrap{flex-direction:column;align-items:stretch}#scr-gate .country-select{max-width:none;width:100%}
+ #scr-gate>.auth-card{align-self:stretch;margin:0!important;padding:23px 19px!important;border-radius:18px!important}
+ #scr-gate .showcase-heading{flex-direction:column}#scr-gate .showcase-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#scr-gate .showcase-card p{font-size:.72rem}
+ .ambient-chip{font-size:.55rem;padding:7px 9px;opacity:.58}.ambient-chip-a{top:4%;left:-35px}.ambient-chip-b{top:36%;right:-40px}.ambient-chip-c{bottom:8%;left:-35px}.ambient-chip-d{display:none}.ambient-orbit{opacity:.5}
+}
+@media(max-width:380px){#scr-gate .showcase-grid{grid-template-columns:1fr}.gate-value-points span{font-size:.66rem}}
+@media(prefers-reduced-motion:reduce){.learning-ambient,.ambient-chip,.ambient-orbit{animation:none!important;transition:none!important}.ambient-chip{transform:none!important}}
+</style>
 </head>
 <body>
 
 <div class="wallpaper"></div>
 <div class="grid-overlay"></div>
 <div class="scanline"></div>
+<div class="learning-ambient" aria-hidden="true">
+  <span class="ambient-chip ambient-chip-a"><i>∑</i> MATEMATİK · KEŞFET</span>
+  <span class="ambient-chip ambient-chip-b"><i>↻</i> AKTİF HATIRLAMA</span>
+  <span class="ambient-chip ambient-chip-c"><i>◎</i> HEDEFİNE ADIM ADIM</span>
+  <span class="ambient-chip ambient-chip-d"><i>✦</i> MERAK ET · ÖĞREN · GELİŞ</span>
+  <span class="ambient-orbit ambient-orbit-a"></span><span class="ambient-orbit ambient-orbit-b"></span>
+</div>
 <div id="auth-transition" role="status" aria-live="polite" aria-label="Hesabın açılıyor"><div class="auth-transition-emblem" aria-hidden="true"><svg viewBox="0 0 120 120"><defs><clipPath id="tkFillClip"><rect class="auth-transition-fill" x="0" y="0" width="120" height="120" fill="#78d8ff"/></clipPath></defs><circle cx="60" cy="60" r="49" fill="none" stroke="#78d8ff" stroke-width="2"/><path d="M28 36 L60 20 L92 36 L60 49 Z" fill="#f3c969"/><path d="M38 40 L38 46 Q60 61 82 46 L82 40 L60 51 Z" fill="#c59645"/><path d="M39 60 H81 M60 53 V91 M45 91 H75 M45 60 L45 82 M75 60 L75 82" fill="none" stroke="#f3c969" stroke-width="5" stroke-linecap="round"/><g clip-path="url(#tkFillClip)"><path d="M28 36 L60 20 L92 36 L60 49 Z" fill="#78d8ff"/><path d="M38 40 L38 46 Q60 61 82 46 L82 40 L60 51 Z" fill="#78d8ff"/><path d="M39 60 H81 M60 53 V91 M45 91 H75 M45 60 L45 82 M75 60 L75 82" fill="none" stroke="#78d8ff" stroke-width="5" stroke-linecap="round"/></g></svg></div><div class="auth-transition-name">TdevKuantum</div><div class="auth-transition-caption">Hesabın güvenli biçimde açılıyor…</div><div class="auth-transition-track"><span></span></div></div>
 
 <!-- ===== TdevKuantum AÇILIŞ / SPLASH ===== -->
@@ -901,8 +962,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <!-- ===== GİRİŞ ===== -->
 <div id="scr-gate" class="screen hidden">
-    <div style="margin-bottom:22px;text-align:center">
+    <div class="gate-brand-block">
         <div class="gate-brand-lockup"><div class="gate-emblem" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="49" fill="none" stroke="#eac16e" stroke-width="2"/><path d="M28 36 L60 20 L92 36 L60 49 Z" fill="#f5d58b"/><path d="M38 40 L38 46 Q60 61 82 46 L82 40 L60 51 Z" fill="#c59645"/><path d="M39 60 H81 M60 53 V91 M45 91 H75 M45 60 L45 82 M75 60 L75 82" fill="none" stroke="#f5d58b" stroke-width="5" stroke-linecap="round"/></svg></div><div class="coming-logo">Tdev<span>Kuantum</span></div><div class="logo-sub">EĞİTİM · TEKNOLOJİ · GELECEK</div><div class="logo-quantum">BİLGİYLE GELECEĞE</div></div>
+        <div class="gate-intro-copy"><span class="gate-intro-label"><span class="gate-live-dot"></span> KİŞİSEL ÖĞRENME EKOSİSTEMİ</span><h1>Merakını bilgiye, emeğini gelişime dönüştür.</h1><p>Derslerini keşfet, çalışma düzenini kur ve ilerlemeni kendi hızında takip et.</p><div class="gate-value-points"><span>✓ Sana göre çalışma</span><span>✓ Hedef odaklı öğrenme</span><span>✓ Tek yerde düzen</span></div></div>
     </div>
     <div class="server-row">
         <div class="server-btn active" onclick="selServer(this,'TR')"><span class="server-dot"></span>🇹🇷 TÜRKİYE</div>
