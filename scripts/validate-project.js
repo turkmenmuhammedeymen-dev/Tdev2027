@@ -123,6 +123,20 @@ check(cloudCode.includes("JSON.stringify({ action: 'healthcheck', token: expecte
   'Back4App probes Apps Script using the matching health-check protocol');
 check(cloudCode.includes("configValueAsync('APPS_SCRIPT_TOKEN')"),
   'Back4App reads the server-side mail token');
+check(cloudCode.includes("Back4App Config is the dashboard's source of truth") &&
+      cloudCode.indexOf("const cfg = await loadParseConfig();") < cloudCode.indexOf("const env = (typeof process !== 'undefined' && process.env)"),
+  'Back4App Config takes precedence over stale environment values');
+check(cloudCode.includes("'deepseek-ai/deepseek-v4-flash'") &&
+      cloudCode.includes("configValueAsync('NVIDIA_API_KEY')") &&
+      cloudCode.includes("configValueAsync('NVIDIA_BASE_URL'"),
+  'NVIDIA provider has a current default model and reads server-side credentials');
+check(cloudCode.includes("nvidiaApiKeyConfigured: !!nvidiaApiKey") &&
+      cloudCode.includes("nvidiaBaseUrlValid") &&
+      cloudCode.includes("nvidiaModel: safeText"),
+  'Health check reports NVIDIA configuration without exposing the API key');
+check(cloudCode.includes("providerError || ''") &&
+      cloudCode.includes("providerErrors.push(provider.label + ' HTTP ' + response.status"),
+  'AI provider errors preserve safe HTTP response details for diagnosis');
 check(cloudCode.includes('PARSE_CONFIG_CACHE_TTL_MS') &&
       cloudCode.includes('Do not cache a failed/empty read forever'),
   'Parse Config cache refreshes and does not permanently retain failed reads');
