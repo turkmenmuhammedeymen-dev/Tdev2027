@@ -53,6 +53,7 @@ for (const filename of requiredFiles) {
 }
 
 for (const filename of [
+  'achievements.js',
   'school.js',
   'study.js',
   'curriculum-catalog.js',
@@ -248,6 +249,34 @@ check(files['learning-center.js'].includes('window.addStudentTask') &&
       files['learning-center.js'].includes('window.addExamReminder') &&
       files['learning-center.js'].includes('window.saveStudentDailyGoal'),
   'Student center includes task, exam reminder and daily goal actions');
+
+check(html.includes('id="nav-student-center"') &&
+      html.includes('Öğrenci Kokpiti') &&
+      html.includes('Derslerim ve Müfredat') &&
+      html.includes('Yapay Zekâ Öğretmenim') &&
+      html.includes('Deneme ve Soru Laboratuvarı') &&
+      html.includes('Akıllı Tekrar ve Yanlış Defteri') &&
+      html.includes('Notlarım ve Kaynaklarım'),
+  'Primary student workspace navigation includes the requested learning areas');
+check(html.includes('Başarı Analizim') &&
+      html.includes('Çalışma Planım') &&
+      html.includes('Sınav ve Kariyer Hedeflerim') &&
+      html.includes('XP ve Başarılarım'),
+  'Development navigation includes analytics, planning, exam goals and achievements');
+check(html.includes('Dijital Sınıf') &&
+      html.includes('Veli ve Öğretmen Alanı') &&
+      html.includes('Güvenlik ve Gizlilik') &&
+      html.includes('Ayarlar ve Destek'),
+  'Community and account navigation includes classroom, guardian, security and settings');
+check(html.includes('id="tab-achievements"') &&
+      html.includes('src="achievements.js" defer') &&
+      files['achievements.js'].includes('window.loadAchievements') &&
+      files['achievements.js'].includes('data-xp-task'),
+  'XP and achievements panel is wired to its local progress module');
+check(html.includes("['system','stats','bots'].includes(id) && !privileged") &&
+      html.includes("id === 'devpanel' && curRole !== 'founder'") &&
+      html.includes('id="nav-admin-group"'),
+  'System diagnostics are hidden from ordinary users and guarded by role checks');
 
 console.log('TdevKuantum repository validation');
 console.log('Passed: ' + passed.length);
