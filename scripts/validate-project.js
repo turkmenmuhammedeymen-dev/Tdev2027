@@ -107,8 +107,8 @@ for (const functionName of [
   'getClassroomMessages', 'addClassroomMemberById',
   'saveStudyPlan', 'getStudyPlans', 'saveStudyNote', 'getStudyNotes',
   'saveStudyProgress', 'getStudyProgress', 'saveStudyCard', 'getStudyCards',
-  'saveStudyMistake', 'getStudyMistakes', 'deleteStudyRecord',
-  'getMyActiveSessions', 'revokeMySession', 'deleteMyAccountData'
+  'saveStudyMistake', 'getStudyMistakes', 'deleteStudyRecord', 'saveStudyGoal', 'getStudyGoals',
+  'getMyActiveSessions', 'revokeMySession', 'deleteMyAccountData', 'tdevAIResearch'
 ]) {
   check(definedFunctions.has(functionName), 'Required Cloud function exists: ' + functionName);
 }
@@ -169,6 +169,17 @@ check(cloudCode.includes('Prefer the current deployment environment') &&
 check(cloudCode.includes('AI_ALL_PROVIDERS_FAILED') &&
       cloudCode.includes('fallbackUsed: index > 0'),
   'AI provider errors trigger a configured fallback and return provider metadata');
+check(cloudCode.includes("Parse.Cloud.define('tdevAIResearch'") &&
+      cloudCode.includes("configValueAsync('TAVILY_API_KEY')") &&
+      html.includes("Parse.Cloud.run('tdevAIResearch'"),
+  'Source-linked research uses a server-side configured search provider');
+check(cloudCode.includes("Parse.Cloud.define('saveStudyGoal'") &&
+      cloudCode.includes("Parse.Cloud.define('getStudyGoals'") &&
+      cloudCode.includes('StudyGoal:'),
+  'Exam goals have server-side ownership and persistence');
+check(html.includes('function startVoiceInput()') && html.includes('function aiFileLoad(input)') &&
+      html.includes('window.pdfjsLib') && html.includes('window.Tesseract'),
+  'AI workspace supports voice dictation and local text extraction/OCR');
 check(cloudCode.includes("Parse.Query('_Session')") &&
       cloudCode.includes("Parse.Cloud.define('revokeMySession'") &&
       cloudCode.includes("Parse.Cloud.define('deleteMyAccountData'"),
