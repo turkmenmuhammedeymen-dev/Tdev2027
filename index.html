@@ -755,7 +755,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 .security-status{margin-top:12px;color:#9ecbff;font-size:.8rem;line-height:1.55}
 .security-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .security-warning{margin-top:14px;color:#f0d9a0;font-size:.78rem;line-height:1.6}
-.study-action.danger{background:#4a2029!important;border-color:#b85a68!important;color:#fff0f2!important}
+.study-action.danger{background:#b42332!important;border-color:#fda4af!important;color:#ffffff!important;box-shadow:0 5px 16px rgba(180,35,50,.18)}
 @media(max-width:600px){.security-hero{align-items:flex-start;gap:12px}.security-hero-icon{flex-basis:44px;width:44px;height:44px}.security-panel-heading{flex-direction:column}.security-panel-heading .study-action{width:100%}.security-actions{flex-direction:column}.security-actions .study-action{width:100%}}
 </style>
 <style>
@@ -766,6 +766,16 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 .exam-goal-card p{color:#b9c8db;font-size:.8rem;line-height:1.55;margin:5px 0}
 .exam-goal-progress{height:8px;background:#1d3048;border-radius:99px;overflow:hidden;margin-top:10px}
 .exam-goal-progress span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4f8fe8,#78d8ff,#f1cb72)}
+</style>
+<style>
+.dashboard-launch-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 8px}
+.dashboard-launch-card{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:10px;row-gap:4px;align-items:center;text-align:left;padding:13px;border:1px solid #d8e3f2;border-radius:13px;background:linear-gradient(145deg,#fff,#f6f9ff);cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s}
+.dashboard-launch-card:hover{transform:translateY(-2px);border-color:#9cb9e9;box-shadow:0 10px 22px rgba(31,65,120,.09)}
+.dashboard-launch-card>span{grid-row:span 2;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eaf1ff;font-size:1.05rem}
+.dashboard-launch-card strong{color:#1b3152;font-size:.79rem;line-height:1.3}
+.dashboard-launch-card small{color:#63748c;font-size:.68rem;line-height:1.45}
+@media(max-width:900px){.dashboard-launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:460px){.dashboard-launch-grid{grid-template-columns:1fr}.dashboard-launch-card{padding:12px}}
 </style>
 </head>
 <body>
@@ -1082,7 +1092,13 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
                     <div class="overview-actions">
                         <button type="button" class="study-action" onclick="showTab('curriculum',document.getElementById('nav-curriculum'))">🌐 MÜFREDAT MERKEZİ</button>
                         <button type="button" class="study-action secondary" onclick="showTab('planner',document.getElementById('nav-planner'));loadStudyPlanner()">＋ ÇALIŞMA PLANI</button>
-                        <button type="button" class="study-action secondary" onclick="showTab('progress',document.getElementById('nav-progress'));loadLearningDashboard()">↗ GELİŞİMİM</button>
+                        <button type="button" class="study-action secondary" onclick="showTab('progress',document.getElementById('nav-progress'));loadLearningDashboard();loadExamGoals()">↗ GELİŞİMİM</button>
+                    </div>
+                    <div class="dashboard-launch-grid" aria-label="Hızlı erişim">
+                        <button type="button" class="dashboard-launch-card" onclick="showTab('ai',document.getElementById('nav-ai'))"><span>🤖</span><strong>AI çalışma alanı</strong><small>Sesle sor, dosya çözümle veya araştır</small></button>
+                        <button type="button" class="dashboard-launch-card" onclick="showTab('mistakes',document.getElementById('nav-mistakes'));loadStudyMistakes()"><span>🔎</span><strong>Yanlış defteri</strong><small>Tekrar tarihlerini ve çözümleri izle</small></button>
+                        <button type="button" class="dashboard-launch-card" onclick="showTab('progress',document.getElementById('nav-progress'));loadLearningDashboard();loadExamGoals()"><span>🎯</span><strong>Sınav hedefleri</strong><small>Hedef puanını ve ilerlemeni takip et</small></button>
+                        <button type="button" class="dashboard-launch-card" onclick="showTab('security',document.getElementById('nav-security'));loadSecurityCenter()"><span>🛡️</span><strong>Güvenlik merkezi</strong><small>Oturumları ve kişisel verilerini yönet</small></button>
                     </div>
                     <p class="overview-disclaimer">Resmî müfredat durumu her kaynak ve program yılı için ayrı gösterilir. Genel konu rehberleri, resmî programın eksiksiz içe aktarıldığı anlamına gelmez.</p>
                 </section>
