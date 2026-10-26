@@ -2099,6 +2099,7 @@ const TK_SCHEMA = {
   StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyCard: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  StudyGoal: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   School: { schoolKey:'string', schoolName:'string', schoolAddress:'string', countryCode:'string', principalId:'string', createdAtISO:'string' },
   GuardianStudent: { guardianId:'string', studentId:'string', status:'string', createdAtISO:'string', removedAtISO:'string' },
   ClassroomMessage: { classroomId:'string', authorId:'string', authorName:'string', authorRole:'string', message:'string', createdAtISO:'string' },
@@ -2184,6 +2185,36 @@ async function getStudyRecords(request, className) {
   const rows = await query.find({ useMasterKey: true });
   return { success: true, items: rows.map(function (row) { return row.get('payload'); }).filter(Boolean) };
 }
+Parse.Cloud.define('saveStudyGoal', async (request) => {
+  const user = requireUser(request);
+  const p = request.params || {};
+  const itemId = safeText(p.id, 100);
+  const title = safeText(p.title, 100);
+  const subject = safeText(p.subject, 60);
+  const targetDate = safeText(p.targetDate, 10);
+  const targetScore = Number(p.targetScore);
+  const currentScore = Number(p.currentScore);
+  if (!itemId || !title || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate) ||
+      !Number.isFinite(targetScore) || targetScore < 0 || targetScore > 100 ||
+      !Number.isFinite(currentScore) || currentScore < 0 || currentScore > 100) {
+    return resultError('Sınav hedefi alanları geçersiz. Tarih ve 0–100 arası puanlar gerekli.', 'INVALID_STUDY_GOAL');
+  }
+  const payload = { id:itemId, title:title, subject:subject, targetDate:targetDate, targetScore:targetScore, currentScore:currentScore, updatedAt:new Date().toISOString() };
+  const query = new Parse.Query('StudyGoal'); query.equalTo('ownerId', user.id); query.equalTo('itemId', itemId);
+  let row = await query.first({ useMasterKey: true });
+  if (!row) row = new Parse.Object('StudyGoal');
+  row.set('ownerId', user.id); row.set('itemId', itemId); row.set('payload', payload);
+  row.set('updatedAtISO', payload.updatedAt); if (!row.get('createdAtISO')) row.set('createdAtISO', payload.updatedAt);
+  await row.save(null, { useMasterKey: true });
+  await writeAuditLog(request, 'learning.exam_goal_saved', itemId, {});
+  return { success:true, item:payload };
+});
+Parse.Cloud.define('getStudyGoals', async (request) => {
+  const user = requireUser(request);
+  const query = new Parse.Query('StudyGoal'); query.equalTo('ownerId', user.id); query.descending('updatedAtISO'); query.limit(100);
+  const rows = await query.find({ useMasterKey: true });
+  return { success:true, items:rows.map(row => row.get('payload') || {}) };
+});
 Parse.Cloud.define('saveStudyPlan', async (request) => saveStudyRecord(request, 'StudyPlan', 'plan'));
 Parse.Cloud.define('getStudyPlans', async (request) => getStudyRecords(request, 'StudyPlan'));
 Parse.Cloud.define('saveStudyNote', async (request) => saveStudyRecord(request, 'StudyNote', 'note'));
