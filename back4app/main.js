@@ -21,7 +21,10 @@
  *   NVIDIA_BASE_URL      optional NVIDIA NIM base URL (default https://integrate.api.nvidia.com/v1)
  *   AI_API_KEY           optional server-only OpenAI-compatible API key fallback
  *   AI_MODEL             optional fallback model name (default gpt-4o-mini)
- *   AI_BASE_URL          optional fallback HTTPS chat-completions URL
+ *   AI_BASE_URL          optional primary HTTPS chat-completions URL
+ *   AI_FALLBACK_API_KEY optional separate fallback API key when the primary AI provider fails
+ *   AI_FALLBACK_MODEL   optional model for the fallback provider
+ *   AI_FALLBACK_BASE_URL optional HTTPS chat-completions URL for the fallback provider
  *
  * Optional:
  *   ALLOWED_ORIGINS      comma-separated site origins
@@ -1734,14 +1737,19 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   if (!/chat\/completions$/i.test(primaryEndpoint)) primaryEndpoint += '/chat/completions';
   if (!/^https:\/\//i.test(primaryEndpoint)) return resultError('Yapay zekâ uç noktası yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
 
-  const providers = [{ key: primaryKey, endpoint: primaryEndpoint, model: primaryModel, label: useNvidia ? 'NVIDIA NIM' : 'AI sağlayıcısı' }];
-  if (useNvidia && generalApiKey) {
-    let fallbackEndpoint = (await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions';
-    fallbackEndpoint = fallbackEndpoint.replace(/\/+$/, '');
+  const providers = [{ key: primaryKey, endpoint: primaryEndpoint, model: primaryModel, label: useNvidia ? 'NVIDIA NIM' : 'Birincil AI sağlayıcısı' }];
+  const fallbackApiKey = useNvidia ? generalApiKey : await configValueAsync('AI_FALLBACK_API_KEY');
+  if (fallbackApiKey) {
+    const fallbackDefaultUrl = useNvidia
+      ? 'https://api.openai.com/v1/chat/completions'
+      : ((await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions');
+    let fallbackEndpoint = ((await configValueAsync(useNvidia ? 'AI_BASE_URL' : 'AI_FALLBACK_BASE_URL', fallbackDefaultUrl)) || fallbackDefaultUrl).replace(/\/+$/, '');
     if (!/chat\/completions$/i.test(fallbackEndpoint)) fallbackEndpoint += '/chat/completions';
-    const fallbackModel = (await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini';
-    if (/^https:\/\//i.test(fallbackEndpoint) && (fallbackEndpoint !== primaryEndpoint || generalApiKey !== primaryKey)) {
-      providers.push({ key: generalApiKey, endpoint: fallbackEndpoint, model: fallbackModel, label: 'Yedek AI sağlayıcısı' });
+    const fallbackModel = useNvidia
+      ? ((await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini')
+      : ((await configValueAsync('AI_FALLBACK_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini');
+    if (/^https:\/\//i.test(fallbackEndpoint) && (fallbackEndpoint !== primaryEndpoint || fallbackApiKey !== primaryKey)) {
+      providers.push({ key: fallbackApiKey, endpoint: fallbackEndpoint, model: fallbackModel, label: 'Yedek AI sağlayıcısı' });
     }
   }
   const systemPrompt = [
@@ -2668,6 +2676,12 @@ Parse.Cloud.define('deleteMyAccountData', async (request) => {
     row.set('details', {});
   }
   if (auditRows.length) await Parse.Object.saveAll(auditRows, { useMasterKey: true });
+  const sessionQuery = new Parse.Query('_Session');
+  sessionQuery.equalTo('user', user);
+  sessionQuery.limit(1000);
+  const sessionsToDelete = await sessionQuery.find({ useMasterKey: true });
+  if (sessionsToDelete.length) await Parse.Object.destroyAll(sessionsToDelete, { useMasterKey: true });
+  deletedCounts['_Session'] = sessionsToDelete.length;
   await writeAuditLog({ user: null }, 'user.account_deleted', userId, { emailHash: emailHash, deletedCounts: deletedCounts });
   await user.destroy({ useMasterKey: true });
   return { success: true, message: 'Hesabın ve kişisel çalışma kayıtların silindi. Güvenlik denetim kayıtları kimlik bilgileri çıkarılarak saklanabilir.', deletedCounts: deletedCounts };
