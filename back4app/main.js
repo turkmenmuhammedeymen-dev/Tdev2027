@@ -897,7 +897,8 @@ Parse.Cloud.define('registerUser', async (request) => {
   user.set('schoolName', schoolName);
   user.set('schoolAddress', schoolAddress);
   user.set('schoolKey', schoolKey);
-  user.set('className', safeText(request.params && request.params.className, 40));
+  // "className" is a reserved Parse.Object property; store the user's class label under a custom field.
+  user.set('schoolClassName', safeText(request.params && request.params.className, 40));
   user.set('publicId', 'TDEV-' + crypto.randomBytes(6).toString('hex').toUpperCase());
   user.set('inviteCodePending', inviteCode);
   user.set('banned', false);
