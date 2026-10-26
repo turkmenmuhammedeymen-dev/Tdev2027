@@ -836,6 +836,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:460px){.dashboard-launch-grid{grid-template-columns:1fr!important}.dashboard-launch-card{min-height:84px}}
 </style>
 
+<style id="tdev-sidebar-refresh">
+.tdev-primary-nav{padding:4px 0 14px}.tdev-primary-nav .nav-section{padding:17px 16px 7px;color:#70829b!important;font:800 .66rem/1.2 'Manrope',sans-serif!important;letter-spacing:.12em!important}
+.tdev-primary-nav .nav-btn{width:calc(100% - 16px);min-height:42px;box-sizing:border-box;display:flex;align-items:center;text-align:left;gap:10px;margin:3px 8px;padding:10px 12px;border-radius:10px;color:#405571!important;font:650 .78rem/1.35 'Manrope',sans-serif!important;letter-spacing:0!important;white-space:normal}
+.tdev-primary-nav .nav-icon{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:7px;background:#edf3fb;color:#385d96;font-size:.9rem}
+.tdev-primary-nav .nav-btn:hover{background:#edf4ff!important;color:#1946a6!important;border-color:#d7e5ff!important;transform:translateX(2px)}
+.tdev-primary-nav .nav-btn.active{background:linear-gradient(100deg,#e7efff,#f8faff)!important;color:#1946a6!important;border-color:#c9dafe!important;box-shadow:inset 3px 0 #326fe0!important}
+.tdev-primary-nav #nav-admin-group{margin-top:12px;padding-top:5px;border-top:1px solid #e1e8f2}
+.xp-hero{display:flex;gap:18px;align-items:center;padding:clamp(18px,3vw,28px);border:1px solid #d8e4f3;border-radius:18px;background:radial-gradient(circle at 0 0,#edf4ff,transparent 62%),linear-gradient(135deg,#fff,#f7faff);color:#1b365c}
+.xp-hero-mark{display:grid;place-items:center;flex:0 0 62px;height:62px;border-radius:18px;background:linear-gradient(135deg,#2457c5,#4b83e6);color:#fff;font-size:2rem;box-shadow:0 10px 24px #2457c526}
+.xp-kicker{font-size:.68rem;font-weight:850;letter-spacing:.12em;color:#3768b8;margin:0 0 6px}.xp-hero h2{font-size:clamp(1.3rem,3vw,1.9rem);margin:0 0 7px;color:#18345a}.xp-hero p:last-child{margin:0;color:#536a88;line-height:1.65;font-size:.88rem}
+.xp-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}.xp-summary-card,.xp-panel{min-width:0;padding:18px;border:1px solid #dce5f1;border-radius:15px;background:#fff;box-shadow:0 8px 24px #17375d08}
+.xp-summary-card span{display:block;color:#71829a;font-size:.68rem;font-weight:850;letter-spacing:.1em}.xp-summary-card strong{display:block;color:#1c468a;font-size:2rem;line-height:1.35;margin:4px 0}.xp-summary-card small{color:#73839a;font-size:.76rem}
+.xp-panel{margin:14px 0}.xp-panel h3{margin:0 0 7px;color:#203d64;font-size:1rem}.xp-panel>p{color:#667b97;font-size:.82rem;line-height:1.6}.xp-panel-head{display:flex;justify-content:space-between;align-items:start;gap:12px}.xp-panel-head p{margin:0 0 12px;color:#6c7e96;font-size:.82rem;line-height:1.55}.xp-date{flex-shrink:0;padding:6px 9px;border-radius:8px;background:#edf4ff;color:#315c9d;font-size:.72rem;font-weight:800}
+.xp-task-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.xp-task{display:flex;align-items:center;gap:11px;padding:13px;border:1px solid #e0e8f3;border-radius:12px;background:#fbfdff}.xp-task input{width:18px;height:18px;accent-color:#2457c5;flex:0 0 auto}.xp-task strong{display:block;color:#263f61;font-size:.84rem}.xp-task small{display:block;color:#71829a;font-size:.74rem;line-height:1.45;margin-top:3px}.xp-task .xp-points{margin-left:auto;white-space:nowrap;color:#2457c5;font-size:.76rem;font-weight:850}.xp-task.is-done{background:#f0f8f4;border-color:#c8e8d6}.xp-task.is-done strong{color:#24724b}
+.xp-badge-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.xp-badge{padding:14px 10px;text-align:center;border:1px solid #e0e8f3;border-radius:12px;background:#fbfdff}.xp-badge .xp-badge-icon{font-size:1.55rem;filter:grayscale(1);opacity:.35}.xp-badge.unlocked{background:#fffaf0;border-color:#ead9a7}.xp-badge.unlocked .xp-badge-icon{filter:none;opacity:1}.xp-badge strong{display:block;color:#314b6c;font-size:.78rem;margin:7px 0 4px}.xp-badge small{color:#7a8ba2;font-size:.7rem;line-height:1.4}
+@media(max-width:760px){.xp-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.xp-summary-card,.xp-panel{padding:12px}.xp-summary-card strong{font-size:1.55rem}.xp-summary-card span{font-size:.58rem}.xp-task-list{grid-template-columns:1fr}.xp-badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xp-hero{align-items:flex-start;gap:12px}.xp-hero-mark{flex-basis:48px;height:48px;font-size:1.5rem;border-radius:13px}}
+</style>
 </head>
 <body>
 
@@ -1098,33 +1115,33 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
             <div class="sidebar-ver">AKADEMİ · ÖĞRENME PLATFORMU</div>
             <div class="grade-badge" id="grade-label">YÜKLENİYOR</div>
         </div>
-        <div class="nav-section">ÖĞRENCİ MERKEZİ</div>
-        <div class="nav-btn active" id="nav-student-center" onclick="showTab('student-center',this)"><span class="nav-icon">🏆</span>Kontrol Merkezi</div>
-        <div class="nav-btn" id="nav-exam-center" onclick="showTab('exam-center',this)"><span class="nav-icon">⏳</span>Süreli Denemeler</div>
-        <div class="nav-section">MODÜLLER</div>
-        <div class="nav-btn" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Dersler</div>
-        <div class="nav-btn" id="nav-curriculum" onclick="showTab('curriculum',this)"><span class="nav-icon">🌐</span>Yeni Müfredat Merkezi</div>
-        <div class="nav-btn" id="nav-quiz" onclick="showTab('quiz',this)"><span class="nav-icon">✅</span>Doğru/Yanlış</div>
-        <div class="nav-btn" id="nav-ai" onclick="showTab('ai',this)"><span class="nav-icon">🤖</span>TDEV-AI</div>
-        <div class="nav-btn" onclick="showTab('m5',this)"><span class="nav-icon">⚡</span>M5 Bilişim</div>
-        <div class="nav-section">ÇALIŞMA ARAÇLARI</div>
-        <div class="nav-btn" id="nav-planner" onclick="showTab('planner',this);loadStudyPlanner()"><span class="nav-icon">🗓️</span>Çalışma Planı</div>
-        <div class="nav-btn" onclick="showTab('notes',this);loadStudyNotes()"><span class="nav-icon">📝</span>Not Defterim</div>
-        <div class="nav-btn" id="nav-cards" onclick="showTab('cards',this);loadStudyCards()"><span class="nav-icon">🧠</span>Bilgi Kartları</div>
-        <div class="nav-btn" id="nav-practice" onclick="showTab('practice',this);loadPracticeLog()"><span class="nav-icon">🎯</span>Tekrar ve Deneme</div>
-        <div class="nav-btn" id="nav-mistakes" onclick="showTab('mistakes',this);loadStudyMistakes()"><span class="nav-icon">🔎</span>Yanlış Defterim</div>
-        <div class="nav-btn" id="nav-focus" onclick="showTab('focus',this)"><span class="nav-icon">⏱️</span>Odak Sayacı</div>
-        <div class="nav-btn" id="nav-progress" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">📈</span>Gelişimim</div>
-        <div class="nav-btn" id="nav-exam-goals" onclick="showTab('progress',this);loadLearningDashboard();loadExamGoals()"><span class="nav-icon">🎯</span>Sınav Hedeflerim</div>
-        <div class="nav-btn" id="nav-school" style="display:none" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">🏫</span>Sınıfım / Okulum</div>
-        <div class="nav-btn" id="nav-settings" style="display:none" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙️</span>Ayarlar · Hesap bilgilerim</div>
-        <div class="nav-btn" id="nav-security" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">🛡️</span>Güvenlik ve Gizlilik</div>
-        <div class="nav-section">SİSTEM</div>
-        <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
-        <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
-        <div class="nav-btn" onclick="showTab('stats',this)"><span class="nav-icon">📊</span>İstatistikler</div>
-        <div class="nav-btn" onclick="showTab('system',this);checkSystemStatus()"><span class="nav-icon">🛡️</span>Sistem Durumu</div>
-        <div class="nav-btn" onclick="openModal('support')"><span class="nav-icon">💬</span>Destek Merkezi</div>
+        <nav class="tdev-primary-nav" aria-label="Öğrenme alanları">
+          <div class="nav-section">ÖĞRENME</div>
+          <div class="nav-btn active" id="nav-student-center" onclick="showTab('student-center',this)"><span class="nav-icon">▦</span>Öğrenci Kokpiti</div>
+          <div class="nav-btn" id="nav-lessons" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Derslerim ve Müfredat</div>
+          <div class="nav-btn" id="nav-ai" onclick="showTab('ai',this)"><span class="nav-icon">✦</span>Yapay Zekâ Öğretmenim</div>
+          <div class="nav-btn" id="nav-exam-center" onclick="showTab('exam-center',this)"><span class="nav-icon">✎</span>Deneme ve Soru Laboratuvarı</div>
+          <div class="nav-btn" id="nav-mistakes" onclick="showTab('mistakes',this);loadStudyMistakes()"><span class="nav-icon">↻</span>Akıllı Tekrar ve Yanlış Defteri</div>
+          <div class="nav-btn" id="nav-notes" onclick="showTab('notes',this);loadStudyNotes()"><span class="nav-icon">▤</span>Notlarım ve Kaynaklarım</div>
+          <div class="nav-section">GELİŞİM</div>
+          <div class="nav-btn" id="nav-progress" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">↗</span>Başarı Analizim</div>
+          <div class="nav-btn" id="nav-planner" onclick="showTab('planner',this);loadStudyPlanner()"><span class="nav-icon">▦</span>Çalışma Planım</div>
+          <div class="nav-btn" id="nav-exam-goals" onclick="showTab('progress',this);loadLearningDashboard();loadExamGoals()"><span class="nav-icon">◎</span>Sınav ve Kariyer Hedeflerim</div>
+          <div class="nav-btn" id="nav-achievements" onclick="showTab('achievements',this);loadAchievements()"><span class="nav-icon">★</span>XP ve Başarılarım</div>
+          <div class="nav-section">TOPLULUK VE HESAP</div>
+          <div class="nav-btn" id="nav-classroom" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">▣</span>Dijital Sınıf</div>
+          <div class="nav-btn" id="nav-guardian" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">♧</span>Veli ve Öğretmen Alanı</div>
+          <div class="nav-btn" id="nav-security" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">⛨</span>Güvenlik ve Gizlilik</div>
+          <div class="nav-btn" id="nav-settings" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙</span>Ayarlar ve Destek</div>
+          <div id="nav-admin-group" style="display:none">
+            <div class="nav-section">YÖNETİM VE SİSTEM TANILAMA</div>
+            <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">⌘</span>Yönetim Paneli</div>
+            <div class="nav-btn" id="nav-bots" onclick="showTab('bots',this)"><span class="nav-icon">◈</span>Sistem Botları</div>
+            <div class="nav-btn" id="nav-stats" onclick="showTab('stats',this)"><span class="nav-icon">▥</span>Sistem İstatistikleri</div>
+            <div class="nav-btn" id="nav-system" onclick="showTab('system',this);checkSystemStatus()"><span class="nav-icon">⛨</span>Sistem Tanılama</div>
+          </div>
+          <div class="nav-btn" id="nav-support" onclick="openModal('support')"><span class="nav-icon">?</span>Destek Merkezi</div>
+        </nav>
         <div class="sidebar-footer">
             <div class="role-indicator">
                 <div class="role-dot" id="role-dot"></div>
@@ -1497,7 +1514,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
             <!-- ÇALIŞMA PLANI -->
             <div id="tab-planner" class="tab"><div class="sec-title">KİŞİSEL <span>ÇALIŞMA PLANI</span></div><div class="study-panel"><p class="study-intro">Günlük hedeflerini planla ve tamamladıklarını işaretle. Oturum açtıysan bulut eşitlemesi denenir; çevrimdışı kullanımda bu cihazda saklanır.</p><form id="study-plan-form" class="study-form" onsubmit="saveStudyPlan(event)"><label>Görev / konu<input id="plan-title" maxlength="140" required placeholder="Örn. Denklem çözme tekrarı"></label><div class="study-form-grid"><label>Ders<input id="plan-subject" maxlength="60" required placeholder="Matematik"></label><label>Tarih<input id="plan-date" type="date" required></label><label>Süre (dakika)<input id="plan-minutes" type="number" min="5" max="600" value="25" required></label></div><button class="study-action" type="submit">＋ PLANA EKLE</button></form><div id="study-plan-list" class="study-list" aria-live="polite"></div></div></div>
             <!-- NOT DEFTERİ -->
-            <div id="tab-notes" class="tab"><div class="sec-title">KİŞİSEL <span>NOT DEFTERİ</span></div><div class="study-panel"><form id="study-note-form" class="study-form" onsubmit="saveStudyNote(event)"><label>Not başlığı<input id="note-title" maxlength="120" required placeholder="Örn. Fotosentez — önemli noktalar"></label><label>Ders / konu<input id="note-subject" maxlength="80" placeholder="Fen Bilimleri"></label><label>Notun<textarea id="note-body" rows="5" maxlength="12000" required placeholder="Kendi cümlelerinle notlarını yaz..."></textarea></label><button class="study-action" type="submit">NOTU KAYDET</button></form><div id="study-note-list" class="study-list" aria-live="polite"></div></div></div>
+            <div id="tab-notes" class="tab"><div class="sec-title">NOTLARIM <span>VE KAYNAKLARIM</span></div><div class="study-actions-row"><button type="button" class="study-action secondary" onclick="showTab('curriculum',document.getElementById('nav-lessons'));if(window.renderCurriculumCenter)window.renderCurriculumCenter(curRole)">MÜFREDAT VE KAYNAK MERKEZİ</button><button type="button" class="study-action secondary" onclick="showTab('cards',document.getElementById('nav-notes'));loadStudyCards()">BİLGİ KARTLARIM</button></div><div class="study-panel"><form id="study-note-form" class="study-form" onsubmit="saveStudyNote(event)"><label>Not başlığı<input id="note-title" maxlength="120" required placeholder="Örn. Fotosentez — önemli noktalar"></label><label>Ders / konu<input id="note-subject" maxlength="80" placeholder="Fen Bilimleri"></label><label>Notun<textarea id="note-body" rows="5" maxlength="12000" required placeholder="Kendi cümlelerinle notlarını yaz..."></textarea></label><button class="study-action" type="submit">NOTU KAYDET</button></form><div id="study-note-list" class="study-list" aria-live="polite"></div></div></div>
             <!-- BİLGİ KARTLARI -->
             <div id="tab-cards" class="tab"><div class="sec-title">AKTİF HATIRLAMA <span>BİLGİ KARTLARI</span></div><div class="study-panel"><p class="study-intro">Ön yüze soruyu, arka yüze cevabı yaz. Hatırlamaya çalıştıktan sonra kartı çevir.</p><form class="study-form" onsubmit="addStudyCard(event)"><label>Soru / ön yüz<input id="card-front" maxlength="300" required placeholder="Örn. Fotosentez nedir?"></label><label>Cevap / arka yüz<textarea id="card-back" rows="3" maxlength="500" required placeholder="Kısa ve doğru cevap..."></textarea></label><button class="study-action" type="submit">＋ KART OLUŞTUR</button></form><div id="study-card-list" class="study-card-grid" aria-live="polite"></div></div></div>
             <!-- TEKRAR VE DENEME -->
@@ -1533,6 +1550,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
                 <section class="security-hero"><div class="security-hero-icon">🛡️</div><div><p class="security-kicker">TDEVKUANTUM · HESAP KONTROLÜ</p><h2>Hesabın ve öğrenme verilerin senin kontrolünde.</h2><p>Son görülen cihaz kayıtlarını incele, bu cihazdaki öğrenme verilerini dışa aktar veya hesabını ve kişisel çalışma kayıtlarını sil.</p></div></section>
                 <section class="security-panel"><div class="security-panel-heading"><div><h3>Aktif oturumlar</h3><p>Hesabında açık olan oturumları görüntüle ve tanımadığın diğer oturumları kapat.</p></div><button type="button" class="study-action secondary" onclick="loadSecurityCenter()">YENİLE</button></div><div id="security-device-list" class="security-device-list" aria-live="polite"><p class="security-muted">Cihaz kayıtları yükleniyor…</p></div><p id="security-status" class="security-status" aria-live="polite"></p></section>
                 <section class="security-panel"><div class="security-panel-heading"><div><h3>Veri kontrolü</h3><p>İndirme yalnızca bu cihazda saklanan öğrenme verilerini içerir. Hesap silme işlemi sunucudaki kişisel çalışma kayıtlarını da kaldırır.</p></div></div><div class="security-actions"><button type="button" class="study-action secondary" onclick="exportLearningData()">BU CİHAZDAKİ VERİLERİ İNDİR</button><button type="button" class="study-action danger" onclick="deleteMyAccountData()">HESABIMI VE KİŞİSEL VERİLERİMİ SİL</button></div><p class="security-warning">Hesap silme işlemi geri alınamaz. Paylaşılan sınıf kayıtları diğer kullanıcıları etkileyebileceği için bu işlemde korunur; güvenlik denetim kayıtları kimlik bilgileri çıkarılarak saklanabilir.</p></section>
+            </div>
+            <div id="tab-achievements" class="tab">
+              <section class="xp-hero"><div class="xp-hero-mark" aria-hidden="true">★</div><div><p class="xp-kicker">TDEVKUANTUM · KİŞİSEL GELİŞİM</p><h2>XP ve Başarılarım</h2><p>Çalışma alışkanlığını görünür kıl. Tamamladığın günlük görevleri işaretle; puanların ve rozetlerin bu cihazda saklanır.</p></div></section>
+              <div class="xp-summary-grid"><article class="xp-summary-card"><span>TOPLAM XP</span><strong id="xp-total">0</strong><small>Bu cihazdaki hesabın</small></article><article class="xp-summary-card"><span>SEVİYE</span><strong id="xp-level">1</strong><small id="xp-level-caption">Başlangıç</small></article><article class="xp-summary-card"><span>GÖREV SERİSİ</span><strong id="xp-streak">0 gün</strong><small>Ardışık görev günleri</small></article></div>
+              <section class="xp-panel"><div class="xp-panel-head"><div><h3>Bugünün öğrenme görevleri</h3><p>Gerçekten tamamladığın görevleri işaretle. Her görev günde bir kez XP kazandırır.</p></div><span class="xp-date" id="xp-today-label"></span></div><div id="xp-daily-tasks" class="xp-task-list"></div><p id="xp-status" class="study-footnote" aria-live="polite">Görevler yükleniyor…</p></section>
+              <section class="xp-panel"><h3>Rozet koleksiyonu</h3><p class="study-intro">Rozetler toplam XP ve devamlılığa göre açılır. Bu puanlar resmî not veya okul başarısı değildir.</p><div id="xp-badges" class="xp-badge-grid"></div></section>
             </div>
             <!-- SİSTEM DURUMU -->
             <div id="tab-system" class="tab">
@@ -2064,6 +2087,8 @@ function launch(g) {
     document.getElementById('role-dot').style.cssText = 'background:' + roleColor + ';box-shadow:0 0 6px ' + roleColor;
     document.getElementById('role-name-disp').innerText = roleNames[curRole] || 'KULLANICI';
     document.getElementById('server-lbl').innerText = 'ÜLKE: ' + (document.getElementById('country-select')?.selectedOptions[0]?.textContent || curServer);
+    const adminGroup = document.getElementById('nav-admin-group');
+    if (adminGroup) adminGroup.style.display = (curRole === 'founder' || curRole === 'admin') ? 'block' : 'none';
     const devNav = document.getElementById('nav-dev');
     if (devNav) devNav.style.display = curRole === 'founder' ? 'flex' : 'none';
     loadLessonsFromCloud(g, curServer);
@@ -2316,17 +2341,24 @@ async function saveExamGoal(event) {
 }
 // ---- TABS ----
 function showTab(id, el) {
+    const privileged = curRole === 'founder' || curRole === 'admin';
+    if (id === 'devpanel' && curRole !== 'founder') { showNotif('Bu yönetim alanı yalnızca kurucu rolüne açıktır.'); return; }
+    if (['system','stats','bots'].includes(id) && !privileged) { showNotif('Sistem tanılama alanı yalnızca yetkili rollere açıktır.'); return; }
+    const target = document.getElementById('tab-' + id);
+    if (!target) { showNotif('Bu alan henüz kullanılamıyor.'); return; }
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    const tab = document.getElementById('tab-'+id); if(tab) tab.classList.add('active');
-    if(el) el.classList.add('active');
-    const titles = { 'student-center':'ÖĞRENCİ KONTROL MERKEZİ', 'exam-center':'SÜRELİ DENEME MERKEZİ', lessons:'DERS MODÜLLERİ', curriculum:'YENİ MÜFREDAT MERKEZİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', school:'SINIFIM / OKULUM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU', security:'GÜVENLİK VE GİZLİLİK' };
-    document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
-    if(id === 'devpanel') refreshDevPanel();
-    if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter(curRole);
-    if(id === 'progress') { loadLearningDashboard(); loadExamGoals(); }
-    if(id === 'student-center' && typeof window.loadStudentCenter === 'function') window.loadStudentCenter();
-    if(id === 'exam-center' && typeof window.loadExamCenter === 'function') window.loadExamCenter();
+    target.classList.add('active');
+    if (el) el.classList.add('active');
+    const titles = { 'student-center':'ÖĞRENCİ KOKPİTİ', 'exam-center':'DENEME VE SORU LABORATUVARI', lessons:'DERSLERİM VE MÜFREDAT', curriculum:'MÜFREDAT VE KAYNAKLAR', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'YAPAY ZEKÂ ÖĞRETMENİ', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANIM', notes:'NOTLARIM VE KAYNAKLARIM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'AKILLI TEKRAR VE YANLIŞ DEFTERİ', focus:'ODAK SAYACI', progress:'BAŞARI ANALİZİM', achievements:'XP VE BAŞARILARIM', school:'DİJİTAL SINIF VE OKUL ALANI', devpanel:'YÖNETİM PANELİ', bots:'SİSTEM BOTLARI', stats:'SİSTEM İSTATİSTİKLERİ', system:'SİSTEM TANILAMA', security:'GÜVENLİK VE GİZLİLİK' };
+    const title = document.getElementById('tab-title');
+    if (title) title.textContent = titles[id] || id.toUpperCase();
+    if (id === 'devpanel') refreshDevPanel();
+    if (id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter(curRole);
+    if (id === 'progress') { loadLearningDashboard(); loadExamGoals(); }
+    if (id === 'student-center' && typeof window.loadStudentCenter === 'function') window.loadStudentCenter();
+    if (id === 'exam-center' && typeof window.loadExamCenter === 'function') window.loadExamCenter();
+    if (id === 'achievements' && typeof window.loadAchievements === 'function') window.loadAchievements();
 }
 
 async function recordCurrentDeviceSession() {
@@ -3038,6 +3070,7 @@ window.onload = () => {
 <script src="study.js" defer></script>
 <script src="school.js" defer></script>
 <script src="learning-center.js" defer></script>
+<script src="achievements.js" defer></script>
 
 </body>
 </html>
