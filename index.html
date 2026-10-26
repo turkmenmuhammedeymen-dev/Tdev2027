@@ -758,6 +758,15 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 .study-action.danger{background:#4a2029!important;border-color:#b85a68!important;color:#fff0f2!important}
 @media(max-width:600px){.security-hero{align-items:flex-start;gap:12px}.security-hero-icon{flex-basis:44px;width:44px;height:44px}.security-panel-heading{flex-direction:column}.security-panel-heading .study-action{width:100%}.security-actions{flex-direction:column}.security-actions .study-action{width:100%}}
 </style>
+<style>
+.exam-goal-panel{margin-top:18px}.exam-goal-heading{color:#f2f7ff;font:800 1.2rem 'Manrope',sans-serif;margin:6px 0 12px}
+.exam-goal-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+.exam-goal-card{border:1px solid #344b66;border-radius:12px;padding:14px;background:#0b1828;min-width:0}
+.exam-goal-card strong{display:block;color:#f2f7ff;font-size:.92rem;margin-bottom:7px}
+.exam-goal-card p{color:#b9c8db;font-size:.8rem;line-height:1.55;margin:5px 0}
+.exam-goal-progress{height:8px;background:#1d3048;border-radius:99px;overflow:hidden;margin-top:10px}
+.exam-goal-progress span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4f8fe8,#78d8ff,#f1cb72)}
+</style>
 </head>
 <body>
 
@@ -1391,6 +1400,14 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
             <div id="tab-practice" class="tab"><div class="sec-title">KENDİNİ <span>DEĞERLENDİR</span></div><div class="study-panel"><p class="study-intro">Kendi tekrarlarını ve deneme performansını takip et. Bu alan resmî sınav sonucu üretmez.</p><form class="study-form" onsubmit="savePractice(event)"><div class="study-form-grid"><label>Ders<input id="practice-subject" maxlength="60" required placeholder="Türkçe"></label><label>Çalışma türü<select id="practice-kind"><option>Konu tekrarı</option><option>Test çözümü</option><option>Deneme sınavı</option><option>Yanlış analizi</option></select></label><label>Soru sayısı<input id="practice-total" type="number" min="0" max="1000" value="20" required></label><label>Doğru sayısı<input id="practice-correct" type="number" min="0" max="1000" value="15" required></label></div><label>Çıkardığım ders / sonraki adım<textarea id="practice-reflection" rows="3" maxlength="1000" placeholder="Hangi konuyu tekrar etmeliyim?"></textarea></label><button class="study-action" type="submit">OTURUMU KAYDET</button></form><div id="practice-log" class="study-list" aria-live="polite"></div></div></div>
             <!-- GELİŞİM -->
             <div id="tab-progress" class="tab"><div class="sec-title">ÖĞRENME <span>GELİŞİMİM</span></div><div class="study-panel"><div id="learning-progress-summary" class="progress-summary"></div><div class="study-actions-row"><button class="study-action secondary" type="button" onclick="exportLearningData()">VERİLERİMİ İNDİR</button><button class="study-action danger" type="button" onclick="clearLocalLearningData()">BU CİHAZDAKİ VERİLERİ TEMİZLE</button></div><p class="study-footnote">İndirme, bu cihazda kayıtlı verileri JSON olarak dışa aktarır. Temizleme işlemi sunucudaki kayıtları silmez.</p></div></div>
+<section class="study-panel exam-goal-panel" aria-labelledby="exam-goal-heading">
+<div class="sec-title">SINAV <span>HEDEFLERİ</span></div><h3 id="exam-goal-heading" class="exam-goal-heading">Hedefini belirle, ilerlemeni ölç.</h3>
+<p class="study-intro">LGS, YKS veya kendi deneme hedefini kaydet. Puanlar kişisel takibindir; resmî sonuç yerine geçmez.</p>
+<form id="exam-goal-form" class="study-form" onsubmit="saveExamGoal(event)">
+<label>Hedef adı<input id="goal-title" maxlength="100" required placeholder="Örn. LGS hedefim"></label>
+<div class="study-form-grid"><label>Ders / sınav türü<input id="goal-subject" maxlength="60" placeholder="LGS / Matematik"></label><label>Hedef tarihi<input id="goal-date" type="date" required></label><label>Hedef puan (0–100)<input id="goal-target-score" type="number" min="0" max="100" value="85" required></label><label>Şu anki puan (0–100)<input id="goal-current-score" type="number" min="0" max="100" value="0" required></label></div>
+<button class="study-action" type="submit">HEDEFİ KAYDET</button></form>
+<p id="exam-goal-status" class="study-footnote" aria-live="polite"></p><div id="exam-goal-list" class="exam-goal-list" aria-live="polite"></div></section>
 <div id="tab-school" class="tab"><div class="sec-title">SINIFIM <span>/ OKULUM</span></div><div class="school-shell"><div id="school-profile-status" class="school-status">Hesap ve okul bilgileri yükleniyor…</div><section id="school-staff-tools" class="school-card" hidden><h3>Yeni sınıf oluştur</h3><p class="school-muted">Sınıf adı, okul adı/adresi, kademe ve sınıf düzeyi zorunludur. Davet bağlantısını yalnızca kendi sınıfın için paylaş.</p><form id="school-create-form" class="school-form" onsubmit="createSchoolClassroom(event)"><label>Grup / sınıf adı<input id="classroom-name" maxlength="120" required placeholder="Örn. 10-A / Matematik kulübü"></label><label>Okul adı<input id="classroom-school-name" maxlength="160" required placeholder="Okulun tam adı"></label><label>Okul adresi<input id="classroom-school-address" maxlength="240" required placeholder="İl, ilçe ve adres"></label><label>Eğitim kademesi<select id="classroom-stage" required><option value="primary">İlkokul</option><option value="middle">Ortaokul</option><option value="high">Lise</option></select></label><label>Sınıf düzeyi<select id="classroom-grade" required><option value="">Sınıf seç</option></select></label><div><button class="school-button" type="submit">＋ SINIF OLUŞTUR</button></div></form></section><section id="school-principal-tools" class="school-card" hidden><h3>Okulum · genel analiz</h3><p class="school-muted">Bu panel yalnızca kayıtlı okul adı ve adresi eşleşen sınıfları listeler. Oranlar, platformda kaydedilmiş etkinliklerden hesaplanır; dışarıdaki başarıyı ölçmez.</p><div id="school-analytics" class="school-list"></div></section><section id="school-student-tools" class="school-card" hidden><h3>Sınıf davetine katıl</h3><p class="school-muted">Öğretmeninin gönderdiği davet bağlantısını açtıysan katılım otomatik denenir. Kodun varsa buraya yapıştır.</p><div class="school-form"><label>Davet kodu<input id="school-invite-code" maxlength="80" placeholder="Davet kodu"></label><div style="align-self:end"><button type="button" class="school-button" onclick="joinSchoolClassroom()">DAVETE KATIL</button></div></div></section><section class="school-card"><h3 id="school-class-list-title">Sınıflarım</h3><p class="school-muted">Sadece hesabının yetkili olduğu sınıflar listelenir.</p><div id="school-classroom-list" class="school-list" aria-live="polite"></div></section><section id="classroom-detail" class="school-card" hidden><h3 id="classroom-detail-title">Sınıf ayrıntıları</h3><div id="classroom-detail-meta" class="school-muted"></div><div class="school-actions" id="classroom-owner-actions"></div><div id="classroom-roster" class="school-list"></div><div class="school-card" style="margin-top:14px"><h3>Sınıf dosyaları</h3><p class="school-muted">En fazla 25 MB dosya. Paylaşılan dosyaların bağlantısı, bağlantıyı bilen kişilerce de erişilebilir olabilir; özel/kişisel belge yükleme.</p><div class="school-actions"><input type="file" id="classroom-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg" style="max-width:100%"><button type="button" class="school-button" onclick="uploadSchoolFile()">DOSYA PAYLAŞ</button></div><div id="classroom-files" class="school-list"></div></div></section></div></div>
             <div id="tab-mistakes" class="tab"><div class="sec-title">HATALARDAN <span>ÖĞREN</span></div><div class="study-panel"><p class="study-intro">Yanlış yaptığın soruyu, doğru çözümü ve tekrar tarihini kaydet. Amaç hata bulmak değil, bir sonraki denemede daha iyi öğrenmek.</p><form id="mistake-form" class="study-form" onsubmit="saveStudyMistake(event)"><label>Ders<input id="mistake-subject" maxlength="60" required placeholder="Örn. Matematik"></label><label>Konu / soru<input id="mistake-title" maxlength="180" required placeholder="Örn. İşaret hatası — denklem"></label><label>Neden yanlış yaptım?<textarea id="mistake-reason" rows="3" maxlength="1200" required placeholder="Nerede takıldım?"></textarea></label><label>Doğru yaklaşım / çözüm<textarea id="mistake-fix" rows="3" maxlength="2000" required placeholder="Doğru yöntemi kendi cümlelerinle yaz..."></textarea></label><div class="study-form-grid"><label>Tekrar tarihi<input id="mistake-review-date" type="date" required></label><label>Durum<select id="mistake-status"><option value="review">Tekrar edilecek</option><option value="learned">Öğrendim</option></select></label></div><button class="study-action" type="submit">YANLIŞI KAYDET</button></form><div id="study-mistake-list" class="study-list" aria-live="polite"></div></div></div>
             <div id="tab-focus" class="tab"><div class="sec-title">DİKKATİNİ TOPLA <span>ODAK SAYACI</span></div><div class="study-panel"><p class="study-intro">Bir ders ve süre seç. Oturum bitince mola ver; sayaç sekme açıkken çalışır.</p><div class="study-form"><label>Çalışacağım ders<input id="focus-subject" maxlength="80" placeholder="Örn. Türkçe paragraf"></label><div class="study-form-grid"><label>Odak süresi<select id="focus-duration"><option value="15">15 dakika</option><option value="25" selected>25 dakika</option><option value="40">40 dakika</option><option value="50">50 dakika</option></select></label><label>Mola önerisi<select id="focus-break"><option value="5" selected>5 dakika</option><option value="10">10 dakika</option><option value="15">15 dakika</option></select></label></div><div class="focus-clock" id="focus-clock" role="timer" aria-live="polite">25:00</div><div class="study-actions-row"><button class="study-action" type="button" onclick="startFocusTimer()">BAŞLAT</button><button class="study-action secondary" type="button" onclick="pauseFocusTimer()">DURAKLAT</button><button class="study-action secondary" type="button" onclick="resetFocusTimer()">SIFIRLA</button></div><p class="study-footnote" id="focus-status" aria-live="polite">Hazır olduğunda başlat. Süre tamamlandığında ekranda bildirim görürsün.</p></div></div></div>
@@ -2151,6 +2168,47 @@ function backLesson() {
     loadLessonsFromCloud(curGrade, curServer);
 }
 
+const TDEV_EXAM_GOALS_KEY = 'tdevkuantum_exam_goals_v1';
+function readLocalExamGoals() {
+    try { const value = JSON.parse(localStorage.getItem(TDEV_EXAM_GOALS_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (_) { return []; }
+}
+function writeLocalExamGoals(items) { try { localStorage.setItem(TDEV_EXAM_GOALS_KEY, JSON.stringify(items)); return true; } catch (_) { return false; } }
+function renderExamGoals(items) {
+    const host = document.getElementById('exam-goal-list'); if (!host) return; host.replaceChildren();
+    if (!items.length) { const empty = document.createElement('p'); empty.className = 'study-footnote'; empty.textContent = 'Henüz sınav hedefi eklenmedi.'; host.appendChild(empty); return; }
+    items.forEach(item => {
+        const card = document.createElement('article'); card.className = 'exam-goal-card';
+        const title = document.createElement('strong'); title.textContent = item.title || 'Sınav hedefi';
+        const meta = document.createElement('p'); meta.textContent = (item.subject || 'Genel hedef') + ' · Hedef tarih: ' + (item.targetDate || 'belirtilmedi');
+        const score = document.createElement('p'); score.textContent = 'Mevcut: ' + Number(item.currentScore || 0) + ' / 100 · Hedef: ' + Number(item.targetScore || 0) + ' / 100';
+        const progress = document.createElement('div'); progress.className = 'exam-goal-progress';
+        const fill = document.createElement('span'); const target = Number(item.targetScore || 0), current = Number(item.currentScore || 0);
+        fill.style.width = (target > 0 ? Math.max(0, Math.min(100, current / target * 100)) : (current >= target ? 100 : 0)) + '%';
+        progress.appendChild(fill); card.append(title, meta, score, progress); host.appendChild(card);
+    });
+}
+async function loadExamGoals() {
+    const status = document.getElementById('exam-goal-status'); const dateInput = document.getElementById('goal-date');
+    if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+    let items = readLocalExamGoals();
+    if (Parse.User.current()) {
+        try { const result = await Parse.Cloud.run('getStudyGoals', {}); if (result && result.success && Array.isArray(result.items)) { items = result.items; writeLocalExamGoals(items); } if (status) status.textContent = 'Hedeflerin hesabınla eşitlendi.'; }
+        catch (_) { if (status) status.textContent = 'Bulut eşitlemesi yapılamadı; bu cihazdaki kayıtlar gösteriliyor.'; }
+    } else if (status) status.textContent = 'Giriş yapmadığın için hedefler bu cihazda saklanır.';
+    renderExamGoals(items);
+}
+async function saveExamGoal(event) {
+    event.preventDefault(); const status = document.getElementById('exam-goal-status');
+    const goal = { id:(window.crypto && typeof window.crypto.randomUUID === 'function') ? window.crypto.randomUUID() : ('goal-' + Date.now() + '-' + Math.random().toString(16).slice(2)), title:(document.getElementById('goal-title').value || '').trim(), subject:(document.getElementById('goal-subject').value || '').trim(), targetDate:document.getElementById('goal-date').value, targetScore:Number(document.getElementById('goal-target-score').value), currentScore:Number(document.getElementById('goal-current-score').value), updatedAt:new Date().toISOString() };
+    if (!goal.title || !/^\d{4}-\d{2}-\d{2}$/.test(goal.targetDate) || !Number.isFinite(goal.targetScore) || !Number.isFinite(goal.currentScore) || goal.targetScore < 0 || goal.targetScore > 100 || goal.currentScore < 0 || goal.currentScore > 100) { if (status) status.textContent = 'Hedef adı, tarih ve 0–100 arası puanlar gerekli.'; return; }
+    const items = readLocalExamGoals().filter(item => item.id !== goal.id); items.unshift(goal); writeLocalExamGoals(items); renderExamGoals(items);
+    if (Parse.User.current()) {
+        try { const result = await Parse.Cloud.run('saveStudyGoal', goal); if (!result || result.success !== true) throw new Error((result && result.error) || 'Bulut eşitlemesi başarısız.'); if (status) status.textContent = 'Sınav hedefi kaydedildi ve hesabınla eşitlendi.'; }
+        catch (error) { if (status) status.textContent = 'Hedef bu cihazda kaydedildi; bulut eşitlemesi başarısız: ' + (error && error.message ? error.message : 'sunucu yanıt vermedi'); }
+    } else if (status) status.textContent = 'Hedef bu cihazda kaydedildi. Hesaplar arası eşitleme için giriş yap.';
+    document.getElementById('exam-goal-form').reset(); const dateInput = document.getElementById('goal-date'); if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+    const targetInput = document.getElementById('goal-target-score'); if (targetInput) targetInput.value = '85'; const currentInput = document.getElementById('goal-current-score'); if (currentInput) currentInput.value = '0';
+}
 // ---- TABS ----
 function showTab(id, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -2161,6 +2219,7 @@ function showTab(id, el) {
     document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
     if(id === 'devpanel') refreshDevPanel();
     if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter(curRole);
+    if(id === 'progress') { loadLearningDashboard(); loadExamGoals(); }
 }
 
 async function recordCurrentDeviceSession() {
