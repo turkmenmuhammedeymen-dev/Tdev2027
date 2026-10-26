@@ -25,6 +25,7 @@
  *   AI_FALLBACK_API_KEY optional separate fallback API key when the primary AI provider fails
  *   AI_FALLBACK_MODEL   optional model for the fallback provider
  *   AI_FALLBACK_BASE_URL optional HTTPS chat-completions URL for the fallback provider
+ *   TAVILY_API_KEY       optional server-only search key for source-linked research
  *
  * Optional:
  *   ALLOWED_ORIGINS      comma-separated site origins
