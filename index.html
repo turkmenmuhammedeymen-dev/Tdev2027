@@ -1408,7 +1408,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
             <div id="tab-security" class="tab">
                 <div class="sec-title">HESAP <span>GÜVENLİĞİ VE GİZLİLİK</span></div>
                 <section class="security-hero"><div class="security-hero-icon">🛡️</div><div><p class="security-kicker">TDEVKUANTUM · HESAP KONTROLÜ</p><h2>Hesabın ve öğrenme verilerin senin kontrolünde.</h2><p>Son görülen cihaz kayıtlarını incele, bu cihazdaki öğrenme verilerini dışa aktar veya hesabını ve kişisel çalışma kayıtlarını sil.</p></div></section>
-                <section class="security-panel"><div class="security-panel-heading"><div><h3>Son görülen cihazlar</h3><p>Cihaz etkinliği, bir oturumun hâlen açık olduğunu tek başına kanıtlamaz.</p></div><button type="button" class="study-action secondary" onclick="loadSecurityCenter()">YENİLE</button></div><div id="security-device-list" class="security-device-list" aria-live="polite"><p class="security-muted">Cihaz kayıtları yükleniyor…</p></div><p id="security-status" class="security-status" aria-live="polite"></p></section>
+                <section class="security-panel"><div class="security-panel-heading"><div><h3>Aktif oturumlar</h3><p>Hesabında açık olan oturumları görüntüle ve tanımadığın diğer oturumları kapat.</p></div><button type="button" class="study-action secondary" onclick="loadSecurityCenter()">YENİLE</button></div><div id="security-device-list" class="security-device-list" aria-live="polite"><p class="security-muted">Cihaz kayıtları yükleniyor…</p></div><p id="security-status" class="security-status" aria-live="polite"></p></section>
                 <section class="security-panel"><div class="security-panel-heading"><div><h3>Veri kontrolü</h3><p>İndirme yalnızca bu cihazda saklanan öğrenme verilerini içerir. Hesap silme işlemi sunucudaki kişisel çalışma kayıtlarını da kaldırır.</p></div></div><div class="security-actions"><button type="button" class="study-action secondary" onclick="exportLearningData()">BU CİHAZDAKİ VERİLERİ İNDİR</button><button type="button" class="study-action danger" onclick="deleteMyAccountData()">HESABIMI VE KİŞİSEL VERİLERİMİ SİL</button></div><p class="security-warning">Hesap silme işlemi geri alınamaz. Paylaşılan sınıf kayıtları diğer kullanıcıları etkileyebileceği için bu işlemde korunur; güvenlik denetim kayıtları kimlik bilgileri çıkarılarak saklanabilir.</p></section>
             </div>
             <!-- SİSTEM DURUMU -->
@@ -2174,28 +2174,48 @@ async function loadSecurityCenter() {
     const status = document.getElementById('security-status');
     if (!list) return;
     list.replaceChildren();
-    const loading = document.createElement('p'); loading.className = 'security-muted'; loading.textContent = 'Cihaz kayıtları yükleniyor…'; list.appendChild(loading);
+    const loading = document.createElement('p'); loading.className = 'security-muted'; loading.textContent = 'Aktif oturumlar yükleniyor…'; list.appendChild(loading);
     if (status) status.textContent = '';
     try {
-        const result = await Parse.Cloud.run('getMyDeviceSessions', {});
+        const result = await Parse.Cloud.run('getMyActiveSessions', {});
         list.replaceChildren();
         const items = result && Array.isArray(result.items) ? result.items : [];
         if (!items.length) {
             const empty = document.createElement('p'); empty.className = 'security-muted';
-            empty.textContent = 'Henüz cihaz etkinliği kaydedilmemiş. Bir sonraki başarılı girişin burada görünecek.'; list.appendChild(empty);
+            empty.textContent = 'Sunucuda listelenecek aktif oturum bulunamadı.'; list.appendChild(empty);
         }
         items.forEach(item => {
             const card = document.createElement('article'); card.className = 'security-device';
-            const title = document.createElement('strong'); title.textContent = item.deviceLabel || 'Bilinmeyen cihaz';
-            const meta = document.createElement('p'); meta.textContent = 'Son görülme: ' + (item.lastSeenISO ? new Date(item.lastSeenISO).toLocaleString('tr-TR') : 'bilgi yok') + (item.timezone ? ' · ' + item.timezone : '');
-            const ua = document.createElement('p'); ua.className = 'security-device-ua'; ua.textContent = item.userAgent || 'Tarayıcı bilgisi yok';
-            card.append(title, meta, ua); list.appendChild(card);
+            const title = document.createElement('strong'); title.textContent = (item.deviceLabel || 'Bilinmeyen cihaz') + (item.isCurrent ? ' · BU OTURUM' : '');
+            const meta = document.createElement('p'); meta.textContent = 'Oluşturulma: ' + (item.createdAtISO ? new Date(item.createdAtISO).toLocaleString('tr-TR') : 'bilgi yok') + (item.expiresAtISO ? ' · Bitiş: ' + new Date(item.expiresAtISO).toLocaleString('tr-TR') : '');
+            const ua = document.createElement('p'); ua.className = 'security-device-ua'; ua.textContent = item.userAgent || 'Tarayıcı bilgisi sunucuda kayıtlı değil';
+            card.append(title, meta, ua);
+            if (!item.isCurrent) {
+                const revoke = document.createElement('button'); revoke.type = 'button'; revoke.className = 'study-action danger'; revoke.textContent = 'BU OTURUMU KAPAT';
+                revoke.addEventListener('click', () => revokeMySession(item.id, revoke));
+                card.appendChild(revoke);
+            }
+            list.appendChild(card);
         });
-        if (status) status.textContent = 'Cihaz kayıtları güncellendi. Bu liste gerçek zamanlı oturum iptali sağlamaz.';
+        if (status) status.textContent = 'Oturum listesi sunucudan alındı. Mevcut oturum güvenlik için bu ekrandan kapatılamaz.';
     } catch (error) {
         list.replaceChildren();
         const failed = document.createElement('p'); failed.className = 'security-muted';
-        failed.textContent = 'Cihaz kayıtları alınamadı: ' + (error && error.message ? error.message : 'sunucu yanıt vermedi'); list.appendChild(failed);
+        failed.textContent = 'Aktif oturumlar alınamadı: ' + (error && error.message ? error.message : 'sunucu yanıt vermedi'); list.appendChild(failed);
+    }
+}
+async function revokeMySession(sessionId, button) {
+    if (!sessionId || !window.confirm('Bu cihazdaki oturumu kapatmak istiyor musun?')) return;
+    if (button) { button.disabled = true; button.textContent = 'KAPATILIYOR…'; }
+    const status = document.getElementById('security-status');
+    try {
+        const result = await Parse.Cloud.run('revokeMySession', { sessionId: sessionId });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Oturum kapatılamadı.');
+        if (status) status.textContent = result.message || 'Oturum kapatıldı.';
+        await loadSecurityCenter();
+    } catch (error) {
+        if (status) status.textContent = 'Oturum kapatılamadı: ' + (error && error.message ? error.message : 'sunucu hatası');
+        if (button) { button.disabled = false; button.textContent = 'BU OTURUMU KAPAT'; }
     }
 }
 async function deleteMyAccountData() {
