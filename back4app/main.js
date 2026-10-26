@@ -2560,6 +2560,16 @@ Parse.Cloud.define('saveMyAccountSettings', async (request) => {
 });
 
 
+function currentRequestSessionToken(request, user) {
+  const headers = request && request.headers ? request.headers : {};
+  return String(
+    (user && typeof user.getSessionToken === 'function' && user.getSessionToken()) ||
+    (request && request.sessionToken) ||
+    headers['x-parse-session-token'] ||
+    headers['X-Parse-Session-Token'] ||
+    ''
+  );
+}
 Parse.Cloud.define('getMyActiveSessions', async (request) => {
   const user = requireUser(request);
   const query = new Parse.Query('_Session');
@@ -2567,7 +2577,8 @@ Parse.Cloud.define('getMyActiveSessions', async (request) => {
   query.descending('createdAt');
   query.limit(100);
   const rows = await query.find({ useMasterKey: true });
-  const currentToken = String(user.getSessionToken() || request.sessionToken || '');
+  const currentToken = currentRequestSessionToken(request, user);
+  if (!currentToken) return resultError('Geçerli oturum doğrulanamadı. Güvenli oturum yönetimi için yeniden giriş yapıp tekrar dene.', 'SESSION_CONTEXT_UNAVAILABLE');
   const now = Date.now();
   const items = rows.filter(row => {
     const expiry = row.get('expiresAt');
@@ -2602,7 +2613,8 @@ Parse.Cloud.define('revokeMySession', async (request) => {
   query.equalTo('user', user);
   const session = await query.first({ useMasterKey: true });
   if (!session) return resultError('Bu oturum bulunamadı veya hesabına ait değil.', 'SESSION_NOT_FOUND');
-  const currentToken = String(user.getSessionToken() || request.sessionToken || '');
+  const currentToken = currentRequestSessionToken(request, user);
+  if (!currentToken) return resultError('Geçerli oturum doğrulanamadı; güvenlik için başka oturum kapatılmadı.', 'SESSION_CONTEXT_UNAVAILABLE');
   if (currentToken && String(session.get('sessionToken') || '') === currentToken) {
     return resultError('Geçerli oturumu buradan kapatamazsın. Çıkış düğmesini kullan.', 'CURRENT_SESSION');
   }
