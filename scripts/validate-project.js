@@ -145,6 +145,10 @@ for (const functionName of [
     'Public auth endpoint uses sessionless request: ' + functionName);
 }
 
+check(!/user\.set\(\s*['"]className['"]/.test(cloudCode) &&
+      cloudCode.includes("user.set('schoolClassName', safeText(request.params && request.params.className, 40))"),
+  'Registration avoids the reserved Parse className field and stores class label safely');
+
 check(cloudCode.includes('async function assertVerificationProviderReady()') &&
       cloudCode.includes('await assertVerificationProviderReady();') &&
       cloudCode.includes("'EMAIL_PROVIDER_NOT_READY'"),
