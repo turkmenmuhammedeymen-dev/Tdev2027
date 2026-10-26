@@ -22,6 +22,7 @@ function doGet() {
     build: SERVICE_BUILD,
     configured: Boolean(token),
     tokenProperty: TOKEN_PROPERTY,
+    tokenAliasesChecked: ['TDEV_APPS_SCRIPT_TOKEN', 'MAIL_SERVICE_TOKEN'],
     timestamp: new Date().toISOString()
   });
 }
@@ -97,9 +98,13 @@ function doPost(e) {
 }
 
 function getMailToken() {
-  return String(
-    PropertiesService.getScriptProperties().getProperty(TOKEN_PROPERTY) || ''
-  ).trim();
+  const properties = PropertiesService.getScriptProperties();
+  const candidates = [TOKEN_PROPERTY, 'TDEV_APPS_SCRIPT_TOKEN', 'MAIL_SERVICE_TOKEN'];
+  for (const key of candidates) {
+    const value = String(properties.getProperty(key) || '').trim();
+    if (value) return value;
+  }
+  return '';
 }
 
 function parsePayload(e) {
