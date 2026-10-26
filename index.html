@@ -1129,9 +1129,11 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
                     </div>
                     <div class="ai-file-preview" id="ai-file-prev">📎 <span id="ai-file-name">—</span> seçildi</div>
                     <div class="chat-input-row">
-                        <input type="file" id="ai-file-inp" style="display:none" accept="image/*,.pdf,.txt,.doc,.docx" onchange="aiFileLoad(this)">
-                        <button class="chat-attach" onclick="document.getElementById('ai-file-inp').click()" title="Dosya/Fotoğraf Yükle">📎</button>
-                        <textarea class="chat-input" id="chat-in" rows="1" maxlength="12000" aria-label="TDEV-AI mesajı" placeholder="Sorunuzu yazın… (Enter gönderir, Shift+Enter yeni satır)"></textarea>
+                        <input type="file" id="ai-file-inp" style="display:none" accept="image/*,.pdf,.txt,.csv,.json,.md,.docx" onchange="aiFileLoad(this)">
+                        <button class="chat-attach" onclick="document.getElementById('ai-file-inp').click()" title="Dosya/Fotoğraf Yükle" aria-label="Dosya veya fotoğraf ekle">📎</button>
+                        <button class="chat-attach" type="button" onclick="startVoiceInput()" title="Sesle soru yaz" aria-label="Sesle soru yaz">🎙️</button>
+                        <textarea class="chat-input" id="chat-in" rows="1" maxlength="12000" aria-label="TDEV-AI mesajı" placeholder="Sorunu yaz veya sesle sor… (Enter gönderir, Shift+Enter yeni satır)"></textarea>
+                        <button class="chat-attach" type="button" onclick="researchMsg()" title="Web kaynaklarında araştır">🌐 ARA</button>
                         <button class="chat-send" type="button" onclick="sendMsg()">GÖNDER</button>
                     </div>
                 </div>
@@ -1448,6 +1450,9 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 <input type="file" id="ai-img-inp" style="display:none" accept="image/*">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/parse/5.0.0/parse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 // ============================================================
 // TDEV QUANTUM - TAM BACK4APP CLOUD ENTEGRASYONU
@@ -2475,58 +2480,160 @@ function ansQ(ans) {
 
 // ---- TDEV-AI CHAT (Cloud Code, optional provider) ----
 let aiFile = null;
-function aiFileLoad(inp) {
-    const file = inp.files[0]; if(!file) return;
-    aiFile = file;
-    document.getElementById('ai-file-prev').style.display = 'block';
-    document.getElementById('ai-file-name').innerText = file.name + ' (' + Math.round(file.size/1024) + ' KB)';
-    showNotif('📎 ' + file.name + ' seçildi. Bu sürümde dosya içeriği otomatik analiz edilmiyor.');
-}
-async function sendMsg() {
-    const inp = document.getElementById('chat-in');
-    const text = inp.value.trim();
-    if (!text && !aiFile) return;
-    const msgText = text || (aiFile ? '[📎 ' + aiFile.name + ' eklendi]' : '');
-    if (text && window.Parse && Parse.User && Parse.User.current && Parse.User.current()) Parse.Cloud.run('trackLearningActivity',{eventType:'ai_question',grade:String(curGrade||''),subject:String(document.getElementById('ql')?.value||'')}).catch(()=>{});
-    inp.value = '';
-    inp.style.height = 'auto';
-    addChatMsg('user', msgText);
-    const file = aiFile; aiFile = null;
+let aiFileText = '';
+let aiSpeechRecognition = null;
+
+async function aiFileLoad(input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+        showNotif('Dosya 10 MB sınırını aşıyor. Daha küçük bir dosya seç.');
+        input.value = ''; return;
+    }
     const preview = document.getElementById('ai-file-prev');
-    if (preview) preview.style.display = 'none';
-    const fileInput = document.getElementById('ai-file-inp');
-    if (fileInput) fileInput.value = '';
+    const name = document.getElementById('ai-file-name');
+    if (preview) preview.style.display = 'block';
+    if (name) name.textContent = file.name + ' · içerik okunuyor…';
+    aiFile = null; aiFileText = '';
+    try {
+        const lower = file.name.toLowerCase();
+        if (file.type.startsWith('text/') || /\.(txt|csv|json|md)$/i.test(lower)) {
+            aiFileText = await file.text();
+        } else if (/\.pdf$/i.test(lower) || file.type === 'application/pdf') {
+            if (!window.pdfjsLib) throw new Error('PDF okuyucu yüklenemedi. Dosyayı metin olarak dışa aktarıp yeniden dene.');
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+            const pages = [];
+            for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 12); pageNumber++) {
+                const page = await pdf.getPage(pageNumber);
+                const content = await page.getTextContent();
+                pages.push(content.items.map(item => item.str || '').join(' '));
+                if (pages.join('\n').length >= 9000) break;
+            }
+            aiFileText = pages.join('\n\n').slice(0, 9000);
+            if (!aiFileText.trim()) throw new Error('PDF içinde seçilebilir metin bulunamadı. Taranmış PDF için sayfayı resim olarak yükleyip OCR desteğini dene.');
+        } else if (/\.docx$/i.test(lower)) {
+            if (!window.mammoth) throw new Error('DOCX okuyucu yüklenemedi. Dosyayı TXT veya PDF olarak dışa aktar.');
+            const extracted = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+            aiFileText = String(extracted.value || '').slice(0, 9000);
+        } else if (file.type.startsWith('image/')) {
+            if (!window.Tesseract) throw new Error('Görsel OCR bileşeni yüklenemedi. Sorunun metnini mesaja yazabilirsin.');
+            const result = await window.Tesseract.recognize(file, 'tur+eng');
+            aiFileText = String(result && result.data && result.data.text || '').slice(0, 9000);
+        } else {
+            throw new Error('Desteklenen dosyalar: PDF, DOCX, TXT, CSV, JSON, MD ve görsel.');
+        }
+        if (!aiFileText.trim()) throw new Error('Dosyadan okunabilir metin çıkarılamadı.');
+        aiFile = file;
+        if (name) name.textContent = file.name + ' · metin çıkarıldı (' + aiFileText.length + ' karakter)';
+        showNotif('Dosya içeriği bu cihazda okundu. Gönderdiğinde TDEV-AI ile analiz edilecek.');
+    } catch (error) {
+        aiFile = null; aiFileText = '';
+        if (name) name.textContent = file.name + ' · okunamadı';
+        showNotif(error && error.message ? error.message : 'Dosya okunamadı.');
+    }
+}
+
+function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showNotif('Bu tarayıcı sesle yazmayı desteklemiyor. Android Chrome gibi desteklenen bir tarayıcıda dene.');
+        return;
+    }
+    if (aiSpeechRecognition) { try { aiSpeechRecognition.stop(); } catch (_) {} aiSpeechRecognition = null; }
+    const recognition = new SpeechRecognition();
+    aiSpeechRecognition = recognition;
+    recognition.lang = curServer === 'TR' ? 'tr-TR' : 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => showNotif('Dinliyorum… Sorunu söyle.');
+    recognition.onresult = event => {
+        const transcript = event.results && event.results[0] && event.results[0][0] ? event.results[0][0].transcript : '';
+        const input = document.getElementById('chat-in');
+        if (input && transcript) { input.value = (input.value ? input.value + ' ' : '') + transcript; input.focus(); input.dispatchEvent(new Event('input', { bubbles: true })); }
+    };
+    recognition.onerror = event => showNotif('Sesle yazma başarısız: ' + (event.error || 'mikrofon erişimini kontrol et.'));
+    recognition.onend = () => { if (aiSpeechRecognition === recognition) aiSpeechRecognition = null; };
+    try { recognition.start(); } catch (error) { showNotif('Mikrofon başlatılamadı. Tarayıcı izinlerini kontrol et.'); }
+}
+
+async function researchMsg() {
+    const input = document.getElementById('chat-in');
+    const query = input ? input.value.trim() : '';
+    if (query.length < 3) { showNotif('Kaynaklı araştırma için önce bir soru yaz.'); return; }
+    if (!Parse.User.current()) { addChatMsg('ai', 'Kaynaklı araştırma için önce hesabına giriş yap.'); return; }
+    input.value = '';
+    addChatMsg('user', '🌐 Kaynaklı araştırma: ' + query);
+    const typing = addTyping();
+    try {
+        const result = await Parse.Cloud.run('tdevAIResearch', { query: query });
+        typing.remove();
+        if (!result || result.success !== true) {
+            addChatMsg('ai', (result && result.error) || 'Kaynaklı araştırma tamamlanamadı.');
+            return;
+        }
+        const lines = [result.message || 'Kaynaklar bulundu.', ''];
+        (result.results || []).forEach((item, index) => {
+            lines.push((index + 1) + '. ' + (item.title || 'Kaynak'));
+            lines.push(item.url || '');
+            if (item.snippet) lines.push(item.snippet);
+            lines.push('');
+        });
+        addChatMsg('ai', lines.join('\n'));
+    } catch (error) {
+        typing.remove();
+        addChatMsg('ai', 'Kaynaklı araştırma yapılamadı: ' + (error && error.message ? error.message : 'sunucu yanıt vermedi'));
+    }
+}
+
+async function sendMsg() {
+    const input = document.getElementById('chat-in');
+    const text = input.value.trim();
+    const file = aiFile;
+    const fileText = aiFileText;
+    if (!text && !fileText) return;
+    const prompt = fileText
+        ? ('Dosya analizi isteği. Dosya adı: ' + (file ? file.name : 'ek dosya') + '. Kullanıcının sorusu: ' + (text || 'Bu dosyayı özetle, önemli noktaları açıkla ve varsa soruları çöz.') + '\n\nDOSYA METNİ:\n' + fileText.slice(0, 9000))
+        : text;
+    const displayText = (text || 'Dosyayı analiz et.') + (file ? '\n📎 ' + file.name + ' · metin çıkarıldı' : '');
+    if (window.Parse && Parse.User && Parse.User.current && Parse.User.current()) Parse.Cloud.run('trackLearningActivity', { eventType: 'ai_question', grade: String(curGrade || ''), subject: String(document.getElementById('ql')?.value || '') }).catch(() => {});
+    input.value = ''; input.style.height = 'auto';
+    addChatMsg('user', displayText);
+    aiFile = null; aiFileText = '';
+    const preview = document.getElementById('ai-file-prev'); if (preview) preview.style.display = 'none';
+    const fileInput = document.getElementById('ai-file-inp'); if (fileInput) fileInput.value = '';
     const button = document.querySelector('.chat-send');
     if (button) { button.disabled = true; button.textContent = 'YANITLANIYOR…'; }
     const typing = addTyping();
     try {
         let responseText = '';
-        if (window.Parse && Parse.Cloud && typeof Parse.Cloud.run === 'function' && text && !file) {
+        let providerError = '';
+        if (window.Parse && Parse.Cloud && typeof Parse.Cloud.run === 'function' && Parse.User.current()) {
             try {
-                const result = await Parse.Cloud.run('tdevAIChat', { message: text, grade: String(curGrade || ''), country: curServer });
-                if (result && result.success && result.answer) responseText = String(result.answer);
-                
-            } catch (cloudError) {
-                console.info('[TDEV-AI] Cloud tutor unavailable:', cloudError && cloudError.message);
+                const result = await Parse.Cloud.run('tdevAIChat', { message: prompt.slice(0, 12000), grade: String(curGrade || ''), country: curServer });
+                if (result && result.success && result.answer) {
+                    responseText = String(result.answer);
+                    if (result.fallbackUsed) responseText += '\n\n(Yedek yapay zekâ sağlayıcısı kullanıldı: ' + (result.provider || 'yedek') + ')';
+                } else providerError = (result && result.error) || 'Yapay zekâ yanıt üretmedi.';
+            } catch (error) {
+                providerError = error && error.message ? error.message : 'Yapay zekâ sunucusuna ulaşılamadı.';
             }
+        } else {
+            providerError = 'Tam yapay zekâ yanıtı için önce giriş yapmalısın.';
         }
-        if (!responseText) {
-            if (file) responseText = 'Dosya seçildi: ' + file.name + '. Bu sürümde dosyanın içeriği otomatik olarak analiz edilmiyor. Metin veya soruyu mesaja yazarsan yardımcı olabilirim.';
-            else {
-                const low = text.toLocaleLowerCase('tr');
-                const topicMatch = currentLessonData && Array.isArray(currentLessonData.topics)
-                    ? currentLessonData.topics.map((item, index) => ({ item: normalizeTopic(item, index), index })).find(x => low.includes(String(x.item.title || '').toLocaleLowerCase('tr')))
-                    : null;
-                if (topicMatch) responseText = topicMatch.item.title + '\n\n' + topicMatch.item.explanation;
-                else if (low.includes('merhaba') || low.includes('selam')) responseText = 'Merhaba! Ben TDEV-AI eğitim yardımcısıyım. Hangi sınıfta olduğunu, dersi ve takıldığın soruyu yaz; adım adım açıklamaya çalışayım.';
-                else responseText = 'Mesajını aldım. Sunucuda yapay zekâ sağlayıcısı yapılandırılmadıysa cevaplar sınırlı kalabilir. Tam yanıtlar için Back4App Config içine NVIDIA_API_KEY (NVIDIA NIM) veya AI_API_KEY eklenmeli; NVIDIA için NVIDIA_BASE_URL ve isteğe bağlı NVIDIA_MODEL kullanılabilir. İstersen sorunu ders, sınıf ve konu bilgisiyle yeniden yaz; elimdeki konu rehberinde eşleşme varsa açıklamasını gösterebilirim.';
-            }
+        if (!responseText && !fileText) {
+            const low = text.toLocaleLowerCase('tr');
+            const topicMatch = currentLessonData && Array.isArray(currentLessonData.topics)
+                ? currentLessonData.topics.map((item, index) => ({ item: normalizeTopic(item, index) })).find(x => low.includes(String(x.item.title || '').toLocaleLowerCase('tr')))
+                : null;
+            if (topicMatch) responseText = topicMatch.item.title + '\n\n' + topicMatch.item.explanation + (providerError ? '\n\nYapay zekâ notu: ' + providerError : '');
         }
+        if (!responseText) responseText = (fileText ? 'Dosyanın metni çıkarıldı ancak AI analizi tamamlanamadı. ' : '') + providerError;
         typing.remove();
         addChatMsg('ai', responseText);
     } catch (error) {
         typing.remove();
-        addChatMsg('ai', 'Yanıt oluşturulamadı. Lütfen tekrar dene.');
+        addChatMsg('ai', 'Yanıt oluşturulamadı: ' + (error && error.message ? error.message : 'bilinmeyen hata'));
     } finally {
         if (button) { button.disabled = false; button.textContent = 'GÖNDER'; }
     }
