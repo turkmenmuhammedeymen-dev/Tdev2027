@@ -40,6 +40,7 @@ NVIDIA NIM is preferred when `NVIDIA_API_KEY` is configured:
 - `NVIDIA_API_KEY` — secret NVIDIA API key.
 - `NVIDIA_BASE_URL` — optional HTTPS base URL; default is `https://integrate.api.nvidia.com/v1`. The server appends `/chat/completions` when needed.
 TAVILY_API_KEY: optional server-side Tavily Search API key for source-linked research in TDEV-AI.
+- `AI_FALLBACK_API_KEY`, `AI_FALLBACK_MODEL`, `AI_FALLBACK_BASE_URL` — optional separate fallback provider for TDEV-AI when the primary AI API fails.
 - `NVIDIA_MODEL` — optional NVIDIA model ID; default is `meta/llama-3.3-70b-instruct`.
 
 Fallback provider options:
