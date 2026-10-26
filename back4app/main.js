@@ -2496,6 +2496,57 @@ Parse.Cloud.define('saveMyAccountSettings', async (request) => {
 });
 
 
+Parse.Cloud.define('getMyActiveSessions', async (request) => {
+  const user = requireUser(request);
+  const query = new Parse.Query('_Session');
+  query.equalTo('user', user);
+  query.descending('createdAt');
+  query.limit(100);
+  const rows = await query.find({ useMasterKey: true });
+  const currentToken = String(user.getSessionToken() || request.sessionToken || '');
+  const now = Date.now();
+  const items = rows.filter(row => {
+    const expiry = row.get('expiresAt');
+    return !expiry || new Date(expiry).getTime() > now;
+  }).map(row => {
+    const createdWith = row.get('createdWith') || {};
+    const ua = safeText(createdWith.userAgent || '', 500);
+    let deviceLabel = 'Bilinmeyen cihaz';
+    if (/Android/i.test(ua)) deviceLabel = 'Android cihaz';
+    else if (/iPhone|iPad|iPod/i.test(ua)) deviceLabel = 'Apple mobil cihaz';
+    else if (/Windows/i.test(ua)) deviceLabel = 'Windows bilgisayar';
+    else if (/Macintosh|Mac OS/i.test(ua)) deviceLabel = 'Mac bilgisayar';
+    else if (/Linux/i.test(ua)) deviceLabel = 'Linux cihaz';
+    return {
+      id: row.id,
+      deviceLabel: deviceLabel,
+      userAgent: ua,
+      createdAtISO: row.createdAt ? row.createdAt.toISOString() : '',
+      expiresAtISO: row.get('expiresAt') ? new Date(row.get('expiresAt')).toISOString() : '',
+      isCurrent: !!currentToken && String(row.get('sessionToken') || '') === currentToken
+    };
+  });
+  return { success: true, items: items };
+});
+
+Parse.Cloud.define('revokeMySession', async (request) => {
+  const user = requireUser(request);
+  const sessionId = safeText(request.params && request.params.sessionId, 80);
+  if (!sessionId) return resultError('Oturum kimliği gerekli.', 'SESSION_ID_REQUIRED');
+  const query = new Parse.Query('_Session');
+  query.equalTo('objectId', sessionId);
+  query.equalTo('user', user);
+  const session = await query.first({ useMasterKey: true });
+  if (!session) return resultError('Bu oturum bulunamadı veya hesabına ait değil.', 'SESSION_NOT_FOUND');
+  const currentToken = String(user.getSessionToken() || request.sessionToken || '');
+  if (currentToken && String(session.get('sessionToken') || '') === currentToken) {
+    return resultError('Geçerli oturumu buradan kapatamazsın. Çıkış düğmesini kullan.', 'CURRENT_SESSION');
+  }
+  await session.destroy({ useMasterKey: true });
+  await writeAuditLog(request, 'security.session_revoked', sessionId, {});
+  return { success: true, message: 'Seçilen oturum kapatıldı.' };
+});
+
 Parse.Cloud.define('deleteMyAccountData', async (request) => {
   const user = requireUser(request);
   const confirmation = safeText(request.params && request.params.confirmation, 40);
