@@ -85,12 +85,16 @@ function configValue(key, fallback) {
 }
 
 async function configValueAsync(key, fallback) {
+  // Prefer the current deployment environment so an older dashboard Config value
+  // cannot shadow a corrected server-side secret.
+  const env = (typeof process !== 'undefined' && process.env) ? process.env[key] : undefined;
+  if (env !== undefined && env !== null && String(env).trim() !== '') return String(env).trim();
   try {
     const cfg = await loadParseConfig();
     const value = cfg && typeof cfg.get === 'function' ? cfg.get(key) : undefined;
     if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
   } catch (_) {}
-  return configValue(key, fallback);
+  return fallback !== undefined ? String(fallback) : '';
 }
 
 function normalizeEmail(value) {
@@ -431,6 +435,31 @@ async function findVerification(email) {
   q.descending('createdAt');
   q.limit(1);
   return q.first({ useMasterKey: true });
+}
+async function issueVerificationCode(email, name) {
+  const normalized = normalizeEmail(email);
+  const recentQuery = new Parse.Query('EmailVerification');
+  recentQuery.equalTo('emailHash', sha256(normalized));
+  recentQuery.equalTo('used', false);
+  recentQuery.greaterThan('createdAt', new Date(Date.now() - 60 * 1000));
+  recentQuery.descending('createdAt');
+  recentQuery.limit(1);
+  const recent = await recentQuery.first({ useMasterKey: true });
+  if (recent && recent.get('deliveryFailed') !== true) {
+    return { alreadySent: true, message: 'Doğrulama kodu yakın zamanda gönderildi. Gelen kutunu ve spam klasörünü kontrol et; gerekirse bir dakika sonra yeniden iste.' };
+  }
+  const code = String(crypto.randomInt(100000, 1000000));
+  const verification = await saveVerification(normalized, code);
+  try {
+    await sendVerificationEmail(normalized, code, name || 'öğrenci');
+    verification.set('deliveryFailed', false);
+    await verification.save(null, { useMasterKey: true });
+    return { alreadySent: false, message: 'Altı haneli doğrulama kodu e-postana gönderildi.' };
+  } catch (error) {
+    verification.set('deliveryFailed', true);
+    await verification.save(null, { useMasterKey: true });
+    throw error;
+  }
 }
 async function setVerified(user) {
   user.set('emailVerified', true);
@@ -907,22 +936,11 @@ Parse.Cloud.define('registerUser', async (request) => {
   await writeAuditLog(request, 'user.register', user.id, { email: email });
 
   if (verificationRequired) {
-    const code = String(crypto.randomInt(100000, 1000000));
     try {
-      const verification = await saveVerification(email, code);
-      try {
-        await sendVerificationEmail(email, code, name);
-        verification.set('deliveryFailed', false);
-        await verification.save(null, { useMasterKey: true });
-      } catch (mailError) {
-        verification.set('deliveryFailed', true);
-        await verification.save(null, { useMasterKey: true });
-        throw mailError;
-      }
+      await issueVerificationCode(email, name);
     } catch (error) {
-      // Do not delete the account automatically if email delivery fails; provide a useful message.
       console.error('[TdevKuantum] Registration email error:', error && error.message);
-      return resultError(error && error.message ? error.message : 'E-posta gönderilemedi. Config ayarlarını kontrol et.', 'EMAIL_DELIVERY_FAILED');
+      return resultError('Doğrulama e-postası gönderilemedi. ' + String(error && error.message || 'E-posta servisi hatalı yanıt verdi.'), 'EMAIL_DELIVERY_FAILED');
     }
   } else {
     await setVerified(user);
@@ -965,28 +983,13 @@ Parse.Cloud.define('resendVerificationCode', async (request) => {
   const user = await userQuery.first({ useMasterKey: true });
   if (!user || user.get('emailVerified') === true) return { success: true, message: genericMessage };
 
-  const recentQuery = new Parse.Query('EmailVerification');
-  recentQuery.equalTo('emailHash', sha256(email));
-  recentQuery.equalTo('used', false);
-  recentQuery.greaterThan('createdAt', new Date(Date.now() - 60 * 1000));
-  recentQuery.descending('createdAt');
-  recentQuery.limit(1);
-  const recent = await recentQuery.first({ useMasterKey: true });
-  if (recent && recent.get('deliveryFailed') !== true) return resultError('Güvenlik için yeni kod istemeden önce bir dakika bekle.', 'RATE_LIMITED');
-
-  const code = String(crypto.randomInt(100000, 1000000));
-  const verification = await saveVerification(email, code);
   try {
-    await sendVerificationEmail(email, code, user.get('displayName') || user.get('name') || 'öğrenci');
-    verification.set('deliveryFailed', false);
-    await verification.save(null, { useMasterKey: true });
-    await writeAuditLog(null, 'user.email_verification_resent', user.id, { emailHash: sha256(email) });
-    return { success: true, message: genericMessage };
+    const delivery = await issueVerificationCode(email, user.get('displayName') || user.get('name') || 'öğrenci');
+    if (!delivery.alreadySent) await writeAuditLog(null, 'user.email_verification_resent', user.id, { emailHash: sha256(email) });
+    return { success: true, message: delivery.alreadySent ? delivery.message : genericMessage };
   } catch (error) {
-    verification.set('deliveryFailed', true);
-    await verification.save(null, { useMasterKey: true });
     console.error('[TdevKuantum] Resend verification email error:', error && error.message);
-    return resultError(error && error.message ? error.message : 'Doğrulama e-postası gönderilemedi.', 'EMAIL_DELIVERY_FAILED');
+    return resultError('Doğrulama e-postası gönderilemedi. ' + String(error && error.message || 'E-posta servisi hatalı yanıt verdi.'), 'EMAIL_DELIVERY_FAILED');
   }
 });
 
@@ -1041,7 +1044,13 @@ Parse.Cloud.define('loginUser', async (request) => {
       return resultError('Bu hesap devre dışı bırakılmış.', 'ACCOUNT_BANNED');
     }
     if ((await configValueAsync('REQUIRE_EMAIL_VERIFY', CONFIG_DEFAULTS.REQUIRE_EMAIL_VERIFY)).toLowerCase() !== 'false' && user.get('emailVerified') !== true) {
-      return { success: false, verificationRequired: true, error: 'Önce e-posta adresini doğrula.', code: 'EMAIL_NOT_VERIFIED' };
+      try {
+        const delivery = await issueVerificationCode(email, user.get('displayName') || user.get('name') || 'öğrenci');
+        return { success: false, verificationRequired: true, message: delivery.message, code: 'EMAIL_NOT_VERIFIED' };
+      } catch (mailError) {
+        console.error('[TdevKuantum] Unverified account recovery email failed:', String(mailError && mailError.message || mailError).slice(0, 300));
+        return { success: false, verificationRequired: true, message: 'Hesabın var ancak e-posta doğrulanmamış. Yeni kod gönderilemedi: ' + String(mailError && mailError.message || mailError).slice(0, 500), code: 'EMAIL_DELIVERY_FAILED' };
+      }
     }
     const configuredRole = await roleForEmail(email);
     const role = configuredRole !== 'member' ? configuredRole : 'member';
@@ -1709,57 +1718,69 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   if (!/^\d{1,2}$/.test(grade) || Number(grade) < 1 || Number(grade) > 12) return resultError('Sınıf bilgisi geçersiz.', 'INVALID_GRADE');
   if (!/^[A-Z]{2}$/.test(country)) return resultError('Ülke seçimi geçersiz.', 'INVALID_COUNTRY');
 
-  // NVIDIA NIM config is preferred when NVIDIA_API_KEY is present.
-  // NVIDIA_BASE_URL may be either the API base (.../v1) or full chat-completions URL.
   const nvidiaApiKey = await configValueAsync('NVIDIA_API_KEY');
+  const generalApiKey = await configValueAsync('AI_API_KEY');
   const useNvidia = !!nvidiaApiKey;
-  const apiKey = nvidiaApiKey || await configValueAsync('AI_API_KEY');
-  if (!apiKey) {
-    return resultError('TDEV-AI için NVIDIA_API_KEY veya AI_API_KEY Back4App Config içinde yapılandırılmamış. API anahtarını HTML dosyasına koyma.', 'AI_PROVIDER_NOT_CONFIGURED');
-  }
-  const model = useNvidia
+  const primaryKey = nvidiaApiKey || generalApiKey;
+  if (!primaryKey) return resultError('Yapay zekâ henüz yapılandırılmamış. Back4App Config içinde NVIDIA_API_KEY veya AI_API_KEY tanımlanmalı.', 'AI_PROVIDER_NOT_CONFIGURED');
+
+  const primaryModel = useNvidia
     ? ((await configValueAsync('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')) || 'meta/llama-3.3-70b-instruct')
     : ((await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini');
-  let endpoint = useNvidia
+  let primaryEndpoint = useNvidia
     ? ((await configValueAsync('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')) || 'https://integrate.api.nvidia.com/v1')
     : ((await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions');
-  endpoint = endpoint.replace(/\/+$/, '');
-  if (!/chat\/completions$/i.test(endpoint)) endpoint += '/chat/completions';
-  if (!/^https:\/\//i.test(endpoint)) return resultError((useNvidia ? 'NVIDIA_BASE_URL' : 'AI_BASE_URL') + ' yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
+  primaryEndpoint = primaryEndpoint.replace(/\/+$/, '');
+  if (!/chat\/completions$/i.test(primaryEndpoint)) primaryEndpoint += '/chat/completions';
+  if (!/^https:\/\//i.test(primaryEndpoint)) return resultError('Yapay zekâ uç noktası yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
 
+  const providers = [{ key: primaryKey, endpoint: primaryEndpoint, model: primaryModel, label: useNvidia ? 'NVIDIA NIM' : 'AI sağlayıcısı' }];
+  if (useNvidia && generalApiKey) {
+    let fallbackEndpoint = (await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions';
+    fallbackEndpoint = fallbackEndpoint.replace(/\/+$/, '');
+    if (!/chat\/completions$/i.test(fallbackEndpoint)) fallbackEndpoint += '/chat/completions';
+    const fallbackModel = (await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini';
+    if (/^https:\/\//i.test(fallbackEndpoint) && (fallbackEndpoint !== primaryEndpoint || generalApiKey !== primaryKey)) {
+      providers.push({ key: generalApiKey, endpoint: fallbackEndpoint, model: fallbackModel, label: 'Yedek AI sağlayıcısı' });
+    }
+  }
   const systemPrompt = [
     'Sen TdevKuantum eğitim platformunun Türkçe konuşan, güvenli ve sabırlı özel ders yardımcısısın.',
     'Öğrencinin sınıfı: ' + grade + '. Ülke/müfredat kodu: ' + country + '.',
     'Soruyu adım adım açıkla; gerekli tanımları, çözüm yolunu, örneği ve kısa bir kontrol sorusunu ekle.',
     'Bilmediğin resmî müfredat ayrıntısını uydurma; resmî kaynakla doğrulanması gerektiğini açıkça belirt.',
-    'Öğrenciye zarar verebilecek yönlendirmeler yapma. Kısa değil, soruyu yanıtlayacak kadar tamamlanmış cevap ver.'
+    'Öğrenciye zarar verebilecek yönlendirmeler yapma. Soruyu yanıtlayacak kadar tamamlanmış cevap ver.'
   ].join(' ');
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: model,
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }],
-        temperature: 0.35,
-        max_tokens: 2500
-      })
-    });
-    const raw = await response.text();
-    let data;
-    try { data = JSON.parse(raw); } catch (_) { data = null; }
-    if (!response.ok) {
-      console.error('[TdevKuantum] AI provider rejected request:', response.status);
-      return resultError('Yapay zekâ sağlayıcısı isteği kabul etmedi (HTTP ' + response.status + '). NVIDIA_API_KEY/NVIDIA_MODEL veya AI_API_KEY/AI_MODEL ve sağlayıcı limitlerini kontrol et.', 'AI_PROVIDER_ERROR');
+  const providerErrors = [];
+  for (let index = 0; index < providers.length; index++) {
+    const provider = providers[index];
+    try {
+      const response = await fetch(provider.endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + provider.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: provider.model, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }], temperature: 0.35, max_tokens: 2500 })
+      });
+      const raw = await response.text();
+      let data;
+      try { data = JSON.parse(raw); } catch (_) { data = null; }
+      if (!response.ok) {
+        providerErrors.push(provider.label + ' HTTP ' + response.status);
+        console.error('[TdevKuantum] AI provider rejected request:', provider.label, response.status);
+        continue;
+      }
+      const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (typeof answer !== 'string' || !answer.trim()) {
+        providerErrors.push(provider.label + ' boş yanıt verdi');
+        continue;
+      }
+      await writeAuditLog(request, 'learning.ai_chat', user.id, { grade: grade, country: country, messageLength: message.length, model: provider.model, provider: provider.label });
+      return { success: true, answer: answer.trim(), model: provider.model, provider: provider.label, fallbackUsed: index > 0 };
+    } catch (error) {
+      providerErrors.push(provider.label + ' bağlantı hatası');
+      console.error('[TdevKuantum] AI provider connection failed:', provider.label, String(error && error.message || error).slice(0, 160));
     }
-    const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if (typeof answer !== 'string' || !answer.trim()) return resultError('Yapay zekâ boş yanıt verdi. Biraz sonra tekrar dene.', 'AI_EMPTY_RESPONSE');
-    await writeAuditLog(request, 'learning.ai_chat', user.id, { grade: grade, country: country, messageLength: message.length, model: model });
-    return { success: true, answer: answer.trim(), model: model };
-  } catch (error) {
-    console.error('[TdevKuantum] AI provider connection failed:', String(error && error.message || error).slice(0, 200));
-    return resultError('Yapay zekâ servisine ulaşılamadı. NVIDIA_BASE_URL/AI_BASE_URL ve sağlayıcı erişimini kontrol et.', 'AI_CONNECTION_FAILED');
   }
+  return resultError('Yapay zekâ sağlayıcıları yanıt vermedi. ' + providerErrors.join('; ') + '. API anahtarı, model, kota ve HTTPS uç noktasını kontrol et.', 'AI_ALL_PROVIDERS_FAILED');
 });
 
 Parse.Cloud.define('getQuestions', async (request) => {
