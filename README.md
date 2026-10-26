@@ -84,3 +84,16 @@ The GitHub Actions workflow runs the same checks on pushes and pull requests. It
 Do not claim production testing until these checks have been run in the deployed environment.
 
 **NVIDIA NIM configuration:** set `NVIDIA_API_KEY` and `NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1` in Back4App Config. Optional `NVIDIA_MODEL` overrides the default `deepseek-ai/deepseek-v4-flash`. The authenticated `healthCheck` response reports only whether the key/URL are configured and the selected model; it never returns the API key. If inference fails, the response includes the provider's HTTP status and a short sanitized error detail. Back4App Config values take precedence over environment variables when both are present.
+
+
+## Öğrenci kontrol merkezi ve süreli denemeler
+
+The signed-in learning dashboard includes:
+- Configurable daily study-minute goal, completed-task tracking, and an activity streak based on saved activity.
+- A seven-day activity report and subject-level correct-answer rates from recorded practice.
+- Personal study tasks, upcoming-exam reminders, and a summary of topics in the mistake/review list.
+- A personal multiple-choice question bank and timed sessions labelled LGS, TYT, AYT, school exam, or personal practice.
+- Automatic local result storage and attempts to sync scores to StudyProgress; incorrect and unanswered items are sent to StudyMistake for review.
+
+The timed exam module is a personal test builder, not a bundled official question bank. Students enter their own question text, choices, correct answer and topic. Local records remain available when signed out or offline; cross-device sync requires a valid Back4App session and a deployed Cloud Code version with the existing study endpoints. The dashboard derives its charts from recorded sessions, so it does not invent progress when there is no activity data.
+
