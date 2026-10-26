@@ -730,6 +730,34 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 .school-shell{display:grid;gap:16px}.school-card{background:rgba(15,28,47,.96);border:1px solid rgba(148,163,184,.25);border-radius:14px;padding:16px;min-width:0}.school-card h3{font-size:1rem;color:#eaf4ff;margin-bottom:8px}.school-muted{color:#b5c4d8;font-size:.86rem;line-height:1.6}.school-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.school-form label{display:grid;gap:6px;color:#d9e5f3;font-size:.82rem}.school-form input,.school-form select{width:100%;min-height:42px;border:1px solid #52657d;border-radius:8px;padding:9px 11px;background:#101e31;color:#f2f6fc}.school-button{border:1px solid #5b9dd7;background:#16385b;color:#f4f9ff;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}.school-button.secondary{background:#172337;border-color:#52657d}.school-list{display:grid;gap:10px;margin-top:12px}.school-item{background:#0d1a2c;border:1px solid #344960;border-radius:11px;padding:13px;display:grid;gap:9px}.school-item-title{color:#f2f7ff;font-weight:750}.school-item-meta{color:#b9c8db;font-size:.82rem;line-height:1.6}.school-actions{display:flex;flex-wrap:wrap;gap:8px}.school-table-wrap{overflow-x:auto}.school-table{width:100%;border-collapse:collapse;font-size:.82rem}.school-table th,.school-table td{padding:9px;text-align:left;border-bottom:1px solid #344960;color:#d8e4f2;vertical-align:top}.school-table th{color:#a9dfff}.school-status{padding:10px 12px;border-radius:9px;background:#10263b;color:#d9ebff;font-size:.86rem;line-height:1.6}#school-staff-tools[hidden],#school-principal-tools[hidden],#school-student-tools[hidden],#classroom-detail[hidden]{display:none!important}
 @media(max-width:640px){.school-form{grid-template-columns:1fr}.school-card{padding:13px}.school-table{min-width:520px}#auth-transition .auth-transition-emblem{width:96px;height:96px}}
 </style>
+<style>
+/* TdevKuantum: contrast, dashboard hierarchy and security center */
+:root{--tdev-ink:#edf4ff;--tdev-muted:#b6c5d9;--tdev-blue:#6db7ff;--tdev-gold:#f1cb72}
+.sec-title{color:#9fb0c6!important;font-size:.72rem!important;letter-spacing:.16em!important}
+.nav-section,.topbar-info,.role-desc,.class-label,.detail-grade,.lesson-desc,.bot-desc,.quiz-source,.stat-lbl,.m5-stat,.study-item-meta,.study-footnote,.overview-disclaimer,.coming-sub,.logo-sub,.logo-quantum,.admin-log,.admin-table th,.curriculum-result-count{color:#b6c5d9!important}
+.lesson-desc,.bot-desc,.study-intro,.study-footnote,.detail-box p,.detail-box ul li{color:#d7e2f0!important}
+.stat-lbl,.quiz-score-lbl,.c-lbl,.msg-time{color:#aabbd0!important}
+.security-hero,.security-panel{border:1px solid rgba(148,181,220,.24);border-radius:18px;background:linear-gradient(135deg,rgba(19,37,61,.97),rgba(10,22,38,.98));box-shadow:0 14px 36px rgba(0,0,0,.14)}
+.security-hero{display:flex;gap:16px;align-items:center;padding:clamp(18px,3vw,28px);margin-bottom:16px}
+.security-hero-icon{display:grid;place-items:center;flex:0 0 58px;width:58px;height:58px;border-radius:16px;background:rgba(109,183,255,.12);border:1px solid rgba(109,183,255,.3);font-size:1.6rem}
+.security-kicker{font-size:.68rem;letter-spacing:.12em;color:#8bc8ff;font-weight:800;margin-bottom:7px}
+.security-hero h2{font:800 clamp(1.2rem,2.8vw,1.8rem)/1.25 'Manrope',sans-serif;color:#f2f7ff;margin:0 0 8px}
+.security-hero p:not(.security-kicker){color:#c2d0e2;line-height:1.65;font-size:.88rem}
+.security-panel{padding:clamp(15px,2.6vw,23px);margin:14px 0}
+.security-panel-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px}
+.security-panel h3{font-size:1rem;color:#f1f6ff;margin:0 0 6px}
+.security-panel-heading p,.security-muted{color:#b6c5d9;font-size:.84rem;line-height:1.6}
+.security-device-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.security-device{min-width:0;padding:14px;border:1px solid #344b66;border-radius:12px;background:#0b1828}
+.security-device strong{display:block;color:#f2f7ff;font-size:.9rem;margin-bottom:7px}
+.security-device p{color:#b9c8db;font-size:.78rem;line-height:1.55;margin:4px 0;overflow-wrap:anywhere}
+.security-device .security-device-ua{color:#8fa5bf;font-size:.72rem}
+.security-status{margin-top:12px;color:#9ecbff;font-size:.8rem;line-height:1.55}
+.security-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.security-warning{margin-top:14px;color:#f0d9a0;font-size:.78rem;line-height:1.6}
+.study-action.danger{background:#4a2029!important;border-color:#b85a68!important;color:#fff0f2!important}
+@media(max-width:600px){.security-hero{align-items:flex-start;gap:12px}.security-hero-icon{flex-basis:44px;width:44px;height:44px}.security-panel-heading{flex-direction:column}.security-panel-heading .study-action{width:100%}.security-actions{flex-direction:column}.security-actions .study-action{width:100%}}
+</style>
 </head>
 <body>
 
@@ -1008,6 +1036,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
         <div class="nav-btn" id="nav-progress" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">📈</span>Gelişimim</div>
         <div class="nav-btn" id="nav-school" style="display:none" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">🏫</span>Sınıfım / Okulum</div>
         <div class="nav-btn" id="nav-settings" style="display:none" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙️</span>Ayarlar · Hesap bilgilerim</div>
+        <div class="nav-btn" id="nav-security" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">🛡️</span>Güvenlik ve Gizlilik</div>
         <div class="nav-section">SİSTEM</div>
         <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">🔧</span>Geliştirici</div>
         <div class="nav-btn" onclick="showTab('bots',this)"><span class="nav-icon">🔬</span>Botlar</div>
@@ -1376,6 +1405,12 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
                 </div>
                 <div class="detail-box"><h3>📚 MÜFREDAT / HİZMET DURUMU</h3><ul><li>Ülke ve sınıf seçimi, platformdaki konu rehberini belirler.</li><li>Resmî müfredat kapsamı yalnızca Back4App üzerinde doğrulanmış kayıtlar varsa geçerlidir.</li><li>Diğer konular genel öğrenme rehberi olarak sunulur; doğrulanmış sunucu gecikmesi veya gerçek zamanlı hizmet durumu iddiası yapılmaz.</li></ul></div>
             </div>
+            <div id="tab-security" class="tab">
+                <div class="sec-title">HESAP <span>GÜVENLİĞİ VE GİZLİLİK</span></div>
+                <section class="security-hero"><div class="security-hero-icon">🛡️</div><div><p class="security-kicker">TDEVKUANTUM · HESAP KONTROLÜ</p><h2>Hesabın ve öğrenme verilerin senin kontrolünde.</h2><p>Son görülen cihaz kayıtlarını incele, bu cihazdaki öğrenme verilerini dışa aktar veya hesabını ve kişisel çalışma kayıtlarını sil.</p></div></section>
+                <section class="security-panel"><div class="security-panel-heading"><div><h3>Son görülen cihazlar</h3><p>Cihaz etkinliği, bir oturumun hâlen açık olduğunu tek başına kanıtlamaz.</p></div><button type="button" class="study-action secondary" onclick="loadSecurityCenter()">YENİLE</button></div><div id="security-device-list" class="security-device-list" aria-live="polite"><p class="security-muted">Cihaz kayıtları yükleniyor…</p></div><p id="security-status" class="security-status" aria-live="polite"></p></section>
+                <section class="security-panel"><div class="security-panel-heading"><div><h3>Veri kontrolü</h3><p>İndirme yalnızca bu cihazda saklanan öğrenme verilerini içerir. Hesap silme işlemi sunucudaki kişisel çalışma kayıtlarını da kaldırır.</p></div></div><div class="security-actions"><button type="button" class="study-action secondary" onclick="exportLearningData()">BU CİHAZDAKİ VERİLERİ İNDİR</button><button type="button" class="study-action danger" onclick="deleteMyAccountData()">HESABIMI VE KİŞİSEL VERİLERİMİ SİL</button></div><p class="security-warning">Hesap silme işlemi geri alınamaz. Paylaşılan sınıf kayıtları diğer kullanıcıları etkileyebileceği için bu işlemde korunur; güvenlik denetim kayıtları kimlik bilgileri çıkarılarak saklanabilir.</p></section>
+            </div>
             <!-- SİSTEM DURUMU -->
             <div id="tab-system" class="tab">
                 <div class="sec-title">SİSTEM <span>DURUM KONTROLÜ</span></div>
@@ -1578,6 +1613,7 @@ async function loginWithEmail() {
             try { await Parse.User.become(result.sessionToken); }
             catch (sessionError) { throw new Error('Giriş oturumu açılamadı. Back4App kullanıcı ayarlarını kontrol et.'); }
         }
+        if (Parse.User.current()) recordCurrentDeviceSession().catch(() => {});
         curRole = result.role || 'member';
         if (result.verificationRequired) {
             if (typeof window.hideTdevAuthTransition === 'function') window.hideTdevAuthTransition();
@@ -2116,10 +2152,66 @@ function showTab(id, el) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     const tab = document.getElementById('tab-'+id); if(tab) tab.classList.add('active');
     if(el) el.classList.add('active');
-    const titles = { lessons:'DERS MODÜLLERİ', curriculum:'YENİ MÜFREDAT MERKEZİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', school:'SINIFIM / OKULUM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU' };
+    const titles = { lessons:'DERS MODÜLLERİ', curriculum:'YENİ MÜFREDAT MERKEZİ', quiz:'DOĞRU/YANLIŞ TESTİ', ai:'TDEV-AI ASISTAN', m5:'M5 BİLİŞİM SİSTEMİ', planner:'ÇALIŞMA PLANI', notes:'NOT DEFTERİM', cards:'BİLGİ KARTLARI', practice:'TEKRAR VE DENEME', mistakes:'YANLIŞ DEFTERİM', focus:'ODAK SAYACI', progress:'GELİŞİMİM', school:'SINIFIM / OKULUM', devpanel:'GELİŞTİRİCİ PANELİ', bots:'SİSTEM BOTLARI', stats:'İSTATİSTİKLER', system:'SİSTEM DURUMU', security:'GÜVENLİK VE GİZLİLİK' };
     document.getElementById('tab-title').innerText = titles[id] || id.toUpperCase();
     if(id === 'devpanel') refreshDevPanel();
     if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter(curRole);
+}
+
+async function recordCurrentDeviceSession() {
+    if (!Parse.User.current()) return;
+    const ua = String(navigator.userAgent || '').slice(0, 500);
+    let deviceLabel = 'Bilinmeyen cihaz';
+    if (/Android/i.test(ua)) deviceLabel = 'Android cihaz';
+    else if (/iPhone|iPad|iPod/i.test(ua)) deviceLabel = 'Apple mobil cihaz';
+    else if (/Windows/i.test(ua)) deviceLabel = 'Windows bilgisayar';
+    else if (/Macintosh|Mac OS/i.test(ua)) deviceLabel = 'Mac bilgisayar';
+    else if (/Linux/i.test(ua)) deviceLabel = 'Linux cihaz';
+    await Parse.Cloud.run('recordDeviceSession', { userAgent: ua, deviceLabel: deviceLabel, timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || '').slice(0, 80), approximateRegion: '' });
+}
+async function loadSecurityCenter() {
+    const list = document.getElementById('security-device-list');
+    const status = document.getElementById('security-status');
+    if (!list) return;
+    list.replaceChildren();
+    const loading = document.createElement('p'); loading.className = 'security-muted'; loading.textContent = 'Cihaz kayıtları yükleniyor…'; list.appendChild(loading);
+    if (status) status.textContent = '';
+    try {
+        const result = await Parse.Cloud.run('getMyDeviceSessions', {});
+        list.replaceChildren();
+        const items = result && Array.isArray(result.items) ? result.items : [];
+        if (!items.length) {
+            const empty = document.createElement('p'); empty.className = 'security-muted';
+            empty.textContent = 'Henüz cihaz etkinliği kaydedilmemiş. Bir sonraki başarılı girişin burada görünecek.'; list.appendChild(empty);
+        }
+        items.forEach(item => {
+            const card = document.createElement('article'); card.className = 'security-device';
+            const title = document.createElement('strong'); title.textContent = item.deviceLabel || 'Bilinmeyen cihaz';
+            const meta = document.createElement('p'); meta.textContent = 'Son görülme: ' + (item.lastSeenISO ? new Date(item.lastSeenISO).toLocaleString('tr-TR') : 'bilgi yok') + (item.timezone ? ' · ' + item.timezone : '');
+            const ua = document.createElement('p'); ua.className = 'security-device-ua'; ua.textContent = item.userAgent || 'Tarayıcı bilgisi yok';
+            card.append(title, meta, ua); list.appendChild(card);
+        });
+        if (status) status.textContent = 'Cihaz kayıtları güncellendi. Bu liste gerçek zamanlı oturum iptali sağlamaz.';
+    } catch (error) {
+        list.replaceChildren();
+        const failed = document.createElement('p'); failed.className = 'security-muted';
+        failed.textContent = 'Cihaz kayıtları alınamadı: ' + (error && error.message ? error.message : 'sunucu yanıt vermedi'); list.appendChild(failed);
+    }
+}
+async function deleteMyAccountData() {
+    const phrase = 'HESABIMI SİL';
+    if (!window.confirm('Bu işlem hesabını ve kişisel öğrenme kayıtlarını kalıcı olarak siler. Geri alınamaz. Devam etmek istiyor musun?')) return;
+    if (window.prompt('Onaylamak için HESABIMI SİL yaz:') !== phrase) { showNotif('Hesap silme iptal edildi; onay metni eşleşmedi.'); return; }
+    const status = document.getElementById('security-status');
+    if (status) status.textContent = 'Hesap ve kişisel kayıtlar siliniyor…';
+    try {
+        const result = await Parse.Cloud.run('deleteMyAccountData', { confirmation: phrase });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Hesap silinemedi.');
+        try { await Parse.User.logOut(); } catch (_) {}
+        window.alert(result.message || 'Hesap silindi.'); window.location.reload();
+    } catch (error) {
+        if (status) status.textContent = 'Hesap silinemedi: ' + (error && error.message ? error.message : 'sunucu hatası');
+    }
 }
 
 // ---- SİSTEM DURUMU / E-POSTA YAPILANDIRMASI ----
