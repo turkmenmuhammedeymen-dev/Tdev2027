@@ -212,7 +212,7 @@ async function probeAppsScript(scriptUrl, expectedToken) {
     throw new Error('Apps Script güncel sürümde değil (beklenen ' + EXPECTED_APPS_SCRIPT_BUILD + ', bulunan ' + String(data.build || 'build bilgisi yok') + '). apps-script/Code.gs dosyasını kaydedip yeni Web App sürümü olarak dağıt.');
   }
   if (data.configured !== true) {
-    throw new Error('Apps Script Script Properties içinde APPS_SCRIPT_TOKEN bulunamadı. Tokenı bu Web App’in bağlı olduğu Apps Script projesinde Script Properties bölümüne ekle.');
+    throw new Error('Apps Script GET kontrolü, bu dağıtımın bağlı olduğu projede APPS_SCRIPT_TOKEN bulunamadığını bildirdi. Script Properties değerini aynı Apps Script projesine kaydet ve Web App dağıtımının bu projeye ait olduğunu doğrula.');
   }
   const tokenCheck = await fetch(scriptUrl, {
     method: 'POST',
@@ -238,7 +238,11 @@ async function probeAppsScript(scriptUrl, expectedToken) {
     throw new Error('Apps Script token eşleşmiyor. Back4App Config APPS_SCRIPT_TOKEN ile bu Apps Script projesinin Script Properties APPS_SCRIPT_TOKEN değerini karakter karakter aynı yap.');
   }
   if (tokenData && tokenData.error) {
-    throw new Error('Apps Script token kontrolü: ' + String(tokenData.error).slice(0, 220));
+    const detail = String(tokenData.error).slice(0, 220);
+    if (/Mail service token is not configured/i.test(detail)) {
+      throw new Error('Apps Script GET ve POST token kontrolleri birbiriyle uyuşmuyor. Bu URL’nin bağlı olduğu Apps Script projesinde Script Properties > APPS_SCRIPT_TOKEN değerini kaydet, ardından aynı Web App dağıtımını yeni sürüm olarak yayınla. Token değerini loga veya istemciye yazdırma.');
+    }
+    throw new Error('Apps Script token kontrolü: ' + detail);
   }
   throw new Error('Apps Script token kontrolü beklenmeyen yanıt verdi; Web App dağıtım sürümünü ve token ayarını kontrol et.');
 }
@@ -339,8 +343,8 @@ async function assertVerificationProviderReady() {
   if (apiKey && from) return { provider: 'resend' };
 
   const setup = (!scriptUrl && !(apiKey && from))
-    ? 'GOOGLE_SCRIPT_URL + APPS_SCRIPT_TOKEN veya RESEND_API_KEY + EMAIL_FROM yapılandırılmalı.'
-    : 'Apps Script token doğrulanamadı ve geçerli Resend yedeği bulunamadı.';
+    ? 'Back4App Config içinde GOOGLE_SCRIPT_URL (veya GOOGLE_APPS_SCRIPT_URL) ve APPS_SCRIPT_TOKEN; alternatif olarak RESEND_API_KEY ve EMAIL_FROM yapılandırılmalı.'
+    : 'Apps Script token/dağıtım doğrulaması başarısız ve geçerli Resend yedeği bulunamadı.';
   throw new Error(setup + (errors.length ? ' ' + errors.join(' | ') : ''));
 }
 
