@@ -781,6 +781,41 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 .msg-bubble a{color:#8bc8ff;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
 .msg-bubble a:hover{color:#c5e5ff}
 </style>
+<style id="tdev-final-polish">
+/* TdevKuantum — coherent enterprise palette, readable contrast and dashboard hierarchy */
+:root{--tdev-primary:#2457c5;--tdev-primary-strong:#1946a6;--tdev-ink:#172b4d;--tdev-muted:#61738d;--tdev-line:#d8e2f0;--tdev-panel:#fff;--tdev-panel-soft:#f5f8fd}
+body{color:var(--tdev-ink)!important}
+.sidebar{background:linear-gradient(180deg,#fff 0%,#f7faff 100%)!important;border-right:1px solid #d8e2f0!important;box-shadow:8px 0 28px rgba(20,45,82,.035)}
+.sidebar-head{background:linear-gradient(135deg,#fff,#f3f7ff)!important;border-bottom:1px solid #d8e2f0!important}
+.sidebar-logo{color:#1946a6!important;font-size:1.02rem!important;letter-spacing:-.025em!important}
+.sidebar-ver{color:#667a96!important;letter-spacing:.08em!important}
+.nav-section{color:#71829a!important;font-weight:800!important;letter-spacing:.12em!important}
+.nav-btn{color:#435875!important;border:1px solid transparent!important;font-weight:650!important;transition:background .16s,border-color .16s,color .16s,transform .16s}
+.nav-btn .nav-icon{filter:none!important;opacity:.92}
+.nav-btn:hover{color:#1946a6!important;background:#edf3ff!important;border-color:#d7e5ff!important;transform:translateX(2px)}
+.nav-btn.active{color:#1946a6!important;background:linear-gradient(90deg,#e7efff,#f5f8ff)!important;border-color:#c9dafe!important;box-shadow:inset 3px 0 #326fe0!important}
+.sidebar-footer{border-top:1px solid #dce5f1!important;background:rgba(245,248,253,.86)}
+.role-indicator-name{color:#263d5e!important}
+.legal-side-links a{color:#49658c!important}
+.btn-exit{border-color:#d5dfed!important;color:#465b78!important;background:#fff!important}
+.topbar{background:rgba(255,255,255,.94)!important;border-bottom:1px solid #dce5f1!important;backdrop-filter:blur(14px)}
+.page-title{color:#203958!important;font-weight:850!important;letter-spacing:.035em!important}
+.sec-title{color:#526783!important}
+.dashboard-launch-grid{gap:13px!important;margin-top:22px!important}
+.dashboard-launch-card{background:linear-gradient(145deg,#fff,#f5f8fe)!important;border-color:#d8e3f2!important;box-shadow:0 7px 22px rgba(23,43,77,.045)!important;min-height:100px}
+.dashboard-launch-card:hover{border-color:#9bb9f5!important;box-shadow:0 13px 28px rgba(37,87,197,.11)!important}
+.dashboard-launch-card>span{background:#e8efff!important;color:#2457c5!important}
+.dashboard-launch-card strong{color:#1e3658!important;font-size:.84rem!important}
+.dashboard-launch-card small{color:#5c708b!important;font-size:.72rem!important}
+.overview-disclaimer{color:#64758d!important;background:#f4f7fc;border-left:3px solid #91b2ef;padding:10px 12px;border-radius:0 8px 8px 0}
+.study-panel,.admin-card,.bot-card,.lesson-card,.detail-box,.quiz-card,.school-card,.security-panel{box-shadow:0 8px 24px rgba(23,43,77,.045)}
+.login-title,.reg-title,.role-desc,.coming-sub,.logo-sub,.logo-quantum,.nav-section,.topbar-info,.detail-grade,.lesson-desc,.bot-desc,.quiz-source,.stat-lbl,.m5-stat,.study-item-meta,.study-footnote,.curriculum-result-count{color:#5e718b!important}
+.error-msg,.auth-error,.auth-message-error{color:#a51f36!important}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(50,111,224,.38)!important;outline-offset:2px}
+@media(max-width:760px){.sidebar{max-height:55vh!important;border-bottom:1px solid #d8e2f0!important}.nav-btn:hover{transform:none}.dashboard-launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:460px){.dashboard-launch-grid{grid-template-columns:1fr!important}.dashboard-launch-card{min-height:84px}}
+</style>
+
 </head>
 <body>
 
@@ -1057,6 +1092,7 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
         <div class="nav-btn" id="nav-mistakes" onclick="showTab('mistakes',this);loadStudyMistakes()"><span class="nav-icon">🔎</span>Yanlış Defterim</div>
         <div class="nav-btn" id="nav-focus" onclick="showTab('focus',this)"><span class="nav-icon">⏱️</span>Odak Sayacı</div>
         <div class="nav-btn" id="nav-progress" onclick="showTab('progress',this);loadLearningDashboard()"><span class="nav-icon">📈</span>Gelişimim</div>
+        <div class="nav-btn" id="nav-exam-goals" onclick="showTab('progress',this);loadLearningDashboard();loadExamGoals()"><span class="nav-icon">🎯</span>Sınav Hedeflerim</div>
         <div class="nav-btn" id="nav-school" style="display:none" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">🏫</span>Sınıfım / Okulum</div>
         <div class="nav-btn" id="nav-settings" style="display:none" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙️</span>Ayarlar · Hesap bilgilerim</div>
         <div class="nav-btn" id="nav-security" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">🛡️</span>Güvenlik ve Gizlilik</div>
