@@ -1783,6 +1783,39 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   return resultError('Yapay zekâ sağlayıcıları yanıt vermedi. ' + providerErrors.join('; ') + '. API anahtarı, model, kota ve HTTPS uç noktasını kontrol et.', 'AI_ALL_PROVIDERS_FAILED');
 });
 
+Parse.Cloud.define('tdevAIResearch', async (request) => {
+  const user = requireUser(request);
+  const query = safeText(request.params && request.params.query, 400);
+  if (query.length < 3) return resultError('Kaynaklı araştırma için en az 3 karakter yaz.', 'RESEARCH_QUERY_REQUIRED');
+  const apiKey = await configValueAsync('TAVILY_API_KEY');
+  if (!apiKey) return resultError('Kaynaklı araştırma servisi yapılandırılmamış. Back4App Config içine TAVILY_API_KEY eklenmeli; anahtarı HTML dosyasına koyma.', 'RESEARCH_PROVIDER_NOT_CONFIGURED');
+  try {
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey, query: query, search_depth: 'basic', topic: 'general', max_results: 5, include_answer: false, include_raw_content: false })
+    });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch (_) { data = null; }
+    if (!response.ok || !data || !Array.isArray(data.results)) {
+      console.error('[TdevKuantum] Research provider error:', response.status);
+      return resultError('Kaynaklı araştırma sağlayıcısı yanıt vermedi (HTTP ' + response.status + '). API anahtarını ve kotayı kontrol et.', 'RESEARCH_PROVIDER_ERROR');
+    }
+    const results = data.results.map(item => ({
+      title: safeText(item.title || 'Kaynak', 180),
+      url: /^https:\/\//i.test(String(item.url || '')) ? String(item.url).slice(0, 1000) : '',
+      snippet: safeText(item.content || item.snippet || '', 1200),
+      score: Number(item.score || 0)
+    })).filter(item => item.url);
+    await writeAuditLog(request, 'learning.ai_research', user.id, { queryLength: query.length, resultCount: results.length });
+    return { success: true, query: query, results: results, message: results.length ? 'Kaynaklar bulundu. Tarih, yazar ve resmîlik durumunu açılan sayfadan ayrıca doğrula.' : 'Uygun kaynak bulunamadı.' };
+  } catch (error) {
+    console.error('[TdevKuantum] Research connection failed:', String(error && error.message || error).slice(0, 180));
+    return resultError('Kaynaklı araştırma servisine bağlanılamadı. Biraz sonra tekrar dene.', 'RESEARCH_CONNECTION_FAILED');
+  }
+});
+
 Parse.Cloud.define('getQuestions', async (request) => {
   const gradeInput = safeText(request.params && request.params.grade, 10).toUpperCase();
   const server = safeText(request.params && request.params.server, 5).toUpperCase();
