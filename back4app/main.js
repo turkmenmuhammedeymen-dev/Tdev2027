@@ -2496,6 +2496,52 @@ Parse.Cloud.define('saveMyAccountSettings', async (request) => {
 });
 
 
+Parse.Cloud.define('deleteMyAccountData', async (request) => {
+  const user = requireUser(request);
+  const confirmation = safeText(request.params && request.params.confirmation, 40);
+  if (confirmation !== 'HESABIMI SİL') {
+    return resultError('Hesap silme onayı geçersiz. Onay metnini tam olarak gir.', 'DELETE_CONFIRMATION_REQUIRED');
+  }
+  const userId = user.id;
+  const email = normalizeEmail(user.get('email') || user.get('username'));
+  const emailHash = sha256(email);
+  const deletedCounts = {};
+
+  // Delete only personal records owned by this account. Shared school/classroom
+  // objects are deliberately not removed as they may belong to other users.
+  for (const className of ['StudyPlan','StudyNote','StudyProgress','StudyMistake','StudyCard','DeviceSession','ClassroomMembership']) {
+    const query = new Parse.Query(className);
+    query.equalTo('userId', userId);
+    query.limit(1000);
+    const rows = await query.find({ useMasterKey: true });
+    if (rows.length) await Parse.Object.destroyAll(rows, { useMasterKey: true });
+    deletedCounts[className] = rows.length;
+  }
+  for (const className of ['EmailVerification','PasswordReset']) {
+    const query = new Parse.Query(className);
+    query.equalTo('emailHash', emailHash);
+    query.limit(1000);
+    const rows = await query.find({ useMasterKey: true });
+    if (rows.length) await Parse.Object.destroyAll(rows, { useMasterKey: true });
+    deletedCounts[className] = rows.length;
+  }
+
+  // Preserve the security event while removing directly identifying audit fields.
+  const auditQuery = new Parse.Query('AuditLog');
+  auditQuery.equalTo('actorId', userId);
+  auditQuery.limit(1000);
+  const auditRows = await auditQuery.find({ useMasterKey: true });
+  for (const row of auditRows) {
+    row.set('actorId', 'deleted-user');
+    row.set('actorEmail', '');
+    row.set('details', {});
+  }
+  if (auditRows.length) await Parse.Object.saveAll(auditRows, { useMasterKey: true });
+  await writeAuditLog({ user: null }, 'user.account_deleted', userId, { emailHash: emailHash, deletedCounts: deletedCounts });
+  await user.destroy({ useMasterKey: true });
+  return { success: true, message: 'Hesabın ve kişisel çalışma kayıtların silindi. Güvenlik denetim kayıtları kimlik bilgileri çıkarılarak saklanabilir.', deletedCounts: deletedCounts };
+});
+
 Parse.Cloud.define('recordDeviceSession', async (request) => {
   const user = requireUser(request); const p = request.params || {};
   const ua = safeText(p.userAgent, 500); const timezone = safeText(p.timezone, 80);
