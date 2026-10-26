@@ -2624,9 +2624,13 @@ Parse.Cloud.define('deleteMyAccountData', async (request) => {
 
   // Delete only personal records owned by this account. Shared school/classroom
   // objects are deliberately not removed as they may belong to other users.
-  for (const className of ['StudyPlan','StudyNote','StudyProgress','StudyMistake','StudyCard','StudyGoal','DeviceSession','ClassroomMembership']) {
+  for (const [className, ownerField] of [
+    ['StudyPlan','ownerId'], ['StudyNote','ownerId'], ['StudyProgress','ownerId'],
+    ['StudyMistake','ownerId'], ['StudyCard','ownerId'], ['StudyGoal','ownerId'],
+    ['DeviceSession','userId'], ['ClassroomMembership','userId']
+  ]) {
     const query = new Parse.Query(className);
-    query.equalTo('userId', userId);
+    query.equalTo(ownerField, userId);
     query.limit(1000);
     const rows = await query.find({ useMasterKey: true });
     if (rows.length) await Parse.Object.destroyAll(rows, { useMasterKey: true });
