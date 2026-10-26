@@ -122,6 +122,13 @@ check(cloudCode.includes("JSON.stringify({ action: 'healthcheck', token: expecte
   'Back4App probes Apps Script using the matching health-check protocol');
 check(cloudCode.includes("configValueAsync('APPS_SCRIPT_TOKEN')"),
   'Back4App reads the server-side mail token');
+check(cloudCode.includes('PARSE_CONFIG_CACHE_TTL_MS') &&
+      cloudCode.includes('Do not cache a failed/empty read forever'),
+  'Parse Config cache refreshes and does not permanently retain failed reads');
+check(cloudCode.includes("EXPECTED_APPS_SCRIPT_BUILD = '2026-10-26.1'") &&
+      appsScript.includes("const SERVICE_BUILD = '2026-10-26.1'") &&
+      appsScript.includes('build: SERVICE_BUILD'),
+  'Back4App and Apps Script use a matching deployment build marker');
 check(!/\b(?:APPS_SCRIPT_TOKEN|RESEND_API_KEY)\b/.test(
   html + '\n' + files['study.js'] + '\n' + files['school.js'] + '\n' + files['curriculum-catalog.js']
 ), 'No mail-service secret key names appear in frontend source');
