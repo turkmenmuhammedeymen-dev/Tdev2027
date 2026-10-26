@@ -777,6 +777,10 @@ input,textarea,select,.reg-input,.input-field,.auth-input,.modal-input,.modal-te
 @media(max-width:900px){.dashboard-launch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:460px){.dashboard-launch-grid{grid-template-columns:1fr}.dashboard-launch-card{padding:12px}}
 </style>
+<style>
+.msg-bubble a{color:#8bc8ff;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.msg-bubble a:hover{color:#c5e5ff}
+</style>
 </head>
 <body>
 
@@ -2728,7 +2732,26 @@ function addChatMsg(role, text) {
     const div = document.createElement('div'); div.className = 'msg ' + role;
     const avatar = document.createElement('div'); avatar.className = 'msg-avatar'; avatar.textContent = role === 'ai' ? '🤖' : '👤';
     const wrap = document.createElement('div');
-    const bubble = document.createElement('div'); bubble.className = 'msg-bubble'; bubble.textContent = String(text == null ? '' : text);
+    const bubble = document.createElement('div'); bubble.className = 'msg-bubble';
+    const messageText = String(text == null ? '' : text);
+    const urlPattern = /https:\/\/[^\s]+/g;
+    let cursor = 0, urlMatch;
+    while ((urlMatch = urlPattern.exec(messageText)) !== null) {
+        const rawUrl = urlMatch[0];
+        const cleanUrl = rawUrl.replace(/[),.;!?]+$/, '');
+        if (urlMatch.index > cursor) bubble.appendChild(document.createTextNode(messageText.slice(cursor, urlMatch.index)));
+        if (cleanUrl) {
+            const link = document.createElement('a');
+            link.href = cleanUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = cleanUrl;
+            bubble.appendChild(link);
+            const punctuation = rawUrl.slice(cleanUrl.length);
+            if (punctuation) bubble.appendChild(document.createTextNode(punctuation));
+        } else {
+            bubble.appendChild(document.createTextNode(rawUrl));
+        }
+        cursor = urlMatch.index + rawUrl.length;
+    }
+    if (cursor < messageText.length) bubble.appendChild(document.createTextNode(messageText.slice(cursor)));
     const time = document.createElement('div'); time.className = 'msg-time'; time.textContent = now;
     wrap.appendChild(bubble); wrap.appendChild(time); div.appendChild(avatar); div.appendChild(wrap);
     msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight; return div;
