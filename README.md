@@ -39,6 +39,7 @@ For full AI-generated answers, set these values in Back4App Config (or the corre
 NVIDIA NIM is preferred when `NVIDIA_API_KEY` is configured:
 - `NVIDIA_API_KEY` — secret NVIDIA API key.
 - `NVIDIA_BASE_URL` — optional HTTPS base URL; default is `https://integrate.api.nvidia.com/v1`. The server appends `/chat/completions` when needed.
+TAVILY_API_KEY: optional server-side Tavily Search API key for source-linked research in TDEV-AI.
 - `NVIDIA_MODEL` — optional NVIDIA model ID; default is `meta/llama-3.3-70b-instruct`.
 
 Fallback provider options:
