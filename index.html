@@ -1099,8 +1099,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
             <div class="grade-badge" id="grade-label">YÜKLENİYOR</div>
         </div>
         <div class="nav-section">ÖĞRENCİ MERKEZİ</div>
-        <div class="nav-btn active" id="nav-student-center" onclick="showTab('student-center',this);loadStudentCenter()"><span class="nav-icon">🏆</span>Kontrol Merkezi</div>
-        <div class="nav-btn" id="nav-exam-center" onclick="showTab('exam-center',this);loadExamCenter()"><span class="nav-icon">⏳</span>Süreli Denemeler</div>
+        <div class="nav-btn active" id="nav-student-center" onclick="showTab('student-center',this)"><span class="nav-icon">🏆</span>Kontrol Merkezi</div>
+        <div class="nav-btn" id="nav-exam-center" onclick="showTab('exam-center',this)"><span class="nav-icon">⏳</span>Süreli Denemeler</div>
         <div class="nav-section">MODÜLLER</div>
         <div class="nav-btn" onclick="showTab('lessons',this)"><span class="nav-icon">📚</span>Dersler</div>
         <div class="nav-btn" id="nav-curriculum" onclick="showTab('curriculum',this)"><span class="nav-icon">🌐</span>Yeni Müfredat Merkezi</div>
@@ -2071,6 +2071,7 @@ function launch(g) {
     if (curRole === 'founder' || curRole === 'admin') refreshDevPanel();
     showNotif('✓ '+g+'. SINIF YÜKLENDİ');
     if (typeof window.loadSchoolDashboard === 'function') window.loadSchoolDashboard();
+    if (typeof window.loadStudentCenter === 'function') window.loadStudentCenter();
 }
 
 // ---- DERSLER (Cloud Code'den) ----
@@ -2324,6 +2325,8 @@ function showTab(id, el) {
     if(id === 'devpanel') refreshDevPanel();
     if(id === 'curriculum' && typeof window.renderCurriculumCenter === 'function') window.renderCurriculumCenter(curRole);
     if(id === 'progress') { loadLearningDashboard(); loadExamGoals(); }
+    if(id === 'student-center' && typeof window.loadStudentCenter === 'function') window.loadStudentCenter();
+    if(id === 'exam-center' && typeof window.loadExamCenter === 'function') window.loadExamCenter();
 }
 
 async function recordCurrentDeviceSession() {
