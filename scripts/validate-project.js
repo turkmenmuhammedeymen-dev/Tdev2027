@@ -203,6 +203,12 @@ check(cloudCode.includes("Parse.Query('_Session')") &&
       cloudCode.includes("Parse.Cloud.define('revokeMySession'") &&
       cloudCode.includes("Parse.Cloud.define('deleteMyAccountData'"),
   'Security center supports active-session listing, remote sign-out and account deletion');
+check(html.includes('id="tdev-final-polish"') && html.includes('id="nav-exam-goals"'),
+  'Dashboard has readable corporate styling and direct exam-goal navigation');
+check(cloudCode.includes('Apps Script GET ve POST token kontrolleri birbiriyle uyuşmuyor') &&
+      cloudCode.includes('GOOGLE_APPS_SCRIPT_URL'),
+  'Email provider diagnostics identify deployment/token mismatch without exposing secrets');
+
 check(html.includes('id="tab-security"') && html.includes('id="nav-security"') &&
       html.includes("Parse.Cloud.run('getMyActiveSessions'") &&
       html.includes("Parse.Cloud.run('revokeMySession'"),
