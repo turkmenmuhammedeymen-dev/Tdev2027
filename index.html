@@ -2556,11 +2556,16 @@ function ansQ(ans) {
 // ---- TDEV-AI CHAT (Cloud Code, optional provider) ----
 let aiFile = null;
 let aiFileText = '';
+let aiFileProcessing = false;
 let aiSpeechRecognition = null;
 
 async function aiFileLoad(input) {
     const file = input && input.files && input.files[0];
     if (!file) return;
+    if (aiFileProcessing) { showNotif('Önceki dosya hâlâ okunuyor.'); return; }
+    aiFileProcessing = true;
+    const sendButtonWhileReading = document.querySelector('.chat-send');
+    if (sendButtonWhileReading) { sendButtonWhileReading.disabled = true; sendButtonWhileReading.textContent = 'DOSYA OKUNUYOR…'; }
     if (file.size > 10 * 1024 * 1024) {
         showNotif('Dosya 10 MB sınırını aşıyor. Daha küçük bir dosya seç.');
         input.value = ''; return;
@@ -2606,6 +2611,9 @@ async function aiFileLoad(input) {
         aiFile = null; aiFileText = '';
         if (name) name.textContent = file.name + ' · okunamadı';
         showNotif(error && error.message ? error.message : 'Dosya okunamadı.');
+    } finally {
+        aiFileProcessing = false;
+        if (sendButtonWhileReading) { sendButtonWhileReading.disabled = false; sendButtonWhileReading.textContent = 'GÖNDER'; }
     }
 }
 
@@ -2662,6 +2670,7 @@ async function researchMsg() {
 }
 
 async function sendMsg() {
+    if (aiFileProcessing) { showNotif('Dosya okunurken bekle; işlem tamamlanınca gönderebilirsin.'); return; }
     const input = document.getElementById('chat-in');
     const text = input.value.trim();
     const file = aiFile;
