@@ -1753,20 +1753,35 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   if (!/^https:\/\//i.test(primaryEndpoint)) return resultError('Yapay zekâ uç noktası yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
 
   const providers = [{ key: primaryKey, endpoint: primaryEndpoint, model: primaryModel, label: useNvidia ? 'NVIDIA NIM' : 'Birincil AI sağlayıcısı' }];
-  const fallbackApiKey = useNvidia ? generalApiKey : await configValueAsync('AI_FALLBACK_API_KEY');
-  if (fallbackApiKey) {
-    const fallbackDefaultUrl = useNvidia
-      ? 'https://api.openai.com/v1/chat/completions'
-      : ((await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions');
-    let fallbackEndpoint = ((await configValueAsync(useNvidia ? 'AI_BASE_URL' : 'AI_FALLBACK_BASE_URL', fallbackDefaultUrl)) || fallbackDefaultUrl).replace(/\/+$/, '');
-    if (!/chat\/completions$/i.test(fallbackEndpoint)) fallbackEndpoint += '/chat/completions';
-    const fallbackModel = useNvidia
-      ? ((await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini')
-      : ((await configValueAsync('AI_FALLBACK_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini');
-    if (/^https:\/\//i.test(fallbackEndpoint) && (fallbackEndpoint !== primaryEndpoint || fallbackApiKey !== primaryKey)) {
-      providers.push({ key: fallbackApiKey, endpoint: fallbackEndpoint, model: fallbackModel, label: 'Yedek AI sağlayıcısı' });
-    }
+  const seenProviders = new Set([primaryKey + '|' + primaryEndpoint + '|' + primaryModel]);
+
+  function addFallbackProvider(key, endpoint, model, label) {
+    key = String(key || '').trim();
+    endpoint = String(endpoint || '').trim().replace(/^['"]|['"]$/g, '').replace(/\/+$/, '');
+    model = String(model || '').trim();
+    if (!key || !endpoint || !model) return;
+    if (!/chat\/completions$/i.test(endpoint)) endpoint += '/chat/completions';
+    if (!/^https:\/\//i.test(endpoint)) return;
+    const identity = key + '|' + endpoint + '|' + model;
+    if (seenProviders.has(identity)) return;
+    seenProviders.add(identity);
+    providers.push({ key: key, endpoint: endpoint, model: model, label: label });
   }
+
+  const openAiDefaultEndpoint = 'https://api.openai.com/v1/chat/completions';
+  const configuredAiEndpoint = (await configValueAsync('AI_BASE_URL', openAiDefaultEndpoint)) || openAiDefaultEndpoint;
+  const configuredAiModel = (await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini';
+
+  // If NVIDIA is primary, AI_API_KEY is the first fallback. AI_FALLBACK_API_KEY
+  // is an additional independent fallback, not ignored when AI_API_KEY is empty.
+  if (useNvidia) {
+    addFallbackProvider(generalApiKey, configuredAiEndpoint, configuredAiModel, 'AI_API_KEY yedek sağlayıcısı');
+  }
+
+  const separateFallbackKey = await configValueAsync('AI_FALLBACK_API_KEY');
+  const separateFallbackEndpoint = (await configValueAsync('AI_FALLBACK_BASE_URL', configuredAiEndpoint)) || configuredAiEndpoint;
+  const separateFallbackModel = (await configValueAsync('AI_FALLBACK_MODEL', configuredAiModel)) || configuredAiModel;
+  addFallbackProvider(separateFallbackKey, separateFallbackEndpoint, separateFallbackModel, 'Ek yedek AI sağlayıcısı');
   const systemPrompt = [
     'Sen TdevKuantum eğitim platformunun Türkçe konuşan, güvenli ve sabırlı özel ders yardımcısısın.',
     'Öğrencinin sınıfı: ' + grade + '. Ülke/müfredat kodu: ' + country + '.',
