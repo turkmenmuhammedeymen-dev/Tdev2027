@@ -37,7 +37,7 @@ function syntaxCheck(source, filename) {
 const requiredFiles = [
   'index.html',
   'learning-center.js',
-  'learning-center.js',
+  'achievements.js',
   'school.js',
   'study.js',
   'curriculum-catalog.js',
