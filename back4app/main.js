@@ -17,7 +17,7 @@
  *   EMAIL_FROM           verified sender, e.g. TdevKuantum <noreply@your-domain>
  *   PASSWORD_RESET_PEPPER optional separate secret for password-reset code hashing
  *   NVIDIA_API_KEY      optional NVIDIA NIM API key (preferred when configured)
- *   NVIDIA_MODEL         optional NVIDIA model ID (default meta/llama-3.3-70b-instruct)
+ *   NVIDIA_MODEL         optional NVIDIA model ID (default deepseek-ai/deepseek-v4-flash)
  *   NVIDIA_BASE_URL      optional NVIDIA NIM base URL (default https://integrate.api.nvidia.com/v1)
  *   AI_API_KEY           optional server-only OpenAI-compatible API key fallback
  *   AI_MODEL             optional fallback model name (default gpt-4o-mini)
@@ -89,15 +89,18 @@ function configValue(key, fallback) {
 }
 
 async function configValueAsync(key, fallback) {
-  // Prefer the current deployment environment so an older dashboard Config value
-  // cannot shadow a corrected server-side secret.
-  const env = (typeof process !== 'undefined' && process.env) ? process.env[key] : undefined;
-  if (env !== undefined && env !== null && String(env).trim() !== '') return String(env).trim();
+  // Back4App Config is the dashboard's source of truth when a key is present.
+  // Environment variables are a fallback only, avoiding stale env values
+  // silently overriding a recently corrected Config entry.
   try {
     const cfg = await loadParseConfig();
     const value = cfg && typeof cfg.get === 'function' ? cfg.get(key) : undefined;
     if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
-  } catch (_) {}
+  } catch (error) {
+    console.error('[TdevKuantum] Config lookup failed for ' + key + ':', String(error && error.message || error).slice(0, 160));
+  }
+  const env = (typeof process !== 'undefined' && process.env) ? process.env[key] : undefined;
+  if (env !== undefined && env !== null && String(env).trim() !== '') return String(env).trim();
   return fallback !== undefined ? String(fallback) : '';
 }
 
@@ -1729,12 +1732,14 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   if (!primaryKey) return resultError('Yapay zekâ henüz yapılandırılmamış. Back4App Config içinde NVIDIA_API_KEY veya AI_API_KEY tanımlanmalı.', 'AI_PROVIDER_NOT_CONFIGURED');
 
   const primaryModel = useNvidia
-    ? ((await configValueAsync('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')) || 'meta/llama-3.3-70b-instruct')
+    ? ((await configValueAsync('NVIDIA_MODEL', 'deepseek-ai/deepseek-v4-flash')) || 'deepseek-ai/deepseek-v4-flash')
     : ((await configValueAsync('AI_MODEL', 'gpt-4o-mini')) || 'gpt-4o-mini');
   let primaryEndpoint = useNvidia
     ? ((await configValueAsync('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')) || 'https://integrate.api.nvidia.com/v1')
     : ((await configValueAsync('AI_BASE_URL', 'https://api.openai.com/v1/chat/completions')) || 'https://api.openai.com/v1/chat/completions');
-  primaryEndpoint = primaryEndpoint.replace(/\/+$/, '');
+  // Accept a copied URL with surrounding quotes/space and either a base URL
+  // (/v1) or the full endpoint (/v1/chat/completions).
+  primaryEndpoint = String(primaryEndpoint).trim().replace(/^['"]|['"]$/g, '').replace(/\/+$/, '');
   if (!/chat\/completions$/i.test(primaryEndpoint)) primaryEndpoint += '/chat/completions';
   if (!/^https:\/\//i.test(primaryEndpoint)) return resultError('Yapay zekâ uç noktası yalnızca HTTPS adresi olabilir.', 'AI_ENDPOINT_INVALID');
 
@@ -1773,8 +1778,18 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
       let data;
       try { data = JSON.parse(raw); } catch (_) { data = null; }
       if (!response.ok) {
-        providerErrors.push(provider.label + ' HTTP ' + response.status);
-        console.error('[TdevKuantum] AI provider rejected request:', provider.label, response.status);
+        let detail = '';
+        if (data && data.error) {
+          const providerError = typeof data.error === 'string'
+            ? data.error
+            : (data.error.message || JSON.stringify(data.error));
+          detail = String(providerError || '').replace(/[\r\n\t]+/g, ' ').slice(0, 260);
+        } else if (raw) {
+          detail = raw.replace(/[\r\n\t]+/g, ' ').slice(0, 260);
+        }
+        providerErrors.push(provider.label + ' HTTP ' + response.status + (detail ? ': ' + detail : ''));
+        // Never log or return authorization headers/API keys.
+        console.error('[TdevKuantum] AI provider rejected request:', provider.label, response.status, detail);
         continue;
       }
       const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
@@ -1979,6 +1994,10 @@ Parse.Cloud.define('healthCheck', async (request) => {
   const scriptToken = await configValueAsync('APPS_SCRIPT_TOKEN');
   const apiKey = await configValueAsync('RESEND_API_KEY');
   const from = await configValueAsync('EMAIL_FROM');
+  const nvidiaApiKey = await configValueAsync('NVIDIA_API_KEY');
+  const nvidiaBaseUrl = await configValueAsync('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1');
+  const nvidiaModel = await configValueAsync('NVIDIA_MODEL', 'deepseek-ai/deepseek-v4-flash');
+  const aiFallbackKey = await configValueAsync('AI_API_KEY');
   let appsScriptConfigured = false;
   let appsScriptDiagnostic = scriptUrl ? 'Kontrol edilmedi.' : 'Google Apps Script URL ayarlanmamış.';
   if (scriptUrl) {
@@ -2004,6 +2023,13 @@ Parse.Cloud.define('healthCheck', async (request) => {
       googleAppsScriptConfigured: appsScriptConfigured,
       googleAppsScriptStatus: appsScriptDiagnostic,
       resendConfigured: resendReady
+    },
+    aiDiagnostics: {
+      nvidiaApiKeyConfigured: !!nvidiaApiKey,
+      nvidiaBaseUrlConfigured: !!String(nvidiaBaseUrl || '').trim(),
+      nvidiaBaseUrlValid: /^https:\/\//i.test(String(nvidiaBaseUrl || '').trim()),
+      nvidiaModel: safeText(nvidiaModel || 'deepseek-ai/deepseek-v4-flash', 120),
+      fallbackApiKeyConfigured: !!aiFallbackKey
     }
   };
 });
