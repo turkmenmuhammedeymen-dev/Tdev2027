@@ -138,6 +138,13 @@ check(cloudCode.includes("nvidiaApiKeyConfigured: !!nvidiaApiKey") &&
       cloudCode.includes("nvidiaBaseUrlValid") &&
       cloudCode.includes("nvidiaModel: safeText"),
   'Health check reports NVIDIA configuration without exposing the API key');
+check(cloudCode.includes("addFallbackProvider(separateFallbackKey, separateFallbackEndpoint, separateFallbackModel") &&
+      cloudCode.includes("addFallbackProvider(generalApiKey, configuredAiEndpoint, configuredAiModel"),
+  'NVIDIA can fall back to both AI_API_KEY and the separate AI_FALLBACK_API_KEY');
+check(html.includes('#chat-msgs .msg.user .msg-bubble') &&
+      html.includes('color: #172b4d !important') &&
+      html.includes('#chat-msgs .msg.ai .msg-bubble'),
+  'TDEV-AI user and assistant messages use readable high-contrast bubbles');
 check(cloudCode.includes("providerError || ''") &&
       cloudCode.includes("providerErrors.push(provider.label + ' HTTP ' + response.status"),
   'AI provider errors preserve safe HTTP response details for diagnosis');
