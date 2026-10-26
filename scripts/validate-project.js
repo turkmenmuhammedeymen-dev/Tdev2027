@@ -167,8 +167,12 @@ check(cloudCode.includes('Prefer the current deployment environment') &&
       cloudCode.indexOf('const env =') < cloudCode.indexOf('const cfg = await loadParseConfig()'),
   'Environment secrets take precedence over stale Parse Config values');
 check(cloudCode.includes('AI_ALL_PROVIDERS_FAILED') &&
-      cloudCode.includes('fallbackUsed: index > 0'),
+      cloudCode.includes('fallbackUsed: index > 0') &&
+      cloudCode.includes("configValueAsync('AI_FALLBACK_API_KEY')"),
   'AI provider errors trigger a configured fallback and return provider metadata');
+check(cloudCode.includes('function currentRequestSessionToken') &&
+      cloudCode.includes("'SESSION_CONTEXT_UNAVAILABLE'"),
+  'Remote session revocation requires a verified current session token');
 check(cloudCode.includes("Parse.Cloud.define('tdevAIResearch'") &&
       cloudCode.includes("configValueAsync('TAVILY_API_KEY')") &&
       html.includes("Parse.Cloud.run('tdevAIResearch'"),
