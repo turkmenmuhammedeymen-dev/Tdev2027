@@ -41,7 +41,7 @@ NVIDIA NIM is preferred when `NVIDIA_API_KEY` is configured:
 - `NVIDIA_BASE_URL` — optional HTTPS base URL; default is `https://integrate.api.nvidia.com/v1`. The server appends `/chat/completions` when needed.
 - `TAVILY_API_KEY` — optional server-side Tavily Search API key for source-linked research in TDEV-AI.
 - `AI_FALLBACK_API_KEY`, `AI_FALLBACK_MODEL`, `AI_FALLBACK_BASE_URL` — optional separate fallback provider for TDEV-AI when the primary AI API fails.
-- `NVIDIA_MODEL` — optional NVIDIA model ID; default is `meta/llama-3.3-70b-instruct`.
+- `NVIDIA_MODEL` — optional NVIDIA model ID; default is `deepseek-ai/deepseek-v4-flash`.
 
 Fallback provider options:
 - `AI_API_KEY` — secret key for an OpenAI-compatible chat-completions provider.
@@ -82,3 +82,5 @@ The GitHub Actions workflow runs the same checks on pushes and pull requests. It
 - [ ] Verify the e-mail registration flow separately; GitHub deployment does not automatically redeploy Back4App Cloud Code.
 
 Do not claim production testing until these checks have been run in the deployed environment.
+
+**NVIDIA NIM configuration:** set `NVIDIA_API_KEY` and `NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1` in Back4App Config. Optional `NVIDIA_MODEL` overrides the default `deepseek-ai/deepseek-v4-flash`. The authenticated `healthCheck` response reports only whether the key/URL are configured and the selected model; it never returns the API key. If inference fails, the response includes the provider's HTTP status and a short sanitized error detail. Back4App Config values take precedence over environment variables when both are present.
