@@ -36,6 +36,8 @@ function syntaxCheck(source, filename) {
 
 const requiredFiles = [
   'index.html',
+  'learning-center.js',
+  'learning-center.js',
   'school.js',
   'study.js',
   'curriculum-catalog.js',
@@ -89,7 +91,7 @@ const cloudCode = files['back4app/main.js'];
 const definedFunctions = new Set(
   [...cloudCode.matchAll(/Parse\.Cloud\.define\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
 );
-const appCode = html + '\n' + files['study.js'] + '\n' + files['school.js'];
+const appCode = html + '\n' + files['learning-center.js'] + '\n' + files['study.js'] + '\n' + files['school.js'];
 const calledFunctions = new Set([
   ...[...appCode.matchAll(/Parse\.Cloud\.run\(\s*['"]([^'"]+)['"]/g)].map(match => match[1]),
   ...[...appCode.matchAll(/runPublicAuthCloud\(\s*['"]([^'"]+)['"]/g)].map(match => match[1])
@@ -218,6 +220,32 @@ check(html.includes('id="tab-security"') && html.includes('id="nav-security"') &
       html.includes("Parse.Cloud.run('getMyActiveSessions'") &&
       html.includes("Parse.Cloud.run('revokeMySession'"),
   'Security and privacy center is connected to server endpoints');
+
+check(html.includes('id="tab-student-center"') &&
+      html.includes('id="nav-student-center"') &&
+      html.includes('id="student-weekly-report"') &&
+      html.includes('id="student-subject-progress"') &&
+      html.includes('id="student-goal-progress"'),
+  'Student control center includes daily goal, weekly report and subject progress UI');
+check(html.includes('id="tab-exam-center"') &&
+      html.includes('id="exam-question-bank"') &&
+      html.includes('id="exam-session-area"') &&
+      html.includes('id="exam-result-area"') &&
+      html.includes('learning-center.js'),
+  'Timed exam center UI and client module are connected');
+check(files['learning-center.js'].includes('window.startTimedExam') &&
+      files['learning-center.js'].includes('window.finishTimedExam') &&
+      files['learning-center.js'].includes("cloud('saveStudyProgress'") &&
+      files['learning-center.js'].includes("cloud('saveStudyMistake'"),
+  'Timed exams save results and automatically record incorrect/blank questions');
+check(files['learning-center.js'].includes('durationLimitSeconds') &&
+      files['learning-center.js'].includes('deadline') &&
+      files['learning-center.js'].includes('timeExpired'),
+  'Timed exam has a deadline, countdown and timeout completion path');
+check(files['learning-center.js'].includes('window.addStudentTask') &&
+      files['learning-center.js'].includes('window.addExamReminder') &&
+      files['learning-center.js'].includes('window.saveStudentDailyGoal'),
+  'Student center includes task, exam reminder and daily goal actions');
 
 console.log('TdevKuantum repository validation');
 console.log('Passed: ' + passed.length);
