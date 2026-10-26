@@ -853,6 +853,26 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .xp-badge-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.xp-badge{padding:14px 10px;text-align:center;border:1px solid #e0e8f3;border-radius:12px;background:#fbfdff}.xp-badge .xp-badge-icon{font-size:1.55rem;filter:grayscale(1);opacity:.35}.xp-badge.unlocked{background:#fffaf0;border-color:#ead9a7}.xp-badge.unlocked .xp-badge-icon{filter:none;opacity:1}.xp-badge strong{display:block;color:#314b6c;font-size:.78rem;margin:7px 0 4px}.xp-badge small{color:#7a8ba2;font-size:.7rem;line-height:1.4}
 @media(max-width:760px){.xp-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.xp-summary-card,.xp-panel{padding:12px}.xp-summary-card strong{font-size:1.55rem}.xp-summary-card span{font-size:.58rem}.xp-task-list{grid-template-columns:1fr}.xp-badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.xp-hero{align-items:flex-start;gap:12px}.xp-hero-mark{flex-basis:48px;height:48px;font-size:1.5rem;border-radius:13px}}
 </style>
+<style id="tdev-chat-contrast-fix">
+/* Keep both sides of TDEV-AI chat readable on the light corporate dashboard. */
+#chat-msgs .msg.user .msg-bubble {
+  background: #eaf2ff !important;
+  border: 1px solid #b8cff4 !important;
+  color: #172b4d !important;
+  box-shadow: 0 3px 10px rgba(36,87,197,.07);
+}
+#chat-msgs .msg.ai .msg-bubble {
+  background: #f6f8fc !important;
+  border: 1px solid #d8e2f0 !important;
+  color: #24364f !important;
+}
+#chat-msgs .msg-bubble a { color: #2457c5 !important; }
+#chat-msgs .msg-bubble a:hover { color: #153d91 !important; }
+#chat-msgs .msg-time { color: #71829a !important; font-size: .66rem !important; }
+#chat-msgs .msg-avatar { color: #24446e; }
+#chat-msgs .msg.user .msg-avatar { background: #eaf2ff; border: 1px solid #b8cff4; }
+#chat-msgs .msg.ai .msg-avatar { background: #eaf7ff; border: 1px solid #c4e2f5; }
+</style>
 </head>
 <body>
 
