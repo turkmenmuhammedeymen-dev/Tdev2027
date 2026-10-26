@@ -175,6 +175,7 @@ check(cloudCode.includes('function currentRequestSessionToken') &&
   'Remote session revocation requires a verified current session token');
 check(cloudCode.includes("Parse.Cloud.define('tdevAIResearch'") &&
       cloudCode.includes("configValueAsync('TAVILY_API_KEY')") &&
+      !html.includes('TAVILY_API_KEY') &&
       html.includes("Parse.Cloud.run('tdevAIResearch'"),
   'Source-linked research uses a server-side configured search provider');
 check(cloudCode.includes("Parse.Cloud.define('saveStudyGoal'") &&
