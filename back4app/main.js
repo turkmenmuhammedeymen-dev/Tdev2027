@@ -37,6 +37,7 @@
  */
 
 const crypto = require('crypto');
+const EXPECTED_APPS_SCRIPT_BUILD = '2026-10-26.1';
 
 const CONFIG_DEFAULTS = {
   FOUNDER_EMAIL: 'admin.tr.reis@gmail.com',
@@ -44,20 +45,34 @@ const CONFIG_DEFAULTS = {
   REQUIRE_EMAIL_VERIFY: 'true'
 };
 
+const PARSE_CONFIG_CACHE_TTL_MS = 30 * 1000;
+let parseConfigCache = null;
+let parseConfigCachedAt = 0;
 let parseConfigPromise = null;
 async function loadParseConfig() {
-  if (!parseConfigPromise) {
-    parseConfigPromise = (async () => {
-      try {
-        if (Parse && Parse.Config && typeof Parse.Config.get === 'function') {
-          return await Parse.Config.get({ useMasterKey: true });
-        }
-      } catch (error) {
-        console.error('[TdevKuantum] Parse Config read failed:', String(error && error.message || error).slice(0, 240));
-      }
-      return null;
-    })();
+  if (parseConfigCache && Date.now() - parseConfigCachedAt < PARSE_CONFIG_CACHE_TTL_MS) {
+    return parseConfigCache;
   }
+  if (parseConfigPromise) return parseConfigPromise;
+  parseConfigPromise = (async () => {
+    try {
+      if (Parse && Parse.Config && typeof Parse.Config.get === 'function') {
+        const cfg = await Parse.Config.get({ useMasterKey: true });
+        if (cfg) {
+          parseConfigCache = cfg;
+          parseConfigCachedAt = Date.now();
+          return cfg;
+        }
+      }
+    } catch (error) {
+      console.error('[TdevKuantum] Parse Config read failed:', String(error && error.message || error).slice(0, 240));
+    } finally {
+      parseConfigPromise = null;
+    }
+    // Do not cache a failed/empty read forever; Config may be corrected while
+    // a Cloud Code process remains warm.
+    return null;
+  })();
   return parseConfigPromise;
 }
 
@@ -179,8 +194,14 @@ async function probeAppsScript(scriptUrl, expectedToken) {
   if (!response.ok) throw new Error('Apps Script sağlık kontrolü HTTP ' + response.status);
   let data;
   try { data = JSON.parse(body); } catch (_) { throw new Error('Apps Script GET yanıtı JSON değil; doğru Web App dağıtım URL’sini kontrol et.'); }
-  if (!data || data.success !== true || data.configured !== true) {
-    throw new Error('Apps Script Script Properties içinde APPS_SCRIPT_TOKEN bulunamadı. Doğru projeye eklediğini kontrol et.');
+  if (!data || data.success !== true) {
+    throw new Error('Apps Script sağlık kontrolü başarısız; Web App URL’si ve dağıtım erişimini kontrol et.');
+  }
+  if (data.build !== EXPECTED_APPS_SCRIPT_BUILD) {
+    throw new Error('Apps Script güncel sürümde değil (beklenen ' + EXPECTED_APPS_SCRIPT_BUILD + ', bulunan ' + String(data.build || 'build bilgisi yok') + '). apps-script/Code.gs dosyasını kaydedip yeni Web App sürümü olarak dağıt.');
+  }
+  if (data.configured !== true) {
+    throw new Error('Apps Script Script Properties içinde APPS_SCRIPT_TOKEN bulunamadı. Tokenı bu Web App’in bağlı olduğu Apps Script projesinde Script Properties bölümüne ekle.');
   }
   const tokenCheck = await fetch(scriptUrl, {
     method: 'POST',
@@ -202,7 +223,13 @@ async function probeAppsScript(scriptUrl, expectedToken) {
     console.warn('[TdevKuantum] Apps Script token accepted; deployed Code.gs uses legacy health-check behavior.');
     return { success: true, tokenValid: true, legacyHealthcheck: true };
   }
-  throw new Error('Apps Script token doğrulaması başarısız. Back4App APPS_SCRIPT_TOKEN ile Script Properties değeri aynı mı kontrol et ve Code.gs güncellemesini dağıt.');
+  if (tokenData && tokenData.tokenValid === false) {
+    throw new Error('Apps Script token eşleşmiyor. Back4App Config APPS_SCRIPT_TOKEN ile bu Apps Script projesinin Script Properties APPS_SCRIPT_TOKEN değerini karakter karakter aynı yap.');
+  }
+  if (tokenData && tokenData.error) {
+    throw new Error('Apps Script token kontrolü: ' + String(tokenData.error).slice(0, 220));
+  }
+  throw new Error('Apps Script token kontrolü beklenmeyen yanıt verdi; Web App dağıtım sürümünü ve token ayarını kontrol et.');
 }
 
 async function sendVerificationEmail(email, code, name) {
