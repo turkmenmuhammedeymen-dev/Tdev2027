@@ -126,7 +126,8 @@ check(cloudCode.includes("JSON.stringify({ action: 'healthcheck', token: expecte
 check(cloudCode.includes("configValueAsync('APPS_SCRIPT_TOKEN')"),
   'Back4App reads the server-side mail token');
 check(cloudCode.includes("Back4App Config is the dashboard's source of truth") &&
-      cloudCode.indexOf("const cfg = await loadParseConfig();") < cloudCode.indexOf("const env = (typeof process !== 'undefined' && process.env)"),
+      cloudCode.indexOf("const cfg = await loadParseConfig();", cloudCode.indexOf("async function configValueAsync(")) <
+      cloudCode.indexOf("const env = (typeof process !== 'undefined' && process.env)", cloudCode.indexOf("async function configValueAsync(")),
   'Back4App Config takes precedence over stale environment values');
 check(cloudCode.includes("'deepseek-ai/deepseek-v4-flash'") &&
       cloudCode.includes("configValueAsync('NVIDIA_API_KEY')") &&
@@ -185,7 +186,8 @@ check(cloudCode.includes('async function issueVerificationCode(') &&
       cloudCode.includes('EMAIL_DELIVERY_FAILED'),
   'Verification delivery failures are recorded and recoverable');
 check(cloudCode.includes('Environment variables are a fallback only') &&
-      cloudCode.indexOf("const cfg = await loadParseConfig();") < cloudCode.indexOf("const env = (typeof process !== 'undefined' && process.env)"),
+      cloudCode.indexOf("const cfg = await loadParseConfig();", cloudCode.indexOf("async function configValueAsync(")) <
+      cloudCode.indexOf("const env = (typeof process !== 'undefined' && process.env)", cloudCode.indexOf("async function configValueAsync(")),
   'Back4App Config values take precedence over environment fallbacks');
 check(cloudCode.includes('AI_ALL_PROVIDERS_FAILED') &&
       cloudCode.includes('fallbackUsed: index > 0') &&
