@@ -12,12 +12,16 @@
 const APP_NAME = 'TdevKuantum';
 const SUPPORT_EMAIL = 'tdevkuantum.official@gmail.com';
 const TOKEN_PROPERTY = 'APPS_SCRIPT_TOKEN';
+const SERVICE_BUILD = '2026-10-26.1';
 
 function doGet() {
+  const token = getMailToken();
   return jsonResponse({
     success: true,
     service: APP_NAME + ' Email Service',
-    configured: Boolean(getMailToken()),
+    build: SERVICE_BUILD,
+    configured: Boolean(token),
+    tokenProperty: TOKEN_PROPERTY,
     timestamp: new Date().toISOString()
   });
 }
@@ -140,7 +144,8 @@ function stripHtml(html) {
 }
 
 function jsonResponse(data) {
+  const payload = Object.assign({ build: SERVICE_BUILD }, data || {});
   return ContentService
-    .createTextOutput(JSON.stringify(data))
+    .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }
