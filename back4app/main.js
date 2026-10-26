@@ -2022,6 +2022,7 @@ Parse.Cloud.define('healthCheck', async (request) => {
   const nvidiaBaseUrl = await configValueAsync('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1');
   const nvidiaModel = await configValueAsync('NVIDIA_MODEL', 'deepseek-ai/deepseek-v4-flash');
   const aiFallbackKey = await configValueAsync('AI_API_KEY');
+  const aiSeparateFallbackKey = await configValueAsync('AI_FALLBACK_API_KEY');
   let appsScriptConfigured = false;
   let appsScriptDiagnostic = scriptUrl ? 'Kontrol edilmedi.' : 'Google Apps Script URL ayarlanmamış.';
   if (scriptUrl) {
@@ -2053,7 +2054,9 @@ Parse.Cloud.define('healthCheck', async (request) => {
       nvidiaBaseUrlConfigured: !!String(nvidiaBaseUrl || '').trim(),
       nvidiaBaseUrlValid: /^https:\/\//i.test(String(nvidiaBaseUrl || '').trim()),
       nvidiaModel: safeText(nvidiaModel || 'deepseek-ai/deepseek-v4-flash', 120),
-      fallbackApiKeyConfigured: !!aiFallbackKey
+      fallbackApiKeyConfigured: !!aiFallbackKey,
+      separateFallbackApiKeyConfigured: !!aiSeparateFallbackKey,
+      fallbackProviderAvailable: !!(aiFallbackKey || aiSeparateFallbackKey)
     }
   };
 });
