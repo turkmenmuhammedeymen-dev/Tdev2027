@@ -97,3 +97,13 @@ The signed-in learning dashboard includes:
 
 The timed exam module is a personal test builder, not a bundled official question bank. Students enter their own question text, choices, correct answer and topic. Local records remain available when signed out or offline; cross-device sync requires a valid Back4App session and a deployed Cloud Code version with the existing study endpoints. The dashboard derives its charts from recorded sessions, so it does not invent progress when there is no activity data.
 
+
+
+## Adaptive learning and official question center
+
+- `adaptive-learning.js` adds two dashboard navigation entries: **Öğrenme Motoru** and **Resmî Soru Merkezi**.
+- The learning loop provides a starter practice bank with immediate answer explanations, adaptive difficulty changes, local result history, and suggested revision order based on missed topics. The built-in starter questions are examples, not a complete grade-by-grade official curriculum or official exam bank.
+- The AI teacher and AI question explanation reuse the existing `tdevAIChat` Cloud Function. The signed-in user and server-side AI provider configuration are required; provider keys remain server-side.
+- The official source center links directly to public education authority portals by country/system and provides a form to work through a question. If an official answer key is entered, the student's answer is compared with that key. If no official key is available, the UI does not invent an official answer; AI explanations are labelled as non-official.
+- Official question pages are not automatically mirrored or claimed to be a complete live feed. Students should verify the latest paper and answer key on the issuing authority's own site. Some portals may require sign-in or may restrict embedding/reuse.
+- Learning-loop results are stored locally in the current browser profile. They are not presented as a cloud-synced record or an official school result.
