@@ -2847,7 +2847,9 @@ async function tdevFeedReadSource(source,grade,subject,year){
     const articles=candidates.filter(a=>!a.pdf).slice(0,2);
     const detail=await Promise.all(articles.map(async a=>{try{const p=await tdevFeedFetchHtml(a.url);return {a:a,p:p,links:p.html?tdevFeedParseAnchors(p.html,p.finalUrl,source.domains).filter(x=>x.pdf||x.keyword).slice(0,10):[]};}catch(_){return {a:a,p:null,links:[]};}}));
     detail.forEach(d=>{if(!d.p)return;const date=tdevFeedFindDate(d.p.html);d.links.forEach(link=>addItem(link,d.a.url,date));});
-    const filtered=all.filter(x=>x.subjectMatch&&x.yearMatch);
+    let filtered=all.filter(x=>x.yearMatch);
+    const exactSubjectMatches=filtered.filter(x=>x.subjectMatch);
+    if(exactSubjectMatches.length)filtered=exactSubjectMatches;
     const gradeMatches=filtered.filter(x=>x.gradeMatch);
     result.items=(gradeMatches.length?gradeMatches.concat(filtered.filter(x=>x.kind==='answer_key')):filtered).slice(0,12);
     result.status=result.items.length?'live':'no_matching_publications';
