@@ -2858,6 +2858,7 @@ async function tdevFeedReadSource(source,grade,subject,year){
   }catch(error){result.status='unavailable';result.note='Canlı kaynak bu istekte okunamadı ('+safeText(error&&error.message||error,100)+'). Resmî sayfayı doğrudan açabilirsin.';return result;}
 }
 Parse.Cloud.define('getOfficialQuestionFeed',async(request)=>{
+  requireUser(request);
   const p=request&&request.params||{},country=safeText(p.country||'TR',2).toUpperCase(),grade=safeText(p.grade,12),subject=safeText(p.subject,80),year=safeText(p.year||'current',12);
   if(!Object.prototype.hasOwnProperty.call(TDEV_OFFICIAL_FEED_SOURCES,country))return resultError('Bu ülke için resmî kaynak adaptörü henüz tanımlı değil.','OFFICIAL_SOURCE_NOT_SUPPORTED');
   if(grade&&grade!=='exam'&&!/^\d{1,2}$/.test(grade))return resultError('Sınıf filtresi geçersiz.','INVALID_GRADE');
