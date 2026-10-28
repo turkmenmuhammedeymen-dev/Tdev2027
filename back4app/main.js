@@ -2778,3 +2778,103 @@ Parse.Cloud.define('addClassroomMemberById', async (request) => {
   await membership.save(null,{useMasterKey:true}); await writeAuditLog(request,'classroom.member_added_by_id',target.id,{classroomId});
   return {success:true,member:{userId:target.id,publicId,name:safeText(target.get('displayName')||target.get('name'),100),profileType:target.get('profileType')}};
 });
+
+
+// Read-only live index of publicly accessible education-authority publications.
+// Protected portals are linked, never bypassed; complete papers are not mirrored.
+const TDEV_OFFICIAL_FEED_SOURCES = {
+  TR:[
+    {id:'tr-odsgm',country:'TR',label:'MEB Ölçme, Değerlendirme ve Sınav Hizmetleri',url:'https://odsgm.meb.gov.tr/',domains:['meb.gov.tr'],kind:'official'},
+    {id:'tr-meb',country:'TR',label:'Millî Eğitim Bakanlığı duyuruları',url:'https://www.meb.gov.tr/haberler',domains:['meb.gov.tr'],kind:'official'},
+    {id:'tr-ogm',country:'TR',label:'OGM Materyal · YKS hazırlık',url:'https://ogmmateryal.eba.gov.tr/YKSHazirlik',domains:['eba.gov.tr'],kind:'official'},
+    {id:'tr-mebi',country:'TR',label:'MEBİ bireysel öğrenme platformu',url:'https://mebi.eba.gov.tr/',domains:['eba.gov.tr'],kind:'portal',note:'Bazı içerikler için EBA/e-Devlet girişi gerekebilir.'}
+  ],
+  GB:[{id:'gb-practice',country:'GB',label:'GOV.UK · Assessment practice materials',url:'https://www.gov.uk/government/collections/national-curriculum-assessments-practice-materials',domains:['gov.uk'],kind:'official'}],
+  US:[{id:'us-naep',country:'US',label:'NAEP · Released assessment items',url:'https://nces.ed.gov/nationsreportcard/itmrlsx/',domains:['ed.gov'],kind:'official'},{id:'us-ed',country:'US',label:'U.S. Department of Education',url:'https://www.ed.gov/',domains:['ed.gov'],kind:'official'}],
+  DE:[{id:'de-iqb',country:'DE',label:'IQB · Abitur and assessment materials',url:'https://www.iqb.hu-berlin.de/abitur/',domains:['hu-berlin.de'],kind:'official'},{id:'de-kmk',country:'DE',label:'Kultusministerkonferenz (KMK)',url:'https://www.kmk.org/',domains:['kmk.org'],kind:'official'}],
+  AZ:[{id:'az-dim',country:'AZ',label:'Dövlət İmtahan Mərkəzi (DİM)',url:'https://dim.gov.az/',domains:['dim.gov.az'],kind:'official'},{id:'az-edu',country:'AZ',label:'Azerbaijan Ministry of Science and Education',url:'https://edu.gov.az/en',domains:['edu.gov.az'],kind:'official'}],
+  JP:[{id:'jp-mext',country:'JP',label:'MEXT · Japan Ministry of Education',url:'https://www.mext.go.jp/en/',domains:['mext.go.jp'],kind:'official'}],
+  UN:[{id:'un-ibe',country:'UN',label:'UNESCO-IBE · Curriculum resources',url:'https://www.ibe.unesco.org/en',domains:['unesco.org'],kind:'reference',note:'Uluslararası referans; ulusal sınav soru bankası değildir.'}]
+};
+const TDEV_OFFICIAL_FEED_CACHE_MS=10*60*1000;
+let tdevOfficialFeedCache=new Map();
+let tdevOfficialFeedInFlight=new Map();
+const TDEV_OFFICIAL_KEYWORDS=/question|questions|exam|exams|assessment|practice|sample|test|answer|mark.?scheme|paper|booklet|lgs|yks|soru|deneme|kitap[cç][ıi]k|cevap|s[iı]nav|[oö]rnek|de[gğ]erlendirme|abitur|pr[uü]fung|aufgaben|preguntas|prova|quest[oõ]es/i;
+function tdevFeedEscapeRegExp(value){return String(value||'').replace(/[.*+?^$()|[\]\\]/g,'\\$&');}
+function tdevFeedDecode(value){return String(value||'').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;|&#34;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Math.min(65535,Number(n)||32))).replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCharCode(Math.min(65535,parseInt(n,16)||32)));}
+function tdevFeedText(value){return tdevFeedDecode(String(value||'').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,' ').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ')).trim();}
+function tdevFeedAllowedHost(url,domains){try{const u=new URL(url);return u.protocol==='https:'&&domains.some(d=>u.hostname.toLowerCase()===d||u.hostname.toLowerCase().endsWith('.'+d));}catch(_){return false;}}
+function tdevFeedNormalizeUrl(href,base,domains){try{const u=new URL(String(href||'').trim(),base);u.hash='';return tdevFeedAllowedHost(u.href,domains)?u.href:'';}catch(_){return '';}}
+async function tdevFeedFetchHtml(url){
+  const controller=typeof AbortController==='function'?new AbortController():null;
+  const timer=controller?setTimeout(()=>controller.abort(),6500):null;
+  try{
+    const r=await fetch(url,{method:'GET',redirect:'follow',headers:{'Accept':'text/html,application/xhtml+xml,text/plain;q=0.8','User-Agent':'TdevKuantum-OfficialEducationFeed/1.0'},signal:controller?controller.signal:undefined});
+    if(!r.ok)throw new Error('HTTP_'+r.status);
+    const finalUrl=r.url||url;
+    if(!tdevFeedAllowedHost(finalUrl,TDEV_OFFICIAL_ALL_DOMAINS))throw new Error('REDIRECT_HOST_NOT_ALLOWED');
+    const type=String(r.headers&&r.headers.get&&r.headers.get('content-type')||'').toLowerCase();
+    if(type&&!/(text\/html|application\/xhtml\+xml|text\/plain)/i.test(type))return {html:'',finalUrl:finalUrl,contentType:type};
+    return {html:(await r.text()).slice(0,1800000),finalUrl:finalUrl,contentType:type};
+  }finally{if(timer)clearTimeout(timer);}
+}
+const TDEV_OFFICIAL_ALL_DOMAINS=Array.from(new Set(Object.keys(TDEV_OFFICIAL_FEED_SOURCES).reduce((all,k)=>all.concat(TDEV_OFFICIAL_FEED_SOURCES[k].reduce((a,s)=>a.concat(s.domains),[])),[])));
+function tdevFeedParseAnchors(html,base,domains){
+  const out=[],seen=new Set(),re=/<a\b([^>]*)>([\s\S]*?)<\/a>/gi;let m;
+  while((m=re.exec(String(html||'').slice(0,1800000)))&&out.length<180){
+    const hm=(m[1]||'').match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);if(!hm)continue;
+    const url=tdevFeedNormalizeUrl(hm[1]||hm[2]||hm[3]||'',base,domains);if(!url||seen.has(url))continue;
+    const title=tdevFeedText(m[2]).slice(0,240);if(title.length<3)continue;
+    seen.add(url);out.push({title:title,url:url,pdf:/\.pdf(?:$|\?)/i.test(url),keyword:TDEV_OFFICIAL_KEYWORDS.test(title+' '+url)});
+  }return out;
+}
+function tdevFeedFindDate(html){
+  const s=String(html||''),patterns=[/<time\b[^>]*datetime=["']([^"']+)["']/i,/(?:datePublished|dateCreated|dateModified)["']?\s*[:=]\s*["']([^"']{8,40})["']/i,/\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2})\b/];
+  for(let i=0;i<patterns.length;i++){const m=s.match(patterns[i]);if(m&&m[1]){const d=new Date(m[1]);if(!isNaN(d.getTime())&&d.getUTCFullYear()>=2000&&d.getUTCFullYear()<=new Date().getUTCFullYear()+1)return d.toISOString();}}return '';
+}
+async function tdevFeedReadSource(source,grade,subject,year){
+  const result={sourceId:source.id,source:source.label,sourceUrl:source.url,status:'checking',note:source.note||'',items:[]};
+  try{
+    const page=await tdevFeedFetchHtml(source.url);
+    if(!page.html){result.status='portal_or_non_html';result.note=result.note||'Sayfa otomatik okunabilir HTML duyurusu sunmuyor; resmî sayfayı doğrudan aç.';return result;}
+    const anchors=tdevFeedParseAnchors(page.html,page.finalUrl,source.domains);
+    const candidates=anchors.filter(a=>a.keyword).slice(0,5),all=[];
+    const addItem=(a,sourceUrl,date)=>{
+      const title=a.title||source.label;
+      all.push({id:source.id+':'+sha256(a.url).slice(0,12),title:title,url:a.url,source:source.label,sourceUrl:sourceUrl||source.url,kind:a.pdf?(/answer|cevap|key|anahtar|mark.?scheme/i.test(title+' '+a.url)?'answer_key':'question_paper'):'announcement',publishedAt:date||'',gradeMatch:grade&&grade!=='exam'?new RegExp('(^|\\D)'+tdevFeedEscapeRegExp(grade)+'(\\D|$)').test(title):false,subjectMatch:!subject||new RegExp(tdevFeedEscapeRegExp(subject),'i').test(title),yearMatch:!year||year==='current'||year==='archive'||title.indexOf(year)>=0||a.url.indexOf(year)>=0||(date&&date.indexOf(year)===0)});
+    };
+    candidates.forEach(a=>addItem(a,source.url,tdevFeedFindDate(page.html)));
+    const articles=candidates.filter(a=>!a.pdf).slice(0,2);
+    const detail=await Promise.all(articles.map(async a=>{try{const p=await tdevFeedFetchHtml(a.url);return {a:a,p:p,links:p.html?tdevFeedParseAnchors(p.html,p.finalUrl,source.domains).filter(x=>x.pdf||x.keyword).slice(0,10):[]};}catch(_){return {a:a,p:null,links:[]};}}));
+    detail.forEach(d=>{if(!d.p)return;const date=tdevFeedFindDate(d.p.html);d.links.forEach(link=>addItem(link,d.a.url,date));});
+    let filtered=all.filter(x=>x.yearMatch);
+    const exactSubjectMatches=filtered.filter(x=>x.subjectMatch);
+    if(exactSubjectMatches.length)filtered=exactSubjectMatches;
+    const gradeMatches=filtered.filter(x=>x.gradeMatch);
+    result.items=(gradeMatches.length?gradeMatches.concat(filtered.filter(x=>x.kind==='answer_key')):filtered).slice(0,12);
+    result.status=result.items.length?'live':'no_matching_publications';
+    if(!result.items.length)result.note=(result.note?result.note+' ':'')+'Filtreye uyan herkese açık bir yayın otomatik ayrıştırılamadı; kaynak bağlantısı kullanılabilir.';
+    return result;
+  }catch(error){result.status='unavailable';result.note='Canlı kaynak bu istekte okunamadı ('+safeText(error&&error.message||error,100)+'). Resmî sayfayı doğrudan açabilirsin.';return result;}
+}
+Parse.Cloud.define('getOfficialQuestionFeed',async(request)=>{
+  requireUser(request);
+  const p=request&&request.params||{},country=safeText(p.country||'TR',2).toUpperCase(),grade=safeText(p.grade,12),subject=safeText(p.subject,80),year=safeText(p.year||'current',12);
+  if(!Object.prototype.hasOwnProperty.call(TDEV_OFFICIAL_FEED_SOURCES,country))return resultError('Bu ülke için resmî kaynak adaptörü henüz tanımlı değil.','OFFICIAL_SOURCE_NOT_SUPPORTED');
+  if(grade&&grade!=='exam'&&!/^\d{1,2}$/.test(grade))return resultError('Sınıf filtresi geçersiz.','INVALID_GRADE');
+  if(grade&&/^\d{1,2}$/.test(grade)&&(Number(grade)<1||Number(grade)>12))return resultError('Sınıf filtresi geçersiz.','INVALID_GRADE');
+  if(year!=='current'&&year!=='archive'&&!/^20\d{2}$/.test(year))return resultError('Yıl filtresi geçersiz.','INVALID_YEAR');
+  const key=[country,grade,subject.toLowerCase(),year].join('|'),cached=tdevOfficialFeedCache.get(key);
+  if(cached&&Date.now()-cached.at<TDEV_OFFICIAL_FEED_CACHE_MS)return {success:true,cached:true,checkedAt:cached.checkedAt,sources:cached.sources,items:cached.items,message:'Önbelleğe alınmış resmî kaynak sonuçları.'};
+  if(tdevOfficialFeedInFlight.has(key))return await tdevOfficialFeedInFlight.get(key);
+  const job=(async()=>{
+    const results=await Promise.all(TDEV_OFFICIAL_FEED_SOURCES[country].map(s=>tdevFeedReadSource(s,grade,subject,year)));
+    const seen=new Set(),items=results.reduce((a,s)=>a.concat(s.items),[]).filter(x=>{if(!x.url||seen.has(x.url))return false;seen.add(x.url);return true;}).sort((a,b)=>(Date.parse(b.publishedAt||'')||0)-(Date.parse(a.publishedAt||'')||0)).slice(0,30);
+    const checkedAt=new Date().toISOString(),payload={success:true,cached:false,checkedAt:checkedAt,sources:results.map(s=>({sourceId:s.sourceId,source:s.source,sourceUrl:s.sourceUrl,status:s.status,note:s.note,itemCount:s.items.length})),items:items,message:items.length?'Resmî kurumların herkese açık sayfalarından canlı ayrıştırılan duyurular ve materyal bağlantıları.':'Canlı kontrol tamamlandı; filtreye uyan yayın bulunamadı. Kaynak bağlantıları kullanılabilir.'};
+    tdevOfficialFeedCache.set(key,{at:Date.now(),checkedAt:checkedAt,sources:payload.sources,items:payload.items});
+    if(tdevOfficialFeedCache.size>120){const first=tdevOfficialFeedCache.keys().next().value;if(first)tdevOfficialFeedCache.delete(first);}
+    return payload;
+  })();
+  tdevOfficialFeedInFlight.set(key,job);
+  try{return await job;}finally{tdevOfficialFeedInFlight.delete(key);}
+});
