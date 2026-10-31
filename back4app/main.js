@@ -2878,3 +2878,73 @@ Parse.Cloud.define('getOfficialQuestionFeed',async(request)=>{
   tdevOfficialFeedInFlight.set(key,job);
   try{return await job;}finally{tdevOfficialFeedInFlight.delete(key);}
 });
+
+
+/* TDEV KUANTUM 2.0 — authenticated personal learning records */
+const TK2_RECORDS = {
+  goal:{className:'TK2Goal',max:100},
+  library:{className:'TK2LibraryItem',max:200},
+  questionSet:{className:'TK2QuestionSet',max:50},
+  review:{className:'TK2Review',max:500},
+  career:{className:'TK2CareerProfile',max:1},
+  xp:{className:'TK2Activity',max:1000}
+};
+function tk2CleanPayload(value, depth) {
+  if (depth > 5) return null;
+  if (value === null || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') return value.slice(0, 4000);
+  if (Array.isArray(value)) return value.slice(0, 100).map(v => tk2CleanPayload(v, depth + 1));
+  if (value && typeof value === 'object') {
+    const out = {};
+    Object.keys(value).slice(0, 60).forEach(k => {
+      if (!/^(?:__proto__|prototype|constructor)$/i.test(k)) out[safeText(k, 60)] = tk2CleanPayload(value[k], depth + 1);
+    });
+    return out;
+  }
+  return null;
+}
+Parse.Cloud.define('tk2SaveRecord', async request => {
+  const user = requireUser(request), p = request.params || {};
+  const type = safeText(p.type, 24), config = TK2_RECORDS[type];
+  if (!config) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Kayıt türü geçersiz.');
+  const id = safeText(p.id, 100), payload = tk2CleanPayload(p.payload, 0);
+  if (!id || !payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Kayıt içeriği geçersiz.');
+  const q = new Parse.Query(config.className); q.equalTo('ownerId', user.id); q.equalTo('itemId', id);
+  let row = await q.first({useMasterKey:true}); if (!row) row = new Parse.Object(config.className);
+  row.set('ownerId', user.id); row.set('itemId', id); row.set('payload', payload);
+  if (!row.get('createdAtISO')) row.set('createdAtISO', new Date().toISOString());
+  row.set('updatedAtISO', new Date().toISOString());
+  await row.save(null, {useMasterKey:true});
+  return {success:true, item:payload};
+});
+Parse.Cloud.define('tk2GetRecords', async request => {
+  const user = requireUser(request), type = safeText(request.params && request.params.type, 24), config = TK2_RECORDS[type];
+  if (!config) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Kayıt türü geçersiz.');
+  const q = new Parse.Query(config.className); q.equalTo('ownerId', user.id); q.descending('updatedAtISO'); q.limit(config.max);
+  const rows = await q.find({useMasterKey:true});
+  return {success:true, items:rows.map(row => row.get('payload') || {})};
+});
+Parse.Cloud.define('tk2DeleteRecord', async request => {
+  const user = requireUser(request), p = request.params || {}, type = safeText(p.type, 24), config = TK2_RECORDS[type], id = safeText(p.id, 100);
+  if (!config || !id) throw new Parse.Error(Parse.Error.INVALID_JSON, 'Silinecek kayıt geçersiz.');
+  const q = new Parse.Query(config.className); q.equalTo('ownerId', user.id); q.equalTo('itemId', id);
+  const row = await q.first({useMasterKey:true}); if (row) await row.destroy({useMasterKey:true});
+  return {success:true};
+});
+Parse.Cloud.define('tk2GetParentSummary', async request => {
+  const guardian = tdevAuthUser(request);
+  if (guardian.get('profileType') !== 'guardian') throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Veli hesabı gerekli.');
+  const q = new Parse.Query('GuardianStudent'); q.equalTo('guardianId', guardian.id); q.equalTo('status','active'); q.limit(100);
+  const links = await q.find({useMasterKey:true}), items = [];
+  for (const link of links) {
+    const studentId = link.get('studentId');
+    const user = await new Parse.Query(Parse.User).get(studentId,{useMasterKey:true});
+    const activityQ = new Parse.Query('LearningActivity'); activityQ.equalTo('userId',studentId); activityQ.descending('createdAt'); activityQ.limit(500);
+    const events = await activityQ.find({useMasterKey:true});
+    const quizzes = events.filter(e=>e.get('eventType')==='quiz_answer'&&e.get('hasAnswer')===true);
+    const correct = quizzes.filter(e=>e.get('isCorrect')===true).length;
+    items.push({studentId,displayName:safeText(user.get('displayName')||user.get('name'),100),activityCount:events.length,quizCount:quizzes.length,successRate:quizzes.length?Math.round(correct/quizzes.length*100):null,lastActivity:events[0]?events[0].get('createdAt'):null});
+  }
+  return {success:true,items};
+});
