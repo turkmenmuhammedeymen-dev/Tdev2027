@@ -2,7 +2,7 @@
 'use strict';
 const KEY='tdevkuantum.v2.';
 const $=id=>document.getElementById(id);
-const read=(name,fallback=[])=>{try{const x=JSON.parse(localStorage.getItem(KEY+name)||'null');return x==null?fallback:x}catch(_){return fallback}};
+const read=(name,fallback=[])=>{try{let raw=localStorage.getItem(KEY+name);const legacy={'plans':'tdevkuantum.study.plans','notes':'tdevkuantum.study.notes','cards':'tdevkuantum.study.cards','mistakes':'tdevkuantum.study.mistakes','progress':'tdevkuantum.study.practice'};if(raw===null&&legacy[name])raw=localStorage.getItem(legacy[name]);const x=JSON.parse(raw||'null');return x==null?fallback:x}catch(_){return fallback}};
 const write=(name,value)=>{localStorage.setItem(KEY+name,JSON.stringify(value));return value};
 const esc=value=>String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notify=message=>typeof window.showNotif==='function'?window.showNotif(message):alert(message);
