@@ -927,7 +927,7 @@ body:has(#scr-gate:not(.hidden)) .learning-ambient{opacity:1}
 @media(max-width:380px){#scr-gate .showcase-grid{grid-template-columns:1fr}.gate-value-points span{font-size:.66rem}}
 @media(prefers-reduced-motion:reduce){.learning-ambient,.ambient-chip,.ambient-orbit{animation:none!important;transition:none!important}.ambient-chip{transform:none!important}}
 </style>
-</head>
+<style id="tdev-kuantum-2">.tk2-hero{display:flex;justify-content:space-between;gap:16px;padding:24px;border:1px solid #d9e5f5;border-radius:16px;background:linear-gradient(120deg,#f7faff,#edf4ff);margin-bottom:14px}.tk2-hero h2{color:#183b78;margin:8px 0}.tk2-hero p,.tk2-note{color:#63758e;line-height:1.6}.tk2-feature-tabs,.tk2-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tk2-feature-tabs button{border:1px solid #d8e3f2;background:#fff;color:#405875;padding:9px 12px;border-radius:9px;cursor:pointer}.tk2-feature-tabs button.active{background:#eaf1ff;color:#1946a6}.tk2-panel{background:#fff;border:1px solid #dce5f1;border-radius:15px;padding:20px;margin-bottom:14px}.tk2-panel h3{color:#1b3d78}.tk2-grid,.tk2-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}.tk2-card,.tk2-item{padding:13px;border:1px solid #e0e8f3;border-radius:10px;background:#f8faff;color:#405875}.tk2-card strong{display:block;font-size:1.3rem;color:#2457c5}.tk2-form{display:grid;gap:10px;margin:14px 0}.tk2-form label{display:grid;gap:5px;color:#405875;font-weight:700}.tk2-form input,.tk2-form select{padding:10px;border:1px solid #d6e0ed;border-radius:8px;background:#fff;color:#172b4d}.tk2-note{padding:12px;background:#f2f6fc;border-radius:9px;margin-top:10px}@media(max-width:700px){.tk2-hero{flex-direction:column}.tk2-panel{padding:15px}}</style></head>
 <body>
 
 <div class="wallpaper"></div>
@@ -1215,6 +1215,17 @@ body:has(#scr-gate:not(.hidden)) .learning-ambient{opacity:1}
           <div class="nav-btn" id="nav-guardian" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">♧</span>Veli ve Öğretmen Alanı</div>
           <div class="nav-btn" id="nav-security" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">⛨</span>Güvenlik ve Gizlilik</div>
           <div class="nav-btn" id="nav-settings" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙</span>Ayarlar ve Destek</div>
+<div class="nav-section">TDEV KUANTUM 2.0</div>
+<div class="nav-btn" id="nav-ai-guide" onclick="showTab('innovation-hub',this);openTdevFeature('ai-guide')">✧ Tdev AI Rehber</div>
+<div class="nav-btn" id="nav-question-factory" onclick="showTab('innovation-hub',this);openTdevFeature('question-factory')">✎ Akıllı Soru Fabrikası</div>
+<div class="nav-btn" id="nav-leagues" onclick="showTab('innovation-hub',this);openTdevFeature('leagues')">🏆 Tdev Ligleri</div>
+<div class="nav-btn" id="nav-memory" onclick="showTab('innovation-hub',this);openTdevFeature('memory')">🧠 Akıllı Hafıza Sistemi</div>
+<div class="nav-btn" id="nav-campus" onclick="showTab('innovation-hub',this);openTdevFeature('campus')">🏫 Tdev Dijital Kampüs</div>
+<div class="nav-btn" id="nav-career" onclick="showTab('innovation-hub',this);openTdevFeature('career')">🧭 Gelecek ve Kariyer</div>
+<div class="nav-btn" id="nav-offline" onclick="showTab('innovation-hub',this);openTdevFeature('offline')">⇩ Çevrimdışı Eğitim</div>
+<div class="nav-btn" id="nav-report-card" onclick="showTab('innovation-hub',this);openTdevFeature('report-card')">▤ Tdev Akademik Karne</div>
+<div class="nav-btn" id="nav-library" onclick="showTab('innovation-hub',this);openTdevFeature('library')">📚 Tdev Kitaplık</div>
+<div class="nav-btn" id="nav-parent-assistant" onclick="showTab('innovation-hub',this);openTdevFeature('parent-assistant')">♧ Tdev Veli Asistanı</div>
           <div id="nav-admin-group" style="display:none">
             <div class="nav-section">YÖNETİM VE SİSTEM TANILAMA</div>
             <div class="nav-btn" id="nav-dev" style="display:none" onclick="showTab('devpanel',this)"><span class="nav-icon">⌘</span>Yönetim Paneli</div>
@@ -1582,6 +1593,20 @@ body:has(#scr-gate:not(.hidden)) .learning-ambient{opacity:1}
                 </div>
             </div>
 
+<div id="tab-innovation-hub" class="tab">
+<section class="tk2-hero"><div><small>TDEV KUANTUM 2.0 · KİŞİSEL ÖĞRENME EKOSİSTEMİ</small><h2 id="tk2-title">Tdev AI Rehber</h2><p id="tk2-description">Kişisel öğrenme rotan.</p></div><strong id="tk2-xp">0 XP</strong></section>
+<div class="tk2-feature-tabs"><button type="button" data-feature="ai-guide" onclick="openTdevFeature('ai-guide')">AI Rehber</button><button type="button" data-feature="question-factory" onclick="openTdevFeature('question-factory')">Soru Fabrikası</button><button type="button" data-feature="leagues" onclick="openTdevFeature('leagues')">Ligler</button><button type="button" data-feature="memory" onclick="openTdevFeature('memory')">Hafıza</button><button type="button" data-feature="campus" onclick="openTdevFeature('campus')">Kampüs</button><button type="button" data-feature="career" onclick="openTdevFeature('career')">Kariyer</button><button type="button" data-feature="offline" onclick="openTdevFeature('offline')">Çevrimdışı</button><button type="button" data-feature="report-card" onclick="openTdevFeature('report-card')">Akademik Karne</button><button type="button" data-feature="library" onclick="openTdevFeature('library')">Kitaplık</button><button type="button" data-feature="parent-assistant" onclick="openTdevFeature('parent-assistant')">Veli Asistanı</button></div>
+<section class="tk2-panel" data-tk2-panel="ai-guide"><h3>Öğrenme rotan</h3><div id="tk2-roadmap" class="tk2-grid"></div><form class="tk2-form" onsubmit="saveTdevGoal(event)"><label>Haftalık odak konun<input id="tk2-goal" maxlength="120" required></label><label>Günlük dakika<input id="tk2-minutes" type="number" min="5" max="360" value="30"></label><button class="study-action">HEDEFİ KAYDET</button></form><div id="tk2-goal-list"></div></section>
+<section class="tk2-panel" data-tk2-panel="question-factory" hidden><h3>Akıllı Soru Fabrikası</h3><form class="tk2-form" onsubmit="generateTdevQuestions(event)"><div class="tk2-fields"><label>Sınıf<select id="tk2-grade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></label><label>Ders<input id="tk2-subject" required></label><label>Konu<input id="tk2-topic" required></label><label>Seviye<select id="tk2-level"><option>Kolay</option><option selected>Orta</option><option>Zor</option></select></label><label>Soru sayısı<select id="tk2-count"><option>5</option><option>10</option><option>15</option></select></label></div><button class="study-action">SORU SETİ OLUŞTUR</button></form><div id="tk2-questions"></div></section>
+<section class="tk2-panel" data-tk2-panel="leagues" hidden><h3>Tdev Ligleri</h3><p>XP bu cihazdaki kişisel çalışma etkinliklerinden hesaplanır; küresel sıralama değildir.</p><div class="tk2-grid"><article class="tk2-card"><strong id="tk2-week-xp">0</strong>Haftalık XP</article><article class="tk2-card"><strong id="tk2-streak">0</strong>Etkin gün</article></div><div id="tk2-missions"></div></section>
+<section class="tk2-panel" data-tk2-panel="memory" hidden><h3>Akıllı Hafıza</h3><div id="tk2-review-list"></div></section>
+<section class="tk2-panel" data-tk2-panel="campus" hidden><h3>Tdev Dijital Kampüs</h3><p>Mevcut sınıf, dosya, mesaj ve ödev araçlarına eriş.</p><button class="study-action" onclick="showTab('school',document.getElementById('nav-classroom'));loadSchoolDashboard()">DİJİTAL SINIFIM</button><button class="study-action secondary" onclick="showTab('planner',document.getElementById('nav-planner'));loadStudyPlanner()">ÇALIŞMA PLANIM</button><p class="tk2-note">Canlı ders yayını bu sürümde etkin değildir.</p></section>
+<section class="tk2-panel" data-tk2-panel="career" hidden><h3>Gelecek ve Kariyer Merkezi</h3><form class="tk2-form" onsubmit="saveTdevCareer(event)"><label>İlgi alanların<input id="tk2-interests" required maxlength="240"></label><label>Çalışma tercihin<select id="tk2-workstyle"><option>Araştırma ve keşif</option><option>İnsanlarla çalışma</option><option>Üretim ve tasarım</option><option>Teknoloji ve mühendislik</option><option>Doğa ve sağlık</option></select></label><button class="study-action">PROFİLİ KAYDET</button></form><div id="tk2-career-result" class="tk2-note"></div></section>
+<section class="tk2-panel" data-tk2-panel="offline" hidden><h3>Çevrimdışı Eğitim</h3><p>İlk bağlantıda uygulama kabuğunu önbelleğe al. Çalışma verilerini ayrıca JSON olarak dışa aktarabilirsin.</p><button class="study-action" onclick="prepareTdevOffline()">ÇEVRİMDIŞI MODU HAZIRLA</button><button class="study-action secondary" onclick="exportTdevOfflinePack()">VERİLERİMİ İNDİR</button><p id="tk2-offline-status"></p></section>
+<section class="tk2-panel" data-tk2-panel="report-card" hidden><h3>Tdev Akademik Karne</h3><p>Yalnızca platformda kaydedilen çalışma verilerini özetler; resmî okul notu değildir.</p><div id="tk2-report" class="tk2-grid"></div><div id="tk2-report-subjects"></div></section>
+<section class="tk2-panel" data-tk2-panel="library" hidden><h3>Tdev Kitaplık</h3><form class="tk2-form" onsubmit="addTdevLibraryItem(event)"><label>Kaynak adı<input id="tk2-book-title" required maxlength="120"></label><label>HTTPS bağlantısı<input id="tk2-book-url" type="url" maxlength="1000"></label><label>Not<input id="tk2-book-note" maxlength="300"></label><button class="study-action">KİTAPLIĞA EKLE</button></form><div id="tk2-library-list"></div></section>
+<section class="tk2-panel" data-tk2-panel="parent-assistant" hidden><h3>Tdev Veli Asistanı</h3><p>Veli hesabı yalnızca mevcut yetkili öğrenci bağlantılarını görebilir.</p><button class="study-action" onclick="showTab('school',document.getElementById('nav-guardian'));loadSchoolDashboard()">VELİ ALANINI AÇ</button><div id="tk2-parent-summary" class="tk2-note"></div></section>
+</div>
             <!-- BOTLAR -->
             <div id="tab-bots" class="tab">
                 <div class="sec-title">ÖĞRENME <span>ARAÇLARI</span></div>
@@ -3154,6 +3179,7 @@ window.onload = () => {
 <script src="learning-center.js" defer></script>
 <script src="achievements.js" defer></script>
 <script src="adaptive-learning.js" defer></script>
+<script src="tdev-kuantum-2.js" defer></script>
 
 </body>
 </html>
