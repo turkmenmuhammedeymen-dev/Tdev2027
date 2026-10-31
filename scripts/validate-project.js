@@ -38,6 +38,7 @@ const requiredFiles = [
   'index.html',
   'learning-center.js',
   'achievements.js',
+  'tdev-kuantum-2.js',
   'school.js',
   'study.js',
   'curriculum-catalog.js',
