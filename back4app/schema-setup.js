@@ -16,7 +16,14 @@ const TK_SCHEMA = {
   StudyProgress: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyCard: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
   StudyMistake: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
-  StudyGoal: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' }
+  StudyGoal: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+
+  TK2Goal: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  TK2LibraryItem: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  TK2QuestionSet: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  TK2Review: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  TK2CareerProfile: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
+  TK2Activity: { ownerId:'string', itemId:'string', payload:'object', createdAtISO:'string', updatedAtISO:'string' },
 };
 const TK_FIELD_METHODS = { string:'addString', number:'addNumber', boolean:'addBoolean', date:'addDate', array:'addArray', object:'addObject' };
 Parse.Cloud.define('setupDatabaseSchema', async (request) => {
