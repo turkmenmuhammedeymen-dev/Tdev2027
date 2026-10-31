@@ -39,6 +39,7 @@ const requiredFiles = [
   'learning-center.js',
   'achievements.js',
   'tdev-kuantum-2.js',
+  'tdev-offline.js',
   'school.js',
   'study.js',
   'curriculum-catalog.js',
@@ -55,6 +56,8 @@ for (const filename of requiredFiles) {
 
 for (const filename of [
   'achievements.js',
+  'tdev-kuantum-2.js',
+  'tdev-offline.js',
   'school.js',
   'study.js',
   'curriculum-catalog.js',
