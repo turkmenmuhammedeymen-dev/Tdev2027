@@ -1247,7 +1247,7 @@ button,input,select,textarea{font-family:inherit}
 
 </div>
 
-<!-- ===== ŞİFRE SIFIRLAMA =====
+<!-- ===== ŞİFRE SIFIRLAMA ===== -->
 <div id="scr-password-reset" class="screen hidden">
     <section class="auth-card reset-card" aria-labelledby="reset-heading">
         <div class="verification-icon" aria-hidden="true">🔐</div>
@@ -1259,15 +1259,19 @@ button,input,select,textarea{font-family:inherit}
             <input type="email" id="reset-email" class="auth-input" placeholder="ornek@eposta.com" autocomplete="email" inputmode="email">
             <button type="button" class="auth-primary reset-main-action" id="reset-request-button" onclick="requestPasswordReset()">Sıfırlama kodu gönder</button>
         </div>
-        <div id="reset-complete-fields" hidden>
+        <div id="reset-code-fields" hidden>
             <label class="auth-label" for="reset-code">E-postana gelen 6 haneli kod</label>
             <input type="text" id="reset-code" class="auth-input verification-code-input" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+            <button type="button" class="auth-primary reset-main-action" id="reset-verify-button" onclick="verifyPasswordResetCode()">Kodu doğrula</button>
+            <button type="button" class="auth-inline reset-resend" onclick="requestPasswordReset(true)">Yeni kod iste</button>
+        </div>
+        <div id="reset-complete-fields" hidden>
+            <p class="auth-description">E-posta kodun doğrulandı. Şimdi yeni şifreni belirle.</p>
             <label class="auth-label" for="reset-new-password">Yeni şifre</label>
             <div class="password-field"><input type="password" id="reset-new-password" class="auth-input" placeholder="En az 8 karakter" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Yeni şifreyi göster" aria-pressed="false" onclick="togglePasswordVisibility('reset-new-password', this)">Göster</button></div>
             <label class="auth-label" for="reset-confirm-password">Yeni şifre tekrar</label>
             <div class="password-field"><input type="password" id="reset-confirm-password" class="auth-input" placeholder="Yeni şifreyi tekrar yaz" autocomplete="new-password"><button type="button" class="password-toggle" aria-label="Yeni şifre tekrarını göster" aria-pressed="false" onclick="togglePasswordVisibility('reset-confirm-password', this)">Göster</button></div>
             <button type="button" class="auth-primary reset-main-action" id="reset-complete-button" onclick="completePasswordReset()">Şifreyi güncelle</button>
-            <button type="button" class="auth-inline reset-resend" onclick="requestPasswordReset(true)">Yeni kod iste</button>
         </div>
         <div class="error-msg" id="reset-err" role="alert" aria-live="polite" style="display:none;margin-top:12px"></div>
         <button type="button" class="auth-secondary reset-back" onclick="goTo('gate')">Giriş ekranına dön</button>
@@ -1393,7 +1397,7 @@ button,input,select,textarea{font-family:inherit}
           <div class="nav-btn" id="nav-classroom" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">▣</span>Dijital Sınıf</div>
           <div class="nav-btn" id="nav-guardian" onclick="showTab('school',this);loadSchoolDashboard()"><span class="nav-icon">♧</span>Veli ve Öğretmen Alanı</div>
           <div class="nav-btn" id="nav-security" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">⛨</span>Güvenlik ve Gizlilik</div>
-          <div class="nav-btn" id="nav-settings" onclick="showTab('school',this);loadSchoolDashboard().then(()=>loadSchoolSettings())"><span class="nav-icon">⚙</span>Ayarlar ve Destek</div>
+          <div class="nav-btn" id="nav-settings" onclick="showTab('security',this);loadSecurityCenter()"><span class="nav-icon">⚙</span>Ayarlar ve Güvenlik</div>
 <div class="nav-section">TDEV KUANTUM 2.0</div>
 <div class="nav-btn" id="nav-ai-guide" onclick="showTab('innovation-hub',this);openTdevFeature('ai-guide')">✧ Tdev AI Rehber</div>
 <div class="nav-btn" id="nav-question-factory" onclick="showTab('innovation-hub',this);openTdevFeature('question-factory')">✎ Akıllı Soru Fabrikası</div>
@@ -1420,7 +1424,7 @@ button,input,select,textarea{font-family:inherit}
                 <div class="role-indicator-name" id="role-name-disp">—</div>
             </div>
             <div class="legal-side-links"><a href="terms.html" target="_blank" rel="noopener">Kullanım Şartları</a><a href="privacy.html" target="_blank" rel="noopener">Gizlilik Politikası</a></div>
-            <button class="btn-exit" onclick="location.reload()">✕ ÇIKIŞ</button>
+            <button class="btn-exit" onclick="logoutTdevAccount()">✕ ÇIKIŞ</button>
         </div>
     </aside>
     <div class="main-area">
@@ -1953,9 +1957,44 @@ const TAG_LBL = { lgs:'⚡ LGS', yks:'🎯 YKS', temel:'TEMEL', lise:'LİSE' };
             gate.classList.remove('hidden');
         }
     };
-    window.setTimeout(enterGate, 2600);
-    splash.addEventListener('click', enterGate, { once: true });
+    const enterAndRestore = async () => {
+        enterGate();
+        if (splash.classList.contains('hidden')) await restoreTdevSession();
+    };
+    window.setTimeout(enterAndRestore, 2600);
+    splash.addEventListener('click', enterAndRestore, { once: true });
 })();
+
+async function restoreTdevSession() {
+    try {
+        const user = Parse.User.current();
+        if (!user) return false;
+        const profileResult = await Parse.Cloud.run('getMyProfile', {});
+        if (!profileResult || profileResult.success !== true || !profileResult.profile) throw new Error('Oturum doğrulanamadı.');
+        const profile = profileResult.profile;
+        curRole = String(user.get('role') || profile.role || 'member');
+        curGrade = String(profile.grade || '8');
+        curServer = String(profile.countryCode || 'TR').toUpperCase();
+        const countrySelect = document.getElementById('country-select');
+        if (countrySelect && [...countrySelect.options].some(option => option.value === curServer)) countrySelect.value = curServer;
+        launch(curGrade);
+        recordCurrentDeviceSession().catch(() => {});
+        showNotif('Oturumun güvenle geri yüklendi.');
+        return true;
+    } catch (error) {
+        try { await Parse.User.logOut(); } catch (_) {}
+        console.warn('[TdevKuantum] Saved session could not be restored:', error && error.message);
+        return false;
+    }
+}
+async function logoutTdevAccount() {
+    if (!window.confirm('Hesabından çıkış yapmak istiyor musun?')) return;
+    try { await Parse.User.logOut(); } catch (error) { showNotif('Çıkış tamamlanamadı: ' + (error && error.message ? error.message : 'oturum kapatılamadı')); return; }
+    curRole = ''; curGrade = '';
+    document.getElementById('app').style.display = 'none';
+    goTo('gate');
+    showNotif('Hesabından güvenli çıkış yapıldı.');
+}
 
 // ---- NAVİGASYON ----
 function goTo(id) {
@@ -2104,7 +2143,9 @@ function openPasswordReset() {
     const emailField = document.getElementById('reset-email');
     if (emailField && loginEmail) emailField.value = loginEmail;
     document.getElementById('reset-request-fields').hidden = false;
+    document.getElementById('reset-code-fields').hidden = true;
     document.getElementById('reset-complete-fields').hidden = true;
+    passwordResetEmail = '';
     const err = document.getElementById('reset-err');
     if (err) err.style.display = 'none';
     goTo('password-reset');
@@ -2124,13 +2165,34 @@ async function requestPasswordReset(isResend = false) {
         if (!result || result.success !== true) throw new Error((result && result.error) || 'İstek tamamlanamadı.');
         passwordResetEmail = email;
         document.getElementById('reset-request-fields').hidden = true;
-        document.getElementById('reset-complete-fields').hidden = false;
+        document.getElementById('reset-code-fields').hidden = false;
+        document.getElementById('reset-complete-fields').hidden = true;
         showAuthError('reset-err', result.message || 'Bu e-posta için bir hesap varsa sıfırlama kodu gönderildi. Gelen kutunu ve spam klasörünü kontrol et.');
         if (err) { err.style.display = 'block'; err.style.color = '#2457c5'; err.style.background = '#eff6ff'; err.style.borderColor = '#bfdbfe'; }
     } catch (error) {
         showAuthError('reset-err', error && error.message ? error.message : 'Kod gönderilemedi. Biraz sonra tekrar dene.');
     } finally {
         if (button) { button.disabled = false; button.textContent = 'Sıfırlama kodu gönder'; }
+    }
+}
+async function verifyPasswordResetCode() {
+    const email = passwordResetEmail || (document.getElementById('reset-email')?.value || '').trim().toLowerCase();
+    const code = (document.getElementById('reset-code')?.value || '').trim();
+    const button = document.getElementById('reset-verify-button');
+    const err = document.getElementById('reset-err');
+    if (err) err.style.display = 'none';
+    if (!/^\\d{6}$/.test(code)) { showAuthError('reset-err', 'E-postana gelen 6 haneli kodu gir.'); return; }
+    if (button) { button.disabled = true; button.textContent = 'Doğrulanıyor…'; }
+    try {
+        const result = await runPublicAuthCloud('verifyTdevPasswordResetCode', { email, code });
+        if (!result || result.success !== true) throw new Error((result && result.error) || 'Kod doğrulanamadı.');
+        document.getElementById('reset-code-fields').hidden = true;
+        document.getElementById('reset-complete-fields').hidden = false;
+        if (err) { err.textContent = result.message || 'Kod doğrulandı.'; err.style.display = 'block'; err.style.color = '#16866a'; }
+    } catch (error) {
+        showAuthError('reset-err', error && error.message ? error.message : 'Kod doğrulanamadı.');
+    } finally {
+        if (button) { button.disabled = false; button.textContent = 'Kodu doğrula'; }
     }
 }
 async function completePasswordReset() {
@@ -2709,7 +2771,7 @@ async function revokeMySession(sessionId, button) {
 }
 async function deleteMyAccountData() {
     const phrase = 'HESABIMI SİL';
-    if (!window.confirm('Bu işlem hesabını ve kişisel öğrenme kayıtlarını kalıcı olarak siler. Geri alınamaz. Devam etmek istiyor musun?')) return;
+    if (!window.confirm('Hesabın ve kişisel öğrenme kayıtların kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musun?')) return;
     if (window.prompt('Onaylamak için HESABIMI SİL yaz:') !== phrase) { showNotif('Hesap silme iptal edildi; onay metni eşleşmedi.'); return; }
     const status = document.getElementById('security-status');
     if (status) status.textContent = 'Hesap ve kişisel kayıtlar siliniyor…';
