@@ -1899,6 +1899,37 @@ const TDEV_PARSE_JS_KEY = "3mTkUnuKy25u07xW87ekGB0aDjuHd4sf7z8uLcBr";
 Parse.initialize(TDEV_PARSE_APP_ID, TDEV_PARSE_JS_KEY);
 Parse.serverURL = "https://parseapi.back4app.com";
 
+// Parse 5 can restore a persisted session asynchronously. Use the async
+// accessor before deciding that a signed-in learner is anonymous.
+async function getTdevActiveUser() {
+    if (!window.Parse || !Parse.User) return null;
+    let user = null;
+    try { user = typeof Parse.User.current === 'function' ? Parse.User.current() : null; } catch (_) {}
+    if (!user && typeof Parse.User.currentAsync === 'function') {
+        try { user = await Parse.User.currentAsync(); } catch (_) {}
+    }
+    if (!user || typeof user.getSessionToken !== 'function' || !user.getSessionToken()) return null;
+    return user;
+}
+window.getTdevActiveUser = getTdevActiveUser;
+window.tdevAIRequest = async function(message, options) {
+    const user = await getTdevActiveUser();
+    if (!user) throw new Error('Yapay zekâ için geçerli oturum bulunamadı. Hesabından çıkış yapıp yeniden giriş yap; oturum geri yüklenemiyorsa tekrar giriş gerekebilir.');
+    if (!Parse.Cloud || typeof Parse.Cloud.run !== 'function') throw new Error('Back4App Cloud servisi yüklenemedi.');
+    const p = options || {};
+    const result = await Parse.Cloud.run('tdevAIChat', {
+        message: String(message || '').slice(0, 12000),
+        grade: String(p.grade || curGrade || '10'),
+        country: String(p.country || curServer || 'TR').toUpperCase()
+    });
+    if (!result || result.success !== true || !result.answer) {
+        const error = new Error((result && result.error) || 'Yapay zekâ yanıt üretemedi.');
+        error.code = result && result.code;
+        throw error;
+    }
+    return result;
+};
+
 /**
  * Public account/verification endpoints must not inherit a stale Parse session
  * from this browser. Parse Server rejects a request carrying an expired session
@@ -3116,7 +3147,8 @@ async function researchMsg() {
     const input = document.getElementById('chat-in');
     const query = input ? input.value.trim() : '';
     if (query.length < 3) { showNotif('Kaynaklı araştırma için önce bir soru yaz.'); return; }
-    if (!Parse.User.current()) { addChatMsg('ai', 'Kaynaklı araştırma için önce hesabına giriş yap.'); return; }
+    const activeUser = await getTdevActiveUser();
+    if (!activeUser) { addChatMsg('ai', 'Kaynaklı araştırma için geçerli oturum bulunamadı. Lütfen yeniden giriş yap.'); return; }
     input.value = '';
     addChatMsg('user', '🌐 Kaynaklı araştırma: ' + query);
     const typing = addTyping();
@@ -3164,18 +3196,12 @@ async function sendMsg() {
     try {
         let responseText = '';
         let providerError = '';
-        if (window.Parse && Parse.Cloud && typeof Parse.Cloud.run === 'function' && Parse.User.current()) {
-            try {
-                const result = await Parse.Cloud.run('tdevAIChat', { message: prompt.slice(0, 12000), grade: String(curGrade || ''), country: curServer });
-                if (result && result.success && result.answer) {
-                    responseText = String(result.answer);
-                    if (result.fallbackUsed) responseText += '\n\n(Yedek yapay zekâ sağlayıcısı kullanıldı: ' + (result.provider || 'yedek') + ')';
-                } else providerError = (result && result.error) || 'Yapay zekâ yanıt üretmedi.';
-            } catch (error) {
-                providerError = error && error.message ? error.message : 'Yapay zekâ sunucusuna ulaşılamadı.';
-            }
-        } else {
-            providerError = 'Tam yapay zekâ yanıtı için önce giriş yapmalısın.';
+        try {
+            const result = await window.tdevAIRequest(prompt, { grade: String(curGrade || '10'), country: curServer });
+            responseText = String(result.answer);
+            if (result.fallbackUsed) responseText += '\n\n(Yedek yapay zekâ sağlayıcısı kullanıldı: ' + (result.provider || 'yedek') + ')';
+        } catch (error) {
+            providerError = error && error.message ? error.message : 'Yapay zekâ sunucusuna ulaşılamadı.';
         }
         if (!responseText && !fileText) {
             const low = text.toLocaleLowerCase('tr');
