@@ -518,7 +518,7 @@ Parse.Cloud.define('requestTdevPasswordReset', async (request) => {
 Parse.Cloud.define('verifyTdevPasswordResetCode', async (request) => {
   const email = normalizeEmail(request.params && request.params.email);
   const code = safeText(request.params && request.params.code, 10);
-  if (!validEmail(email) || !/^\\d{6}$/.test(code)) return resultError('Geçerli e-posta ve 6 haneli kod gerekli.', 'INVALID_INPUT');
+  if (!validEmail(email) || !/^\d{6}$/.test(code)) return resultError('Geçerli e-posta ve 6 haneli kod gerekli.', 'INVALID_INPUT');
   const reset = await findPasswordReset(email);
   if (!reset || reset.get('deliveryFailed') === true) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
   const attempts = Number(reset.get('attempts') || 0);
@@ -545,7 +545,7 @@ Parse.Cloud.define('completeTdevPasswordReset', async (request) => {
   if (!reset || reset.get('deliveryFailed') === true) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
   // Backward compatibility: older clients may still submit code and password
   // together. New clients verify in a separate step first.
-  if (reset.get('verified') !== true && /^\\d{6}$/.test(code) &&
+  if (reset.get('verified') !== true && /^\d{6}$/.test(code) &&
       secureEqual(reset.get('codeHash'), await passwordResetCodeHash(email, code))) {
     reset.set('verified', true);
     reset.set('verifiedAt', new Date());
