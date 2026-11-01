@@ -500,10 +500,38 @@ Parse.Cloud.define('requestTdevPasswordReset', async (request) => {
   const recent = await recentQuery.first({ useMasterKey: true });
   if (recent) return { success: true, message: genericMessage };
   const code = String(crypto.randomInt(100000, 1000000));
-  await sendPasswordResetEmail(email, code);
+  // Save the hashed code before delivery so a fast recipient cannot submit it
+  // before the reset record exists. Failed delivery invalidates the record.
   await savePasswordReset(email, code);
+  const latest = await findPasswordReset(email);
+  try {
+    await sendPasswordResetEmail(email, code);
+    if (latest) { latest.set('deliveryFailed', false); await latest.save(null, { useMasterKey: true }); }
+  } catch (error) {
+    if (latest) { latest.set('deliveryFailed', true); latest.set('used', true); await latest.save(null, { useMasterKey: true }); }
+    throw error;
+  }
   await writeAuditLog(request, 'user.password_reset_requested', user.id, { emailHash: emailHash });
   return { success: true, message: genericMessage };
+});
+
+Parse.Cloud.define('verifyTdevPasswordResetCode', async (request) => {
+  const email = normalizeEmail(request.params && request.params.email);
+  const code = safeText(request.params && request.params.code, 10);
+  if (!validEmail(email) || !/^\\d{6}$/.test(code)) return resultError('Geçerli e-posta ve 6 haneli kod gerekli.', 'INVALID_INPUT');
+  const reset = await findPasswordReset(email);
+  if (!reset || reset.get('deliveryFailed') === true) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
+  const attempts = Number(reset.get('attempts') || 0);
+  if (attempts >= 5) return resultError('Çok fazla yanlış deneme. Yeni kod iste.', 'RESET_TOO_MANY_ATTEMPTS');
+  if (!secureEqual(reset.get('codeHash'), await passwordResetCodeHash(email, code))) {
+    reset.set('attempts', attempts + 1);
+    await reset.save(null, { useMasterKey: true });
+    return resultError('Kod hatalı. Tekrar kontrol et.', 'RESET_CODE_INVALID');
+  }
+  reset.set('verified', true);
+  reset.set('verifiedAt', new Date());
+  await reset.save(null, { useMasterKey: true });
+  return { success: true, message: 'Kod doğrulandı. Şimdi yeni şifreni oluşturabilirsin.' };
 });
 
 Parse.Cloud.define('completeTdevPasswordReset', async (request) => {
@@ -514,13 +542,18 @@ Parse.Cloud.define('completeTdevPasswordReset', async (request) => {
     return resultError('E-posta, 6 haneli kod veya yeni şifre geçersiz.', 'INVALID_INPUT');
   }
   const reset = await findPasswordReset(email);
-  if (!reset) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
-  const attempts = Number(reset.get('attempts') || 0);
-  if (attempts >= 5) return resultError('Çok fazla yanlış deneme. Yeni kod iste.', 'RESET_TOO_MANY_ATTEMPTS');
-  if (!secureEqual(reset.get('codeHash'), await passwordResetCodeHash(email, code))) {
-    reset.set('attempts', attempts + 1);
+  if (!reset || reset.get('deliveryFailed') === true) return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_EXPIRED');
+  // Backward compatibility: older clients may still submit code and password
+  // together. New clients verify in a separate step first.
+  if (reset.get('verified') !== true && /^\\d{6}$/.test(code) &&
+      secureEqual(reset.get('codeHash'), await passwordResetCodeHash(email, code))) {
+    reset.set('verified', true);
+    reset.set('verifiedAt', new Date());
     await reset.save(null, { useMasterKey: true });
-    return resultError('Kod geçersiz veya süresi dolmuş. Yeni kod iste.', 'RESET_CODE_INVALID');
+  }
+  const verifiedAt = reset.get('verifiedAt') ? new Date(reset.get('verifiedAt')).getTime() : 0;
+  if (reset.get('verified') !== true || !verifiedAt || Date.now() - verifiedAt > 10 * 60 * 1000) {
+    return resultError('Önce e-postana gönderilen kodu doğrula veya yeni kod iste.', 'RESET_CODE_NOT_VERIFIED');
   }
   const query = new Parse.Query(Parse.User);
   query.equalTo('username', email);
