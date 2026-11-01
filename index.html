@@ -2181,7 +2181,7 @@ async function verifyPasswordResetCode() {
     const button = document.getElementById('reset-verify-button');
     const err = document.getElementById('reset-err');
     if (err) err.style.display = 'none';
-    if (!/^\\d{6}$/.test(code)) { showAuthError('reset-err', 'E-postana gelen 6 haneli kodu gir.'); return; }
+    if (!/^\d{6}$/.test(code)) { showAuthError('reset-err', 'E-postana gelen 6 haneli kodu gir.'); return; }
     if (button) { button.disabled = true; button.textContent = 'Doğrulanıyor…'; }
     try {
         const result = await runPublicAuthCloud('verifyTdevPasswordResetCode', { email, code });
