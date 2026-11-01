@@ -1769,8 +1769,9 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
   if (!/^\d{1,2}$/.test(grade) || Number(grade) < 1 || Number(grade) > 12) return resultError('Sınıf bilgisi geçersiz.', 'INVALID_GRADE');
   if (!/^[A-Z]{2}$/.test(country)) return resultError('Ülke seçimi geçersiz.', 'INVALID_COUNTRY');
 
-  const nvidiaApiKey = await configValueAsync('NVIDIA_API_KEY');
-  const generalApiKey = await configValueAsync('AI_API_KEY');
+  const cleanConfigSecret = (value) => String(value || '').trim().replace(/^['"]|['"]$/g, '');
+  const nvidiaApiKey = cleanConfigSecret(await configValueAsync('NVIDIA_API_KEY'));
+  const generalApiKey = cleanConfigSecret(await configValueAsync('AI_API_KEY'));
   const useNvidia = !!nvidiaApiKey;
   const primaryKey = nvidiaApiKey || generalApiKey;
   if (!primaryKey) return resultError('Yapay zekâ henüz yapılandırılmamış. Back4App Config içinde NVIDIA_API_KEY veya AI_API_KEY tanımlanmalı.', 'AI_PROVIDER_NOT_CONFIGURED');
@@ -1813,7 +1814,7 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
     addFallbackProvider(generalApiKey, configuredAiEndpoint, configuredAiModel, 'AI_API_KEY yedek sağlayıcısı');
   }
 
-  const separateFallbackKey = await configValueAsync('AI_FALLBACK_API_KEY');
+  const separateFallbackKey = cleanConfigSecret(await configValueAsync('AI_FALLBACK_API_KEY'));
   const separateFallbackEndpoint = (await configValueAsync('AI_FALLBACK_BASE_URL', configuredAiEndpoint)) || configuredAiEndpoint;
   const separateFallbackModel = (await configValueAsync('AI_FALLBACK_MODEL', configuredAiModel)) || configuredAiModel;
   addFallbackProvider(separateFallbackKey, separateFallbackEndpoint, separateFallbackModel, 'Ek yedek AI sağlayıcısı');
@@ -1851,7 +1852,8 @@ Parse.Cloud.define('tdevAIChat', async (request) => {
         console.error('[TdevKuantum] AI provider rejected request:', provider.label, response.status, detail);
         continue;
       }
-      const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      let answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (Array.isArray(answer)) answer = answer.map(part => typeof part === 'string' ? part : (part && (part.text || part.content) || '')).join('');
       if (typeof answer !== 'string' || !answer.trim()) {
         providerErrors.push(provider.label + ' boş yanıt verdi');
         continue;
