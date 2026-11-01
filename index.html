@@ -1263,7 +1263,7 @@ button,input,select,textarea{font-family:inherit}
             <label class="auth-label" for="reset-code">E-postana gelen 6 haneli kod</label>
             <input type="text" id="reset-code" class="auth-input verification-code-input" placeholder="123456" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
             <button type="button" class="auth-primary reset-main-action" id="reset-verify-button" onclick="verifyPasswordResetCode()">Kodu doğrula</button>
-            <button type="button" class="auth-inline reset-resend" onclick="requestPasswordReset(true)">Yeni kod iste</button>
+            <button type="button" class="auth-inline reset-resend" id="reset-resend-button" onclick="requestPasswordReset(true)">Yeni kod iste</button>
         </div>
         <div id="reset-complete-fields" hidden>
             <p class="auth-description">E-posta kodun doğrulandı. Şimdi yeni şifreni belirle.</p>
@@ -1978,6 +1978,7 @@ async function restoreTdevSession() {
         const countrySelect = document.getElementById('country-select');
         if (countrySelect && [...countrySelect.options].some(option => option.value === curServer)) countrySelect.value = curServer;
         launch(curGrade);
+        if (typeof window.updateSidebarRole === 'function') window.updateSidebarRole(profile.profileType || profile.role || 'student', profile);
         recordCurrentDeviceSession().catch(() => {});
         showNotif('Oturumun güvenle geri yüklendi.');
         return true;
@@ -2152,7 +2153,7 @@ function openPasswordReset() {
 }
 async function requestPasswordReset(isResend = false) {
     const email = (document.getElementById('reset-email')?.value || '').trim().toLowerCase();
-    const button = document.getElementById('reset-request-button');
+    const button = document.getElementById(isResend ? 'reset-resend-button' : 'reset-request-button');
     const err = document.getElementById('reset-err');
     if (err) err.style.display = 'none';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -2172,7 +2173,7 @@ async function requestPasswordReset(isResend = false) {
     } catch (error) {
         showAuthError('reset-err', error && error.message ? error.message : 'Kod gönderilemedi. Biraz sonra tekrar dene.');
     } finally {
-        if (button) { button.disabled = false; button.textContent = 'Sıfırlama kodu gönder'; }
+        if (button) { button.disabled = false; button.textContent = isResend ? 'Yeni kod iste' : 'Sıfırlama kodu gönder'; }
     }
 }
 async function verifyPasswordResetCode() {
