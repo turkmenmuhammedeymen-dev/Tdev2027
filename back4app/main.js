@@ -418,6 +418,8 @@ async function savePasswordReset(email, code) {
   row.set('expiresAt', new Date(Date.now() + 10 * 60 * 1000));
   row.set('attempts', 0);
   row.set('used', false);
+  row.set('verified', false);
+  row.set('deliveryFailed', false);
   await row.save(null, { useMasterKey: true });
 }
 async function findPasswordReset(email) {
